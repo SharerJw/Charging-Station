@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.playwright-mcp/
+.superpowers/
+*.log
+.env.local
+.env.*.local
+.gradle/
+build/
+.idea/
+*.iml
