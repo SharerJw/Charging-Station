@@ -18,7 +18,7 @@
    - 填写漏洞详情
 
 2. **邮件**
-   - 发送至 **[your-email@example.com]**
+   - 发送至 **[Sharer.Jw@Gmail.com]**
    - 标题格式: `[SECURITY] 简要描述`
 
 ### 报告内容应包括
