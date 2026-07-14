@@ -1,0 +1,23 @@
+{
+  "name": "EV充电平台-用户端",
+  "appid": "",
+  "description": "电动汽车充电桩用户端小程序",
+  "versionName": "0.1.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "minified": true
+    },
+    "usingComponents": true
+  },
+  "h5": {
+    "title": "EV充电平台",
+    "router": {
+      "mode": "hash"
+    }
+  }
+}

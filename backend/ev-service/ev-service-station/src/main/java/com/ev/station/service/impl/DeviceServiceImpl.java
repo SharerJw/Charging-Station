@@ -1,0 +1,84 @@
+package com.ev.station.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.ev.common.core.exception.BizException;
+import com.ev.common.core.result.PageResult;
+import com.ev.station.dto.*;
+import com.ev.station.entity.ConnectorEntity;
+import com.ev.station.entity.DeviceEntity;
+import com.ev.station.mapper.ConnectorMapper;
+import com.ev.station.mapper.DeviceMapper;
+import com.ev.station.service.DeviceService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j @Service @RequiredArgsConstructor
+public class DeviceServiceImpl implements DeviceService {
+    private final DeviceMapper deviceMapper;
+    private final ConnectorMapper connectorMapper;
+
+    @Override
+    public PageResult<DeviceVO> page(int page, int size, String keyword, Long stationId, String status) {
+        LambdaQueryWrapper<DeviceEntity> wrapper = new LambdaQueryWrapper<>();
+        if (keyword != null && !keyword.isBlank()) {
+            wrapper.and(w -> w.like(DeviceEntity::getName, keyword).or().like(DeviceEntity::getCode, keyword));
+        }
+        if (stationId != null) wrapper.eq(DeviceEntity::getStationId, stationId);
+        if (status != null && !status.isBlank()) wrapper.eq(DeviceEntity::getStatus, status);
+        wrapper.orderByDesc(DeviceEntity::getCreatedAt);
+        Page<DeviceEntity> result = deviceMapper.selectPage(new Page<>(page, size), wrapper);
+        List<DeviceVO> voList = result.getRecords().stream().map(this::toVO).collect(Collectors.toList());
+        return PageResult.of(voList, result.getTotal(), page, size);
+    }
+
+    @Override
+    public DeviceVO detail(Long id) {
+        DeviceEntity entity = deviceMapper.selectById(id);
+        if (entity == null) throw BizException.deviceNotFound();
+        return toVO(entity);
+    }
+
+    @Override
+    public List<DeviceVO> listByStation(Long stationId) {
+        return deviceMapper.selectList(new LambdaQueryWrapper<DeviceEntity>()
+                .eq(DeviceEntity::getStationId, stationId).orderByAsc(DeviceEntity::getCode))
+                .stream().map(this::toVO).collect(Collectors.toList());
+    }
+
+    @Override
+    public void reset(Long id) {
+        DeviceEntity entity = deviceMapper.selectById(id);
+        if (entity == null) throw BizException.deviceNotFound();
+        log.info("远程重启设备: id={}, code={}", id, entity.getCode());
+    }
+
+    @Override
+    public void unlock(Long id, Integer connectorId) {
+        DeviceEntity entity = deviceMapper.selectById(id);
+        if (entity == null) throw BizException.deviceNotFound();
+        log.info("解锁枪头: deviceId={}, connectorId={}", id, connectorId);
+    }
+
+    private DeviceVO toVO(DeviceEntity entity) {
+        List<ConnectorEntity> connectors = connectorMapper.selectList(
+                new LambdaQueryWrapper<ConnectorEntity>().eq(ConnectorEntity::getDeviceId, entity.getId())
+                        .orderByAsc(ConnectorEntity::getConnectorId));
+        List<ConnectorVO> connectorVOs = connectors.stream().map(c -> ConnectorVO.builder()
+                .id(String.valueOf(c.getId())).connectorId(c.getConnectorId()).type(c.getType())
+                .status(c.getStatus()).maxPower(c.getMaxPower())
+                .currentTransactionId(c.getCurrentTransactionId()).build()).collect(Collectors.toList());
+        return DeviceVO.builder()
+                .id(String.valueOf(entity.getId())).stationId(String.valueOf(entity.getStationId()))
+                .code(entity.getCode()).ocppId(entity.getOcppId()).name(entity.getName())
+                .type(entity.getType()).model(entity.getModel()).vendor(entity.getVendor())
+                .ratedPower(entity.getRatedPower()).firmwareVersion(entity.getFirmwareVersion())
+                .status(entity.getStatus()).lifecycle(entity.getLifecycle())
+                .connectors(connectorVOs).createTime(entity.getCreatedAt())
+                .build();
+    }
+}

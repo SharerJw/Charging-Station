@@ -1,0 +1,46 @@
+server:
+  port: 8080
+
+spring:
+  main:
+    web-application-type: reactive
+  application:
+    name: ev-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5180"
+            allowed-methods: "*"
+            allowed-headers: "*"
+            allow-credentials: true
+            max-age: 3600
+      routes:
+        - id: identity-service
+          uri: lb://ev-service-identity
+          predicates:
+            - Path=/api/auth/**,/api/v1/auth/**,/api/v1/ops/auth/**,/api/v1/ops/user/**,/api/v1/user/**,/api/users/**
+        - id: station-service
+          uri: lb://ev-service-station
+          predicates:
+            - Path=/api/stations/**,/api/v1/stations/**,/api/v1/ops/stations/**,/api/devices/**
+        - id: order-service
+          uri: lb://ev-service-order
+          predicates:
+            - Path=/api/orders/**,/api/v1/orders/**,/api/dashboard/**,/api/finance/**,/api/v1/ops/alerts/**,/api/v1/ops/workorders/**,/api/v1/ops/inspections/**
+        - id: charging-service
+          uri: lb://ev-service-charging
+          predicates:
+            - Path=/api/v1/charging/**,/ws/charging/**
+        - id: simulator-service
+          uri: lb://ev-service-simulator
+          predicates:
+            - Path=/api/simulator/**
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG

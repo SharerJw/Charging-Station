@@ -1,0 +1,245 @@
+/* ========================================
+ * EV充电平台 - admin-web 设计令牌
+ * 主色: #1677FF (品牌蓝)
+ * 背景: #F0F2F5
+ * ======================================== */
+
+:root {
+  /* ===== 品牌色 ===== */
+  --color-primary: #1677FF;
+  --color-primary-light: #4096FF;
+  --color-primary-lighter: #69B1FF;
+  --color-primary-bg: #E6F4FF;
+  --color-primary-border: #91CAFF;
+
+  /* ===== 辅助色 ===== */
+  --color-purple: #722ED1;
+  --color-purple-bg: #F9F0FF;
+  --color-cyan: #13C2C2;
+  --color-cyan-bg: #E6FFFB;
+
+  /* ===== 状态色 ===== */
+  --color-success: #52C41A;
+  --color-success-bg: #F6FFED;
+  --color-success-border: #B7EB8F;
+  --color-warning: #FAAD14;
+  --color-warning-bg: #FFFBE6;
+  --color-warning-border: #FFE58F;
+  --color-error: #FF4D4F;
+  --color-error-bg: #FFF2F0;
+  --color-error-border: #FFCCC7;
+  --color-info: #1677FF;
+  --color-info-bg: #E6F4FF;
+
+  /* ===== 中性色 ===== */
+  --color-text-primary: #1F1F1F;
+  --color-text-secondary: #595959;
+  --color-text-tertiary: #8C8C8C;
+  --color-text-disabled: #BFBFBF;
+  --color-text-inverse: #FFFFFF;
+  --color-border: #D9D9D9;
+  --color-border-light: #F0F0F0;
+  --color-bg-page: #F0F2F5;
+  --color-bg-card: #FFFFFF;
+  --color-bg-hover: #F5F5F5;
+  --color-bg-mask: rgba(0, 0, 0, 0.45);
+
+  /* ===== 间距 (8px网格) ===== */
+  --space-2: 2px;
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-40: 40px;
+  --space-48: 48px;
+
+  /* ===== 圆角 ===== */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-round: 9999px;
+
+  /* ===== 阴影 ===== */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.16);
+
+  /* ===== 字体 ===== */
+  --font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-number: 'DIN Alternate', 'Helvetica Neue', Arial, monospace;
+  --font-family-code: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 28px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 600;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ===== 动画 ===== */
+  --duration-fast: 0.15s;
+  --duration-normal: 0.25s;
+  --duration-slow: 0.35s;
+  --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-in: cubic-bezier(0.4, 0, 1, 1);
+  --easing-out: cubic-bezier(0, 0, 0.2, 1);
+
+  /* ===== 布局 ===== */
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 64px;
+  --header-height: 56px;
+  --tab-height: 40px;
+  --content-padding: 16px;
+}
+
+/* ===== 全局基础样式 ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  height: 100%;
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-page);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 数字字体 */
+.font-number {
+  font-family: var(--font-family-number);
+}
+
+/* 金额样式 */
+.amount {
+  color: var(--color-error);
+  font-weight: var(--font-weight-bold);
+}
+
+/* 代码字体 */
+.font-code {
+  font-family: var(--font-family-code);
+}
+
+/* ===== 自定义滚动条 ===== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C1C1C1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #A8A8A8;
+}
+
+/* ===== 通用工具类 ===== */
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-error { color: var(--color-error); }
+.text-info { color: var(--color-info); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-tertiary { color: var(--color-text-tertiary); }
+
+.text-xs { font-size: var(--font-size-xs); }
+.text-sm { font-size: var(--font-size-sm); }
+.text-md { font-size: var(--font-size-md); }
+.text-lg { font-size: var(--font-size-lg); }
+.text-xl { font-size: var(--font-size-xl); }
+
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-bold { font-weight: var(--font-weight-bold); }
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===== 过渡动画 ===== */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--duration-normal) var(--easing-default);
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: all var(--duration-normal) var(--easing-default);
+}
+.slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+/* ===== 骨架屏动画 ===== */
+@keyframes skeleton-pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ===== Element Plus 主题覆盖 ===== */
+.el-card {
+  border-radius: var(--radius-md);
+  border: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.el-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--color-primary);
+  --el-button-border-color: var(--color-primary);
+}
+
+.el-table {
+  --el-table-border-color: var(--color-border-light);
+  --el-table-header-bg-color: #FAFAFA;
+}
+
+.el-tag--success { --el-tag-bg-color: var(--color-success-bg); }
+.el-tag--warning { --el-tag-bg-color: var(--color-warning-bg); }
+.el-tag--danger { --el-tag-bg-color: var(--color-error-bg); }

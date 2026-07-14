@@ -1,0 +1,33 @@
+{
+  "name": "EV充电平台-运维端",
+  "appid": "",
+  "description": "电动汽车充电桩运维管理App",
+  "versionName": "0.1.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "minified": true
+    },
+    "usingComponents": true
+  },
+  "app-plus": {
+    "distribute": {
+      "android": {
+        "permissions": [
+          "<uses-permission android:name=\"android.permission.CAMERA\"/>",
+          "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>"
+        ]
+      }
+    }
+  },
+  "h5": {
+    "title": "运维App",
+    "router": {
+      "mode": "hash"
+    }
+  }
+}

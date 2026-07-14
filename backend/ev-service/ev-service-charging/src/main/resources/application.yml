@@ -1,0 +1,40 @@
+server:
+  port: 8084
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: ev-service-charging
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaStreamsAutoConfiguration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      retries: 0
+      properties:
+        max.block.ms: 3000
+        request.timeout.ms: 3000
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/ev_order?currentSchema=public
+    username: ${DB_USER:ev}
+    password: ${DB_PASS:ev123}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: 6379
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl

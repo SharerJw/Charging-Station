@@ -1,0 +1,27 @@
+{
+  "pages": [
+    { "path": "pages/index/index", "style": { "navigationBarTitleText": "工作台" } },
+    { "path": "pages/station/index", "style": { "navigationBarTitleText": "充电站管理" } },
+    { "path": "pages/alert/index", "style": { "navigationBarTitleText": "告警中心" } },
+    { "path": "pages/workorder/index", "style": { "navigationBarTitleText": "工单管理" } },
+    { "path": "pages/inspection/index", "style": { "navigationBarTitleText": "巡检任务" } },
+    { "path": "pages/profile/index", "style": { "navigationBarTitleText": "我的" } }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "运维App",
+    "navigationBarBackgroundColor": "#1677FF",
+    "backgroundColor": "#F0F2F5"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#1677FF",
+    "backgroundColor": "#ffffff",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "工作台", "iconPath": "static/tab-home.png", "selectedIconPath": "static/tab-home-active.png" },
+      { "pagePath": "pages/alert/index", "text": "告警", "iconPath": "static/tab-alert.png", "selectedIconPath": "static/tab-alert-active.png" },
+      { "pagePath": "pages/workorder/index", "text": "工单", "iconPath": "static/tab-order.png", "selectedIconPath": "static/tab-order-active.png" },
+      { "pagePath": "pages/profile/index", "text": "我的", "iconPath": "static/tab-profile.png", "selectedIconPath": "static/tab-profile-active.png" }
+    ]
+  }
+}

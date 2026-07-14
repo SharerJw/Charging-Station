@@ -1,0 +1,21 @@
+{
+  "name": "ev-charging-platform-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "EV充电平台 - 前端项目集合",
+  "scripts": {
+    "admin:dev": "cd apps/admin-web && pnpm dev",
+    "admin:build": "cd apps/admin-web && pnpm build",
+    "simulator:dev": "cd apps/simulator-web && pnpm dev",
+    "simulator:build": "cd apps/simulator-web && pnpm build",
+    "user:dev": "cd apps/user-miniapp && pnpm dev:h5",
+    "user:dev:mp": "cd apps/user-miniapp && pnpm dev:mp-weixin",
+    "user:build:mp": "cd apps/user-miniapp && pnpm build:mp-weixin",
+    "ops:dev": "cd apps/ops-app && pnpm dev:h5",
+    "ops:dev:app": "cd apps/ops-app && pnpm dev:app",
+    "ops:build:app": "cd apps/ops-app && pnpm build:app",
+    "install:all": "cd apps/admin-web && pnpm install && cd ../simulator-web && pnpm install && cd ../user-miniapp && pnpm install && cd ../ops-app && pnpm install"
+  },
+  "keywords": ["ev", "charging", "platform", "vue3", "uniapp"],
+  "license": "MIT"
+}

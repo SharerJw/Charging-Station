@@ -1,0 +1,62 @@
+{
+  "dashboard": {
+    "title": "EV充电平台 - 业务概览",
+    "tags": ["ev-charging", "business"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "title": "API QPS",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+        "targets": [{ "expr": "rate(http_server_requests_seconds_count[1m])", "legendFormat": "{{method}} {{uri}}" }]
+      },
+      {
+        "title": "API P99 延迟",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+        "targets": [{ "expr": "histogram_quantile(0.99, rate(http_server_requests_seconds_bucket[5m]))", "legendFormat": "P99" }]
+      },
+      {
+        "title": "在线设备数",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
+        "targets": [{ "expr": "device_online_count" }]
+      },
+      {
+        "title": "可用充电枪",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 6, "y": 8 },
+        "targets": [{ "expr": "station_available_ports" }]
+      },
+      {
+        "title": "充电订单总数",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 12, "y": 8 },
+        "targets": [{ "expr": "charging_order_total" }]
+      },
+      {
+        "title": "累计充电量(Wh)",
+        "type": "stat",
+        "gridPos": { "h": 4, "w": 6, "x": 18, "y": 8 },
+        "targets": [{ "expr": "charging_energy_wh_total" }]
+      },
+      {
+        "title": "API 错误率",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+        "targets": [{ "expr": "rate(api_error_total[5m])", "legendFormat": "errors/s" }]
+      },
+      {
+        "title": "JVM 内存",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+        "targets": [
+          { "expr": "jvm_memory_used_bytes{area='heap'}", "legendFormat": "heap used" },
+          { "expr": "jvm_memory_max_bytes{area='heap'}", "legendFormat": "heap max" }
+        ]
+      }
+    ],
+    "refresh": "10s",
+    "time": { "from": "now-1h", "to": "now" }
+  }
+}

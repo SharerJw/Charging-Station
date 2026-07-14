@@ -1,11 +1,66 @@
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
+
+# Build output
 dist/
-.playwright-mcp/
-.superpowers/
-*.log
-.env.local
-.env.*.local
-.gradle/
 build/
+out/
+
+# Gradle
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
 .idea/
 *.iml
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env.local
+.env.*.local
+
+# Testing
+coverage/
+.playwright-mcp/
+
+# Claude
+.superpowers/
+.superpowers/sdd/
+
+# Binary / Archives
+*.zip
+*.tar.gz
+*.rar
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# Docker volumes
+docker/pg-data/
+docker/redis-data/
+docker/nacos-data/
+docker/minio-data/
+docker/kafka-data/
+
+# UniApp
+unpackage/
+dist/
+
+# Temp
+tmp/
+temp/
+*.tmp
