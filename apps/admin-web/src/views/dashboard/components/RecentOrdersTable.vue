@@ -36,10 +36,10 @@ function formatTime(time: string) {
       <el-table-column prop="userName" label="用户" width="80" />
       <el-table-column prop="stationName" label="充电站" show-overflow-tooltip />
       <el-table-column label="电量" width="100" align="right">
-        <template #default="{ row }"><span class="font-number">{{ row.consumedEnergy }} kWh</span></template>
+        <template #default="{ row }"><span class="font-number">{{ (row.consumedEnergy || row.energyWh || 0) }} kWh</span></template>
       </el-table-column>
       <el-table-column label="金额" width="100" align="right">
-        <template #default="{ row }"><span class="font-number amount">¥{{ row.payableAmount.toFixed(2) }}</span></template>
+        <template #default="{ row }"><span class="font-number amount">¥{{ (row.payableAmount || row.totalAmount || 0).toFixed(2) }}</span></template>
       </el-table-column>
       <el-table-column label="状态" width="90" align="center">
         <template #default="{ row }">
