@@ -49,6 +49,13 @@ coverage/
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
 
+# Non-code specs
+CLAUDE.md
+docs/
+前端/
+后端/
+前后端.zip
+
 # Docker volumes
 docker/pg-data/
 docker/redis-data/
