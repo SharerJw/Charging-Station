@@ -1,0 +1,22 @@
+# CODEOWNERS - 代码审查自动分配
+# 文档: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# 默认所有文件需要 @SharerJw 审查
+*                       @SharerJw
+
+# 后端代码
+backend/                @SharerJw
+
+# 前端代码
+apps/                   @SharerJw
+
+# 基础设施
+docker/                 @SharerJw
+
+# 文档
+docs/                   @SharerJw
+*.md                    @SharerJw
+
+# CI/CD 和配置
+.github/                @SharerJw
+.gitignore              @SharerJw
