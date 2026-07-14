@@ -44,55 +44,59 @@
 
 ## 🚀 快速启动
 
-### 1. 启动基础设施
+### 前置要求
+- **Docker Desktop** (基础设施)
+- **JDK 21** (后端编译)
+- **Node.js 18+** (前端运行)
+
+### 一键启动（推荐）
+
 ```bash
-cd docker
-docker compose up -d
+# 克隆仓库
+git clone https://github.com/SharerJw/Charging-Station.git
+cd Charging-Station
+
+# Linux/Mac
+chmod +x start.sh && ./start.sh
+
+# Windows
+start.bat
 ```
 
-等待所有容器健康运行 (PostgreSQL, Redis, Nacos, MinIO, Kafka)。
+脚本会自动：启动Docker容器 → 构建后端 → 启动6个服务 → 安装前端依赖 → 启动4个前端App
 
-### 2. 启动后端服务
+### 手动启动
+
+#### 步骤1: 启动基础设施
+```bash
+cd docker && docker compose up -d
+```
+
+#### 步骤2: 构建并启动后端
 ```bash
 cd backend
-
-# 需要 Java 21
-export JAVA_HOME=/path/to/jdk-21
-
-# 构建所有模块
-./gradlew build -x test
-
-# 启动各服务 (分别在不同终端)
-./gradlew :ev-gateway:bootRun              # Gateway   :8080
-./gradlew :ev-service:ev-service-identity:bootRun    # Identity  :8081
-./gradlew :ev-service:ev-service-station:bootRun     # Station   :8082
-./gradlew :ev-service:ev-service-order:bootRun       # Order     :8083
-./gradlew :ev-service:ev-service-charging:bootRun    # Charging  :8084
-./gradlew :ev-service:ev-service-simulator:bootRun   # Simulator :8085
+./gradlew build -x test          # 构建
+./gradlew :ev-gateway:bootRun    # 分别在6个终端启动
+./gradlew :ev-service:ev-service-identity:bootRun
+./gradlew :ev-service:ev-service-station:bootRun
+./gradlew :ev-service:ev-service-order:bootRun
+./gradlew :ev-service:ev-service-charging:bootRun
+./gradlew :ev-service:ev-service-simulator:bootRun
 ```
 
-### 3. 启动前端应用
+#### 步骤3: 启动前端
 ```bash
-# 后台管理系统 (端口 5173)
-cd apps/admin-web && npm install && npm run dev
-
-# 运维App H5模式 (端口 5175)
-cd apps/ops-app && npm install && npm run dev:h5
-
-# 用户小程序 H5模式 (端口 5176)
-cd apps/user-miniapp && npm install && npm run dev:h5
-
-# 模拟器 (端口 5177)
-cd apps/simulator-web && npm install && npm run dev
+cd apps/admin-web && npm install && npm run dev          # :5173
+cd apps/ops-app && npm install && npm run dev:h5         # :5175
+cd apps/user-miniapp && npm install && npm run dev:h5    # :5176
+cd apps/simulator-web && npm install && npm run dev      # :5177
 ```
 
-### 4. 切换Mock/真实数据
+### 切换Mock/真实数据
 ```bash
-# 使用真实后端数据 (默认)
-VITE_USE_MOCK=false
-
-# 使用Mock数据
-VITE_USE_MOCK=true
+# .env.development 中设置
+VITE_USE_MOCK=false   # 使用真实后端 (默认)
+VITE_USE_MOCK=true    # 使用Mock数据 (无需后端)
 ```
 
 ## 🔑 演示账号

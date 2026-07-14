@@ -10,7 +10,8 @@ out/
 
 # Gradle
 .gradle/
-!gradle/wrapper/gradle-wrapper.jar
+build/
+!**/gradle/wrapper/gradle-wrapper.jar
 
 # IDE
 .idea/
