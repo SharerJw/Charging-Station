@@ -7,6 +7,7 @@ import { LineChart, BarChart, PieChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
 import { useSimulatorStore } from '@/store/simulator'
 import { systemApi, deviceApi } from '@/api'
+import DeviceSelect from '@/components/DeviceSelect.vue'
 
 interface OcppMessage {
   messageId: string
@@ -229,20 +230,11 @@ const eventLevelColors: Record<string, string> = {
     <div class="control-bar card">
       <div class="control-left">
         <span class="control-label">设备:</span>
-        <el-select
+        <DeviceSelect
           v-model="selectedDevice"
-          size="small"
-          style="width: 220px"
-          filterable
           placeholder="输入搜索设备..."
-        >
-          <el-option
-            v-for="d in simulatorStore.devices"
-            :key="d.id"
-            :label="d.name + ' (' + d.ocppId + ')'"
-            :value="d.id"
-          />
-        </el-select>
+          style="width: 220px"
+        />
         <span class="control-label" style="margin-left: 16px">刷新:</span>
         <el-radio-group v-model="refreshInterval" size="small" @change="(val: any) => changeInterval(Number(val))">
           <el-radio-button :value="1000">1s</el-radio-button>

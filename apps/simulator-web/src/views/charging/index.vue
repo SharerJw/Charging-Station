@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useSimulatorStore } from '@/store/simulator'
 import { chargingApi, deviceApi } from '@/api'
 import { ElMessage } from 'element-plus'
+import DeviceSelect from '@/components/DeviceSelect.vue'
 
 const simulatorStore = useSimulatorStore()
 
@@ -148,20 +149,11 @@ const socColor = computed(() => {
         <h3 class="card-title">充电配置</h3>
         <el-form label-position="top">
           <el-form-item label="选择设备">
-            <el-select
+            <DeviceSelect
               v-model="selectedDevice"
               placeholder="输入搜索充电桩..."
-              style="width: 100%"
-              filterable
               :disabled="isCharging"
-            >
-              <el-option
-                v-for="device in simulatorStore.devices"
-                :key="device.id"
-                :label="`${device.name} (${device.model})`"
-                :value="device.id"
-              />
-            </el-select>
+            />
           </el-form-item>
           <el-form-item label="目标 SOC">
             <el-slider v-model="chargingConfig.targetSoc" :min="10" :max="100" :step="5" show-input :disabled="isCharging" />
