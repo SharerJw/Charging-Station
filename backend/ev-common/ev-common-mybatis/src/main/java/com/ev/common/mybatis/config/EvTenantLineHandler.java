@@ -13,12 +13,17 @@ import java.util.List;
  */
 public class EvTenantLineHandler implements TenantLineHandler {
 
-    /** 不需要租户隔离的表 */
+    /** 不需要租户隔离的表（无 tenant_id 列） */
     private static final List<String> IGNORE_TABLES = Arrays.asList(
             "sys_role",
             "sys_permission",
             "sys_role_permission",
-            "sys_user_role"
+            "sys_user_role",
+            "connector",
+            "device_alert",
+            "inspection_task",
+            "payment_record",
+            "work_order"
     );
 
     @Override
