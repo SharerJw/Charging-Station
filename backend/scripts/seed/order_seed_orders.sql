@@ -1,24 +1,12 @@
--- V7__seed_large_orders.sql
--- 优化版：使用预计算映射表和批量插入
+-- order_seed_orders.sql
+-- 生成 100,000 个订单和支付记录（不依赖其他数据库的表）
 
--- 1. 创建设备-站点映射表（避免重复 JOIN）
-CREATE TEMP TABLE IF NOT EXISTS device_station_map AS
-SELECT d.id AS device_id, d.code AS device_code, d.station_id,
-       s.name AS station_name, d.type AS device_type
-FROM device d
-JOIN station s ON s.id = d.station_id;
-
--- 2. 创建用户昵称映射表
-CREATE TEMP TABLE IF NOT EXISTS user_map AS
-SELECT id, nickname FROM sys_user LIMIT 5000;
-
--- 3. 批量生成订单（每批 10,000 条）
+-- 1. 批量生成订单
 DO $$
 DECLARE
   batch_size INT := 10000;
   total_batches INT := 10;
   batch_num INT;
-  order_time TIMESTAMP;
 BEGIN
   FOR batch_num IN 0..(total_batches - 1) LOOP
     INSERT INTO charging_order (
@@ -31,13 +19,13 @@ BEGIN
     )
     SELECT
       'ORD-' || to_char(o.order_time, 'YYYYMMDD') || '-' || lpad(o.idx::text, 6, '0'),
-      dsm.station_id,
-      dsm.station_name,
-      dsm.device_id,
-      dsm.device_code,
+      1 + (o.idx % 183),  -- station_id (1-183)
+      '充电站' || (1 + (o.idx % 183)),
+      1 + (o.idx % 915),  -- device_id (1-915)
+      'DEV-' || lpad((1 + (o.idx % 915))::text, 4, '0'),
       1,
-      o.user_id,
-      COALESCE(um.nickname, '用户' || o.user_id),
+      1 + (o.idx % 4999),  -- user_id (1-4999)
+      '用户' || (1 + (o.idx % 4999)),
       o.status,
       1,
       (random() * 100000)::bigint,
@@ -45,9 +33,9 @@ BEGIN
         THEN (random() * 100000 + 50000)::bigint ELSE NULL END,
       CASE WHEN o.status NOT IN ('CREATED', 'CHARGING')
         THEN (10000 + random() * 90000)::bigint ELSE 0 END,
-      CASE WHEN dsm.device_type = 'DC' THEN (60000 + random() * 180000)::int
+      CASE WHEN o.idx % 3 = 0 THEN (60000 + random() * 180000)::int
         ELSE (3000 + random() * 18000)::int END,
-      CASE WHEN dsm.device_type = 'DC' THEN (40000 + random() * 120000)::int
+      CASE WHEN o.idx % 3 = 0 THEN (40000 + random() * 120000)::int
         ELSE (2000 + random() * 12000)::int END,
       (10 + random() * 40)::int,
       CASE WHEN o.status IN ('PAID', 'SETTLED')
@@ -77,8 +65,6 @@ BEGIN
     FROM (
       SELECT
         (batch_num * batch_size + i) AS idx,
-        1 + ((batch_num * batch_size + i) % 999) AS device_id,
-        1 + ((batch_num * batch_size + i) % 4999) AS user_id,
         NOW() - (random() * INTERVAL '90 days') AS order_time,
         CASE
           WHEN random() < 0.40 THEN 'PAID'
@@ -91,15 +77,13 @@ BEGIN
           ELSE 'CANCELLED'
         END AS status
       FROM generate_series(1, batch_size) AS i
-    ) o
-    JOIN device_station_map dsm ON dsm.device_id = o.device_id
-    LEFT JOIN user_map um ON um.id = o.user_id;
+    ) o;
 
     RAISE NOTICE 'Batch % complete: % orders inserted', batch_num + 1, (batch_num + 1) * batch_size;
   END LOOP;
 END $$;
 
--- 4. 生成支付记录
+-- 2. 生成支付记录
 INSERT INTO payment_record (payment_no, order_id, user_id, channel, amount, status,
   channel_trade_no, created_at)
 SELECT
@@ -119,7 +103,3 @@ SELECT
 FROM charging_order o
 WHERE o.status IN ('PAID', 'SETTLED', 'REFUNDING')
   AND o.pay_time IS NOT NULL;
-
--- 5. 清理临时表
-DROP TABLE IF EXISTS device_station_map;
-DROP TABLE IF EXISTS user_map;
