@@ -16,7 +16,7 @@ test.describe('Device 冒烟测试', () => {
 
   test('页面标题显示', async ({ page }) => {
     await devicePage.waitForLoad()
-    await expect(devicePage.pageTitle).toBeVisible()
+    await expect(devicePage.heading).toBeVisible()
   })
 
   test('添加设备按钮', async ({ page }) => {

@@ -3,12 +3,12 @@ import { type Page, type Locator } from '@playwright/test'
 export class DevicePage {
   readonly page: Page
   readonly addButton: Locator
-  readonly pageTitle: Locator
+  readonly heading: Locator
 
   constructor(page: Page) {
     this.page = page
-    this.addButton = page.locator('text=添加设备')
-    this.pageTitle = page.locator('text=设备管理')
+    this.addButton = page.locator('button:has-text("添加设备")')
+    this.heading = page.locator('h2:has-text("设备管理")')
   }
 
   async goto() {
@@ -17,8 +17,11 @@ export class DevicePage {
   }
 
   async waitForLoad() {
-    await this.pageTitle.waitFor({ state: 'visible' })
-    await this.page.waitForTimeout(500)
+    await this.heading.waitFor({ state: 'visible', timeout: 10000 })
+  }
+
+  async isPageLoaded() {
+    return this.heading.isVisible()
   }
 
   async isAddButtonVisible() {
