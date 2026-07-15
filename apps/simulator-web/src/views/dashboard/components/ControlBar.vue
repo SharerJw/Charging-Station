@@ -45,10 +45,17 @@ const intervalOptions = [
       <el-select
         :model-value="selectedDevice"
         size="small"
-        style="width: 160px"
+        style="width: 220px"
+        filterable
+        placeholder="输入搜索设备..."
         @update:model-value="(val: string) => emit('update:selectedDevice', val)"
       >
-        <el-option v-for="d in devices" :key="d.id" :label="d.name" :value="d.id" />
+        <el-option
+          v-for="d in devices"
+          :key="d.id"
+          :label="d.name + ' (' + d.ocppId + ')'"
+          :value="d.id"
+        />
       </el-select>
       <span class="control-label" style="margin-left: 16px">刷新:</span>
       <el-radio-group

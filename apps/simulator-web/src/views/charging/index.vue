@@ -148,7 +148,13 @@ const socColor = computed(() => {
         <h3 class="card-title">充电配置</h3>
         <el-form label-position="top">
           <el-form-item label="选择设备">
-            <el-select v-model="selectedDevice" placeholder="选择充电桩" style="width: 100%" :disabled="isCharging">
+            <el-select
+              v-model="selectedDevice"
+              placeholder="输入搜索充电桩..."
+              style="width: 100%"
+              filterable
+              :disabled="isCharging"
+            >
               <el-option
                 v-for="device in simulatorStore.devices"
                 :key="device.id"
