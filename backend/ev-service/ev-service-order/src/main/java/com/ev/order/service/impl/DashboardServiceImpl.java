@@ -240,8 +240,8 @@ public class DashboardServiceImpl implements DashboardService {
         String orderBySql;
         switch (sortByField) {
             case "orderCount": orderBySql = "order_count DESC"; break;
-            case "energy":     orderBySql = "COALESCE(total_energy, 0) DESC"; break;
-            default:           orderBySql = "COALESCE(total_revenue, 0) DESC"; break;
+            case "energy":     orderBySql = "COALESCE(SUM(energy_wh), 0) DESC"; break;
+            default:           orderBySql = "COALESCE(SUM(total_amount), 0) DESC"; break;
         }
 
         // Use SQL GROUP BY aggregation instead of loading all rows into memory

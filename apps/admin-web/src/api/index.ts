@@ -8,7 +8,7 @@ import {
   mockDashboardApi,
 } from './mock'
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
+const USE_MOCK = false // Force real API mode
 
 // ==================== 认证 ====================
 export const authApi = {
