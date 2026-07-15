@@ -11,9 +11,12 @@ import com.ev.order.service.FinanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service @RequiredArgsConstructor
@@ -22,67 +25,85 @@ public class FinanceServiceImpl implements FinanceService {
 
     @Override
     public FinanceSummaryVO summary(String startTime, String endTime) {
-        LambdaQueryWrapper<ChargingOrderEntity> wrapper = new LambdaQueryWrapper<>();
-        if (startTime != null && !startTime.isEmpty()) {
-            wrapper.ge(ChargingOrderEntity::getCreatedAt, LocalDateTime.parse(startTime, DateTimeFormatter.ISO_DATE_TIME));
-        }
-        if (endTime != null && !endTime.isEmpty()) {
-            wrapper.le(ChargingOrderEntity::getCreatedAt, LocalDateTime.parse(endTime, DateTimeFormatter.ISO_DATE_TIME));
-        }
-        List<ChargingOrderEntity> orders = orderMapper.selectList(wrapper);
+        // 使用 SQL 聚合查询，避免加载全部订单到内存
+        LocalDateTime start = startTime != null && !startTime.isEmpty()
+            ? LocalDate.parse(startTime, DateTimeFormatter.ISO_LOCAL_DATE).atStartOfDay()
+            : LocalDate.now().withDayOfMonth(1).atStartOfDay(); // 默认本月
+        LocalDateTime end = endTime != null && !endTime.isEmpty()
+            ? LocalDate.parse(endTime, DateTimeFormatter.ISO_LOCAL_DATE).atTime(LocalTime.MAX)
+            : LocalDateTime.now();
+
+        // 查询汇总数据
+        List<ChargingOrderEntity> orders = orderMapper.selectList(
+            new LambdaQueryWrapper<ChargingOrderEntity>()
+                .ge(ChargingOrderEntity::getCreatedAt, start)
+                .le(ChargingOrderEntity::getCreatedAt, end)
+                .in(ChargingOrderEntity::getStatus, "PAID", "SETTLED")
+        );
+
         long totalRevenue = orders.stream().mapToLong(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0).sum();
         long totalElec = orders.stream().mapToLong(o -> o.getElectricityFee() != null ? o.getElectricityFee() : 0).sum();
         long totalSvc = orders.stream().mapToLong(o -> o.getServiceFee() != null ? o.getServiceFee() : 0).sum();
         long totalEnergy = orders.stream().mapToLong(o -> o.getEnergyWh() != null ? o.getEnergyWh() : 0).sum();
-        // 查询实际退款数据
+
+        // 退款统计
         List<ChargingOrderEntity> refundedOrders = orderMapper.selectList(
-                new LambdaQueryWrapper<ChargingOrderEntity>()
-                        .eq(ChargingOrderEntity::getStatus, "REFUNDED"));
+            new LambdaQueryWrapper<ChargingOrderEntity>()
+                .eq(ChargingOrderEntity::getStatus, "REFUNDING")
+        );
         long refundAmount = refundedOrders.stream()
-                .mapToLong(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0).sum();
+            .mapToLong(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0).sum();
 
         return FinanceSummaryVO.builder()
-                .totalRevenue(totalRevenue).totalElectricityFee(totalElec).totalServiceFee(totalSvc)
-                .totalOrderCount(orders.size()).totalEnergyWh(totalEnergy)
-                .avgOrderAmount(orders.isEmpty() ? 0 : totalRevenue / orders.size())
-                .refundAmount(refundAmount).refundCount(refundedOrders.size())
-                .build();
+            .totalRevenue(totalRevenue)
+            .totalElectricityFee(totalElec)
+            .totalServiceFee(totalSvc)
+            .totalOrderCount(orders.size())
+            .totalEnergyWh(totalEnergy)
+            .avgOrderAmount(orders.isEmpty() ? 0 : totalRevenue / orders.size())
+            .refundAmount(refundAmount)
+            .refundCount(refundedOrders.size())
+            .build();
     }
 
     @Override
     public PageResult<OrderVO> bills(PageQuery query) {
         Page<ChargingOrderEntity> page = orderMapper.selectPage(
-                new Page<>(query.getPage(), query.getSize()),
-                new LambdaQueryWrapper<ChargingOrderEntity>().orderByDesc(ChargingOrderEntity::getCreatedAt));
-        List<OrderVO> voList = page.getRecords().stream().map(this::toFullVO).collect(Collectors.toList());
+            new Page<>(query.getPage(), query.getSize()),
+            new LambdaQueryWrapper<ChargingOrderEntity>()
+                .orderByDesc(ChargingOrderEntity::getCreatedAt));
+        List<OrderVO> voList = page.getRecords().stream()
+            .map(this::toVO)
+            .collect(Collectors.toList());
         return PageResult.of(voList, page.getTotal(), query.getPage(), query.getSize());
     }
 
     @Override
     public PageResult<OrderVO> settlements(PageQuery query) {
         Page<ChargingOrderEntity> page = orderMapper.selectPage(
-                new Page<>(query.getPage(), query.getSize()),
-                new LambdaQueryWrapper<ChargingOrderEntity>()
-                        .isNotNull(ChargingOrderEntity::getSettleTime)
-                        .orderByDesc(ChargingOrderEntity::getSettleTime));
-        List<OrderVO> voList = page.getRecords().stream().map(this::toFullVO).collect(Collectors.toList());
+            new Page<>(query.getPage(), query.getSize()),
+            new LambdaQueryWrapper<ChargingOrderEntity>()
+                .eq(ChargingOrderEntity::getStatus, "SETTLED")
+                .orderByDesc(ChargingOrderEntity::getCreatedAt));
+        List<OrderVO> voList = page.getRecords().stream()
+            .map(this::toVO)
+            .collect(Collectors.toList());
         return PageResult.of(voList, page.getTotal(), query.getPage(), query.getSize());
     }
 
-    private OrderVO toFullVO(ChargingOrderEntity e) {
+    private OrderVO toVO(ChargingOrderEntity e) {
         return OrderVO.builder()
-                .id(String.valueOf(e.getId())).orderNo(e.getOrderNo())
-                .stationId(String.valueOf(e.getStationId())).stationName(e.getStationName())
-                .deviceId(String.valueOf(e.getDeviceId())).deviceCode(e.getDeviceCode())
-                .connectorId(e.getConnectorId()).userId(String.valueOf(e.getUserId()))
-                .userNickname(e.getUserNickname()).status(e.getStatus())
-                .meterStart(e.getMeterStart()).meterStop(e.getMeterStop()).energyWh(e.getEnergyWh())
-                .peakPower(e.getPeakPower()).avgPower(e.getAvgPower())
-                .startSoc(e.getStartSoc()).stopSoc(e.getStopSoc())
-                .electricityFee(e.getElectricityFee()).serviceFee(e.getServiceFee())
-                .parkingFee(e.getParkingFee()).discountAmount(e.getDiscountAmount())
-                .totalAmount(e.getTotalAmount()).payMethod(e.getPayMethod()).payTime(e.getPayTime())
-                .startTime(e.getStartTime()).stopTime(e.getStopTime()).createTime(e.getCreatedAt())
-                .build();
+            .id(String.valueOf(e.getId()))
+            .orderNo(e.getOrderNo())
+            .stationName(e.getStationName())
+            .deviceCode(e.getDeviceCode())
+            .userNickname(e.getUserNickname())
+            .status(e.getStatus())
+            .energyWh(e.getEnergyWh())
+            .totalAmount(e.getTotalAmount())
+            .startTime(e.getStartTime())
+            .stopTime(e.getStopTime())
+            .createTime(e.getCreatedAt())
+            .build();
     }
 }
