@@ -51,6 +51,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
+import { api } from '@/api/index'
 
 const AMAP_KEY = 'c86443d9a8cd72e5a26af987f46345ca'
 
@@ -67,6 +68,7 @@ interface Station {
 
 const keyword = ref('')
 const stations = ref<Station[]>([])
+const loading = ref(false)
 let map: any = null
 
 function loadAmapScript(): Promise<void> {
@@ -114,16 +116,20 @@ function addMarkers() {
 }
 
 async function loadStations() {
-  // Mock 数据
-  stations.value = [
-    { id: 'S001', name: '北京朝阳充电站', address: '朝阳区建国路88号', deviceCount: 12, onlineCount: 10, price: 1.7, longitude: 116.46, latitude: 39.92 },
-    { id: 'S002', name: '上海浦东快充站', address: '浦东新区张江高科技园区', deviceCount: 8, onlineCount: 7, price: 2.1, longitude: 121.59, latitude: 31.22 },
-    { id: 'S003', name: '深圳南山超充站', address: '南山区科技园南路', deviceCount: 6, onlineCount: 6, price: 1.4, longitude: 113.94, latitude: 22.53 },
-    { id: 'S004', name: '杭州西湖慢充站', address: '西湖区文三路', deviceCount: 20, onlineCount: 18, price: 1.1, longitude: 120.13, latitude: 30.27 },
-  ]
-  if (keyword.value) {
-    const kw = keyword.value.toLowerCase()
-    stations.value = stations.value.filter(s => s.name.toLowerCase().includes(kw) || s.address.toLowerCase().includes(kw))
+  loading.value = true
+  try {
+    const params: any = {}
+    if (keyword.value) {
+      params.keyword = keyword.value
+    }
+    const data = await api.getStations(params)
+    stations.value = (data as any)?.list || data || []
+    addMarkers()
+  } catch (e) {
+    console.error('获取充电站列表失败:', e)
+    stations.value = []
+  } finally {
+    loading.value = false
   }
 }
 

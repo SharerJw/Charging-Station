@@ -4,8 +4,8 @@
     <view class="user-card">
       <view class="avatar">👷</view>
       <view class="user-info">
-        <text class="username">张工</text>
-        <text class="role">高级运维工程师</text>
+        <text class="username">{{ userProfile.nickname || '加载中...' }}</text>
+        <text class="role">{{ userProfile.role }}</text>
       </view>
     </view>
 
@@ -14,19 +14,19 @@
       <text class="section-title">本月工作统计</text>
       <view class="stats-grid">
         <view class="stat-item">
-          <text class="stat-value">156</text>
+          <text class="stat-value">{{ userProfile.stats.workorders }}</text>
           <text class="stat-label">处理工单</text>
         </view>
         <view class="stat-item">
-          <text class="stat-value">98%</text>
+          <text class="stat-value">{{ userProfile.stats.completionRate }}</text>
           <text class="stat-label">完成率</text>
         </view>
         <view class="stat-item">
-          <text class="stat-value">4.9</text>
+          <text class="stat-value">{{ userProfile.stats.rating }}</text>
           <text class="stat-label">评分</text>
         </view>
         <view class="stat-item">
-          <text class="stat-value">23</text>
+          <text class="stat-value">{{ userProfile.stats.inspections }}</text>
           <text class="stat-label">巡检任务</text>
         </view>
       </view>
@@ -62,13 +62,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { api } from '@/api/index'
 
-const recentRecords = ref([
-  { name: '北京朝阳充电站日常巡检', status: 'completed', time: '2026-07-13 09:00-09:30', result: '全部设备正常，无异常' },
-  { name: '上海浦东快充站日常巡检', status: 'completed', time: '2026-07-12 08:00-09:30', result: 'CP003 充电枪锁止异常，已创建工单' },
-  { name: '深圳南山超充站日常巡检', status: 'in_progress', time: '2026-07-13 10:00-', result: '巡检中...' },
-])
+interface UserProfile {
+  nickname: string
+  role: string
+  stats: {
+    workorders: number
+    completionRate: string
+    rating: number
+    inspections: number
+  }
+}
+
+interface InspectionRecord {
+  name: string
+  status: string
+  time: string
+  result: string
+}
+
+const userProfile = ref<UserProfile>({
+  nickname: '',
+  role: '',
+  stats: { workorders: 0, completionRate: '0%', rating: 0, inspections: 0 },
+})
+const recentRecords = ref<InspectionRecord[]>([])
+const loading = ref(false)
 
 const menuItems = [
   { icon: '📊', label: '工作统计', action: 'stats' },
@@ -77,6 +98,27 @@ const menuItems = [
   { icon: '📞', label: '联系管理员', action: 'contact' },
   { icon: '⚙️', label: '设置', action: 'settings' },
 ]
+
+async function loadProfile() {
+  loading.value = true
+  try {
+    const [profileData, inspectionData] = await Promise.all([
+      api.getUserInfo(),
+      api.getInspections({ page: 1, pageSize: 3 }),
+    ])
+    if (profileData) {
+      userProfile.value = profileData as any
+    }
+    if (inspectionData) {
+      const list = (inspectionData as any)?.list || inspectionData
+      recentRecords.value = (Array.isArray(list) ? list : []).slice(0, 3)
+    }
+  } catch (e) {
+    console.error('获取用户信息失败:', e)
+  } finally {
+    loading.value = false
+  }
+}
 
 function handleMenuTap(action: string) {
   uni.showToast({ title: action, icon: 'none' })
@@ -94,6 +136,10 @@ function handleLogout() {
     }
   })
 }
+
+onMounted(() => {
+  loadProfile()
+})
 </script>
 
 <style scoped>
