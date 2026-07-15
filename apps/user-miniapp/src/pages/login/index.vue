@@ -59,7 +59,7 @@ function sendCode() {
   uni.showToast({ title: '验证码已发送', icon: 'success' })
 }
 
-function handleLogin() {
+async function handleLogin() {
   if (!phone.value || phone.value.length !== 11) {
     uni.showToast({ title: '请输入正确的手机号', icon: 'none' })
     return

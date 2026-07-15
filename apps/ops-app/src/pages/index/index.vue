@@ -54,13 +54,10 @@
 
     <!-- 最近告警 -->
     <view class="section">
-      <view class="section-header">
-        <text class="section-title">最近告警</text>
-        <text class="section-more" @tap="navigateTo('/pages/alert/index')">查看全部 ›</text>
-      </view>
+      <text class="section-title">最近告警</text>
       <view class="alert-list">
         <view class="alert-item" v-for="alert in recentAlerts" :key="alert.id" @tap="navigateTo('/pages/alert/index')">
-          <view class="alert-level" :class="alert.level.toLowerCase()">{{ alert.level }}</view>
+          <view class="alert-level" :class="alert.level?.toLowerCase()">{{ alert.level }}</view>
           <view class="alert-content">
             <text class="alert-title">{{ alert.title }}</text>
             <text class="alert-desc">{{ alert.stationName }} - {{ alert.deviceCode }}</text>
@@ -74,7 +71,24 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { mockOpsApi, type OpsStats, type Alert } from '@/api/mock'
+import { api } from '@/api'
+
+interface OpsStats {
+  onlineDevices: number
+  pendingAlerts: number
+  pendingWorkorders: number
+  todayInspections: number
+  completedInspections: number
+}
+
+interface Alert {
+  id: string
+  level: string
+  title: string
+  stationName: string
+  deviceCode: string
+  createTime: string
+}
 
 const stats = ref<OpsStats>({
   onlineDevices: 0,
@@ -97,179 +111,212 @@ function formatTime(time: string): string {
   return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
+function navigateTo(url: string) {
+  uni.navigateTo({ url })
+}
+
 onMounted(async () => {
   try {
-    const [s, alerts] = await Promise.all([
-      mockOpsApi.getStats(),
-      mockOpsApi.getAlerts(),
-    ])
-    stats.value = s
-    recentAlerts.value = alerts.slice(0, 3)
+    const alerts = await api.getAlerts({ page: 1, size: 3 })
+    recentAlerts.value = alerts?.list || alerts || []
+    stats.value = {
+      onlineDevices: 0,
+      pendingAlerts: recentAlerts.value.filter(a => a.status === 'pending').length,
+      pendingWorkorders: 0,
+      todayInspections: 0,
+      completedInspections: 0,
+    }
   } catch (error) {
     console.error('加载数据失败:', error)
   }
 })
-
-const navigateTo = (url: string) => {
-  uni.navigateTo({ url })
-}
 </script>
 
 <style scoped>
 .workbench-page {
-  padding: 24rpx;
-  background: #F0F2F5;
+  padding: 16px;
+  background: #f5f7fa;
   min-height: 100vh;
 }
 
 .stats-row {
   display: flex;
-  gap: 16rpx;
-  margin-bottom: 24rpx;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .stat-card {
   flex: 1;
   background: #fff;
-  border-radius: 12rpx;
-  padding: 24rpx;
+  border-radius: 8px;
+  padding: 16px;
   text-align: center;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
 }
 
 .stat-card.warning {
-  background: #FFF7E6;
-  border: 2rpx solid #FAAD14;
+  border: 1px solid #ff4d4f;
 }
 
 .stat-value {
-  font-size: 40rpx;
+  font-size: 24px;
   font-weight: bold;
-  color: #1677FF;
+  color: #1677ff;
   display: block;
 }
 
-.stat-card.warning .stat-value { color: #FAAD14; }
-
 .stat-label {
-  font-size: 22rpx;
-  color: #666;
-  margin-top: 8rpx;
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
   display: block;
 }
 
 .section {
-  margin-bottom: 24rpx;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
 }
 
 .section-title {
-  font-size: 28rpx;
+  font-size: 16px;
   font-weight: bold;
   color: #333;
-  margin-bottom: 16rpx;
+  margin-bottom: 12px;
   display: block;
 }
 
-.section-more {
-  font-size: 24rpx;
-  color: #1677FF;
-}
-
 .inspection-progress {
-  background: #fff;
-  border-radius: 12rpx;
-  padding: 20rpx 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .progress-bar {
-  height: 16rpx;
-  background: #E8E8E8;
-  border-radius: 8rpx;
+  flex: 1;
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
   overflow: hidden;
-  margin-bottom: 12rpx;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #1677FF, #4096FF);
-  border-radius: 8rpx;
-  transition: width 0.5s ease;
+  background: #1677ff;
+  border-radius: 4px;
+  transition: width 0.3s;
 }
 
 .progress-text {
-  font-size: 24rpx;
+  font-size: 12px;
   color: #666;
+  white-space: nowrap;
 }
 
 .action-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16rpx;
+  gap: 12px;
 }
 
 .action-item {
-  background: #fff;
-  border-radius: 12rpx;
-  padding: 24rpx 12rpx;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  cursor: pointer;
   position: relative;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
 }
 
-.action-icon { font-size: 48rpx; display: block; }
-.action-label { font-size: 22rpx; color: #333; margin-top: 8rpx; display: block; }
+.action-item:hover {
+  background: #e6f7ff;
+}
+
+.action-icon {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.action-label {
+  font-size: 12px;
+  color: #333;
+}
 
 .action-badge {
   position: absolute;
-  top: 8rpx;
-  right: 8rpx;
-  background: #FF4D4F;
+  top: 4px;
+  right: 4px;
+  background: #ff4d4f;
   color: #fff;
-  font-size: 18rpx;
-  min-width: 32rpx;
-  height: 32rpx;
-  line-height: 32rpx;
-  border-radius: 16rpx;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 16px;
   text-align: center;
-  padding: 0 8rpx;
 }
 
 .alert-list {
   display: flex;
   flex-direction: column;
-  gap: 12rpx;
+  gap: 8px;
 }
 
 .alert-item {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  background: #fff;
-  border-radius: 12rpx;
-  padding: 20rpx 24rpx;
+  gap: 12px;
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.alert-item:hover {
+  background: #fff7e6;
 }
 
 .alert-level {
-  font-size: 20rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 4rpx;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
   font-weight: bold;
-  flex-shrink: 0;
+  min-width: 32px;
+  text-align: center;
 }
 
-.alert-level.p0 { background: #FFCCC7; color: #CF1322; }
-.alert-level.p1 { background: #FFE7BA; color: #D46B08; }
-.alert-level.p2 { background: #FFF7E6; color: #D48806; }
-.alert-level.p3 { background: #E6F7FF; color: #1677FF; }
+.alert-level.p0 { background: #ff4d4f; color: #fff; }
+.alert-level.p1 { background: #faad14; color: #fff; }
+.alert-level.p2 { background: #1677ff; color: #fff; }
+.alert-level.p3 { background: #999; color: #fff; }
 
-.alert-content { flex: 1; min-width: 0; }
-.alert-title { font-size: 26rpx; color: #333; display: block; }
-.alert-desc { font-size: 22rpx; color: #999; margin-top: 4rpx; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.alert-time { font-size: 22rpx; color: #999; flex-shrink: 0; }
+.alert-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-title {
+  font-size: 14px;
+  color: #333;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alert-desc {
+  font-size: 12px;
+  color: #999;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alert-time {
+  font-size: 12px;
+  color: #999;
+  white-space: nowrap;
+}
 </style>
