@@ -104,41 +104,42 @@ function updatePosition(lng: number, lat: number) {
 }
 
 function handleConfirm() {
-  // 确认时强制执行逆地理编码并等待结果
-  if (geocoder && map) {
-    geocoder.getAddress([selectedLng.value, selectedLat.value], (status: string, result: any) => {
-      let address = ''
-      let province = ''
-      let city = ''
-      let district = ''
-      if (status === 'complete' && result.regeocode) {
-        address = result.regeocode.formattedAddress || ''
-        province = result.regeocode.addressComponent?.province || ''
-        city = result.regeocode.addressComponent?.city || ''
-        district = result.regeocode.addressComponent?.district || ''
-      }
-      selectedAddress.value = address
-      emit('update:modelValue', {
-        longitude: selectedLng.value,
-        latitude: selectedLat.value,
-        address,
-        province,
-        city,
-        district,
-      })
-      setTimeout(() => emit('close'), 100)
-    })
-  } else {
-    emit('update:modelValue', {
-      longitude: selectedLng.value,
-      latitude: selectedLat.value,
-      address: '',
-      province: '',
-      city: '',
-      district: '',
-    })
-    emit('close')
+  const lng = selectedLng.value
+  const lat = selectedLat.value
+
+  // 直接发送坐标，不依赖异步地理编码
+  const data = {
+    longitude: lng,
+    latitude: lat,
+    address: selectedAddress.value || `${lng}, ${lat}`,
+    province: '',
+    city: '',
+    district: '',
   }
+
+  // 尝试同步获取地址（如果geocoder可用）
+  if (geocoder) {
+    try {
+      geocoder.getAddress([lng, lat], (status: string, result: any) => {
+        if (status === 'complete' && result?.regeocode) {
+          const addr = result.regeocode
+          data.address = addr.formattedAddress || data.address
+          data.province = addr.addressComponent?.province || ''
+          data.city = addr.addressComponent?.city || ''
+          data.district = addr.addressComponent?.district || ''
+        }
+        emit('update:modelValue', data)
+        setTimeout(() => emit('close'), 50)
+      })
+      return // geocoder callback will emit
+    } catch (e) {
+      console.warn('[MapPicker] Geocoder error:', e)
+    }
+  }
+
+  // fallback: 直接发送坐标
+  emit('update:modelValue', data)
+  emit('close')
 }
 
 watch(() => props.visible, (val) => {
