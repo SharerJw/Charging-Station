@@ -53,4 +53,22 @@ describe('ControlBar', () => {
     const wrapper = mount(ControlBar, { props: defaultProps })
     expect(wrapper.text()).toContain('刷新')
   })
+
+  it('应显示暂停按钮', () => {
+    const wrapper = mount(ControlBar, { props: defaultProps })
+    expect(wrapper.text()).toContain('暂停')
+  })
+
+  it('暂停状态应显示继续按钮', () => {
+    const wrapper = mount(ControlBar, { props: { ...defaultProps, isPaused: true } })
+    expect(wrapper.text()).toContain('继续')
+  })
+
+  it('应显示刷新间隔选项', () => {
+    const wrapper = mount(ControlBar, { props: defaultProps })
+    expect(wrapper.text()).toContain('1s')
+    expect(wrapper.text()).toContain('3s')
+    expect(wrapper.text()).toContain('5s')
+    expect(wrapper.text()).toContain('10s')
+  })
 })
