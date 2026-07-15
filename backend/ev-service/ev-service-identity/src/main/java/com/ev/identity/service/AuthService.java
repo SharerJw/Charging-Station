@@ -6,9 +6,9 @@ import com.ev.identity.dto.SmsLoginReq;
 import com.ev.identity.dto.UserVO;
 
 public interface AuthService {
-    LoginResp login(LoginReq req);
+    LoginResp login(LoginReq req, String clientIp);
     LoginResp smsLogin(SmsLoginReq req);
-    LoginResp opsLogin(LoginReq req);
+    LoginResp opsLogin(LoginReq req, String clientIp);
     UserVO getUserInfo(Long userId);
     void sendSmsCode(String phone);
 }

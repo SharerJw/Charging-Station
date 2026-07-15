@@ -107,4 +107,8 @@ public class BizException extends RuntimeException {
     public static BizException accountDisabled() {
         return new BizException(4005, "账号已禁用");
     }
+
+    public static BizException loginTooManyAttempts() {
+        return new BizException(ErrorCode.LOGIN_TOO_MANY_ATTEMPTS);
+    }
 }

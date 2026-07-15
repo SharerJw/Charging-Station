@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ev.common.core.result.PageResult;
 import com.ev.common.core.result.R;
+import com.ev.identity.dto.UserQuery;
 import com.ev.identity.entity.SysUser;
 import com.ev.identity.mapper.SysUserMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,24 +28,20 @@ public class UserManagementController {
 
     @Operation(summary = "用户列表")
     @GetMapping
-    public R<PageResult<Map<String, Object>>> list(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String status) {
+    public R<PageResult<Map<String, Object>>> list(@Valid UserQuery query) {
 
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        if (keyword != null && !keyword.isBlank()) {
-            wrapper.and(w -> w.like(SysUser::getNickname, keyword)
-                    .or().like(SysUser::getPhone, keyword)
-                    .or().like(SysUser::getUsername, keyword));
+        if (query.getKeyword() != null && !query.getKeyword().isBlank()) {
+            wrapper.and(w -> w.like(SysUser::getNickname, query.getKeyword())
+                    .or().like(SysUser::getPhone, query.getKeyword())
+                    .or().like(SysUser::getUsername, query.getKeyword()));
         }
-        if (status != null && !status.isBlank()) {
-            wrapper.eq(SysUser::getStatus, "ACTIVE".equals(status) ? 1 : 0);
+        if (query.getStatus() != null && !query.getStatus().isBlank()) {
+            wrapper.eq(SysUser::getStatus, "ACTIVE".equals(query.getStatus()) ? 1 : 0);
         }
         wrapper.orderByDesc(SysUser::getCreatedAt);
 
-        Page<SysUser> result = userMapper.selectPage(new Page<>(page, size), wrapper);
+        Page<SysUser> result = userMapper.selectPage(new Page<>(query.getPage(), query.getSize()), wrapper);
         List<Map<String, Object>> voList = result.getRecords().stream().map(u -> {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("id", String.valueOf(u.getId()));
@@ -58,7 +56,7 @@ public class UserManagementController {
             return map;
         }).collect(Collectors.toList());
 
-        return R.ok(PageResult.of(voList, result.getTotal(), page, size));
+        return R.ok(PageResult.of(voList, result.getTotal(), query.getPage(), query.getSize()));
     }
 
     @Operation(summary = "用户详情")

@@ -3,7 +3,9 @@ package com.ev.charging.controller;
 import com.ev.charging.dto.ChargingSessionVO;
 import com.ev.charging.dto.StartChargingReq;
 import com.ev.charging.service.ChargingService;
+import com.ev.common.core.exception.BizException;
 import com.ev.common.core.result.R;
+import com.ev.common.core.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -15,17 +17,27 @@ public class ChargingController {
 
     private final ChargingService chargingService;
 
+    /**
+     * Z-015 fix: 始终从 JWT token 获取 userId，忽略请求体中的 userId
+     */
     @Operation(summary = "启动充电") @PostMapping("/api/v1/charging/start")
-    public R<ChargingSessionVO> start(@Valid @RequestBody StartChargingReq req,
-                                       @RequestHeader(value = "X-User-Id", required = false) Long userId) {
-        if (userId == null) userId = 2001L;
+    public R<ChargingSessionVO> start(@Valid @RequestBody StartChargingReq req) {
+        Long userId = SecurityUtils.getUserId();
+        if (userId == null) {
+            throw BizException.notLogin();
+        }
         return R.ok(chargingService.start(req, userId));
     }
 
+    /**
+     * Z-015 fix: 始终从 JWT token 获取 userId
+     */
     @Operation(summary = "停止充电") @PostMapping("/api/v1/charging/{orderId}/stop")
-    public R<ChargingSessionVO> stop(@PathVariable String orderId,
-                                      @RequestHeader(value = "X-User-Id", required = false) Long userId) {
-        if (userId == null) userId = 2001L;
+    public R<ChargingSessionVO> stop(@PathVariable String orderId) {
+        Long userId = SecurityUtils.getUserId();
+        if (userId == null) {
+            throw BizException.notLogin();
+        }
         return R.ok(chargingService.stop(orderId, userId));
     }
 

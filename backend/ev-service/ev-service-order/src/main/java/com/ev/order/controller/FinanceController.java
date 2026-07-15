@@ -7,6 +7,7 @@ import com.ev.order.dto.*;
 import com.ev.order.service.FinanceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,8 +21,8 @@ public class FinanceController {
     }
 
     @Operation(summary = "交易明细") @GetMapping("/transactions")
-    public R<PageResult<OrderVO>> transactions(PageQuery query) { return R.ok(financeService.bills(query)); }
+    public R<PageResult<OrderVO>> transactions(@Valid PageQuery query) { return R.ok(financeService.bills(query)); }
 
     @Operation(summary = "结算列表") @GetMapping("/settlement")
-    public R<PageResult<OrderVO>> settlement(PageQuery query) { return R.ok(financeService.settlements(query)); }
+    public R<PageResult<OrderVO>> settlement(@Valid PageQuery query) { return R.ok(financeService.settlements(query)); }
 }

@@ -8,6 +8,7 @@ import com.ev.identity.dto.*;
 import com.ev.identity.entity.SysUser;
 import com.ev.identity.mapper.SysUserMapper;
 import com.ev.identity.service.AuthService;
+import com.ev.identity.service.LoginRateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,23 +23,33 @@ public class AuthServiceImpl implements AuthService {
 
     private final SysUserMapper userMapper;
     private final RedisLock redisLock;
+    private final LoginRateLimiter loginRateLimiter;
 
     private static final String SMS_CODE_PREFIX = "sms:code:";
 
     @Override
-    public LoginResp login(LoginReq req) {
+    public LoginResp login(LoginReq req, String clientIp) {
+        // Check rate limit before attempting authentication
+        loginRateLimiter.checkRateLimit(req.getUsername(), clientIp);
+
         SysUser user = userMapper.selectOne(
                 new LambdaQueryWrapper<SysUser>().eq(SysUser::getUsername, req.getUsername()));
         if (user == null) {
+            loginRateLimiter.recordFailure(req.getUsername(), clientIp);
             throw BizException.userNotFound();
         }
         if (user.getStatus() != 1) {
+            loginRateLimiter.recordFailure(req.getUsername(), clientIp);
             throw BizException.accountDisabled();
         }
         // L1 简化：明文密码比较（生产环境用BCrypt）
         if (!req.getPassword().equals("admin123") && !req.getPassword().equals("ops123")) {
+            loginRateLimiter.recordFailure(req.getUsername(), clientIp);
             throw BizException.wrongPassword();
         }
+
+        // Successful login: reset failure counters
+        loginRateLimiter.resetCounters(req.getUsername(), clientIp);
         return buildLoginResp(user);
     }
 
@@ -66,20 +77,29 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public LoginResp opsLogin(LoginReq req) {
+    public LoginResp opsLogin(LoginReq req, String clientIp) {
+        // Check rate limit before attempting authentication
+        loginRateLimiter.checkRateLimit(req.getUsername(), clientIp);
+
         SysUser user = userMapper.selectOne(
                 new LambdaQueryWrapper<SysUser>().eq(SysUser::getUsername, req.getUsername()));
         if (user == null) {
+            loginRateLimiter.recordFailure(req.getUsername(), clientIp);
             throw BizException.userNotFound();
         }
         // 校验角色
         List<String> roles = userMapper.selectRoleCodesByUserId(user.getId());
         if (!roles.contains("ops")) {
+            loginRateLimiter.recordFailure(req.getUsername(), clientIp);
             throw BizException.noPermission();
         }
         if (!req.getPassword().equals("ops123")) {
+            loginRateLimiter.recordFailure(req.getUsername(), clientIp);
             throw BizException.wrongPassword();
         }
+
+        // Successful login: reset failure counters
+        loginRateLimiter.resetCounters(req.getUsername(), clientIp);
         return buildLoginResp(user);
     }
 

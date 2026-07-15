@@ -17,23 +17,26 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Slf4j @Service @RequiredArgsConstructor
+@Slf4j
+@Service
+@RequiredArgsConstructor
 public class DeviceServiceImpl implements DeviceService {
     private final DeviceMapper deviceMapper;
     private final ConnectorMapper connectorMapper;
 
     @Override
-    public PageResult<DeviceVO> page(int page, int size, String keyword, Long stationId, String status) {
+    public PageResult<DeviceVO> page(DeviceQuery query) {
         LambdaQueryWrapper<DeviceEntity> wrapper = new LambdaQueryWrapper<>();
-        if (keyword != null && !keyword.isBlank()) {
-            wrapper.and(w -> w.like(DeviceEntity::getName, keyword).or().like(DeviceEntity::getCode, keyword));
+        if (query.getKeyword() != null && !query.getKeyword().isBlank()) {
+            wrapper.and(w -> w.like(DeviceEntity::getName, query.getKeyword())
+                    .or().like(DeviceEntity::getCode, query.getKeyword()));
         }
-        if (stationId != null) wrapper.eq(DeviceEntity::getStationId, stationId);
-        if (status != null && !status.isBlank()) wrapper.eq(DeviceEntity::getStatus, status);
+        if (query.getStationId() != null) wrapper.eq(DeviceEntity::getStationId, query.getStationId());
+        if (query.getStatus() != null && !query.getStatus().isBlank()) wrapper.eq(DeviceEntity::getStatus, query.getStatus());
         wrapper.orderByDesc(DeviceEntity::getCreatedAt);
-        Page<DeviceEntity> result = deviceMapper.selectPage(new Page<>(page, size), wrapper);
+        Page<DeviceEntity> result = deviceMapper.selectPage(new Page<>(query.getPage(), query.getSize()), wrapper);
         List<DeviceVO> voList = result.getRecords().stream().map(this::toVO).collect(Collectors.toList());
-        return PageResult.of(voList, result.getTotal(), page, size);
+        return PageResult.of(voList, result.getTotal(), query.getPage(), query.getSize());
     }
 
     @Override

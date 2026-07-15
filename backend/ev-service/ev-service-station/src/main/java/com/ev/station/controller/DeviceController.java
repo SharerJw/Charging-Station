@@ -2,10 +2,12 @@ package com.ev.station.controller;
 
 import com.ev.common.core.result.R;
 import com.ev.common.core.result.PageResult;
+import com.ev.station.dto.DeviceQuery;
 import com.ev.station.dto.DeviceVO;
 import com.ev.station.service.DeviceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -19,10 +21,8 @@ public class DeviceController {
     public R<List<DeviceVO>> stationDevices(@PathVariable Long stationId) { return R.ok(deviceService.listByStation(stationId)); }
 
     @Operation(summary = "设备列表") @GetMapping("/api/devices")
-    public R<PageResult<DeviceVO>> list(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size,
-                                         @RequestParam(required = false) String keyword, @RequestParam(required = false) Long stationId,
-                                         @RequestParam(required = false) String status) {
-        return R.ok(deviceService.page(page, size, keyword, stationId, status));
+    public R<PageResult<DeviceVO>> list(@Valid DeviceQuery query) {
+        return R.ok(deviceService.page(query));
     }
 
     @Operation(summary = "设备详情") @GetMapping("/api/devices/{id}")

@@ -15,6 +15,7 @@ public enum ErrorCode {
     NOT_LOGIN(1002, "未登录或token已过期"),
     NO_PERMISSION(1003, "无权限访问"),
     TOKEN_EXPIRED(1004, "token已过期"),
+    LOGIN_TOO_MANY_ATTEMPTS(1005, "登录失败次数过多，请15分钟后重试"),
 
     // ========== 2xxx: 充电站/设备 ==========
     STATION_NOT_FOUND(2001, "充电站不存在"),

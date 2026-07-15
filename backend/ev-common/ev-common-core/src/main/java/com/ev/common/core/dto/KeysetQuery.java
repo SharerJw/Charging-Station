@@ -1,5 +1,7 @@
 package com.ev.common.core.dto;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.Data;
 
 /**
@@ -8,10 +10,13 @@ import lombok.Data;
  */
 @Data
 public class KeysetQuery {
+
     /** 上一页最后一条记录的ID */
     private Long lastId;
 
     /** 每页大小 */
+    @Min(value = 1, message = "每页大小最小为1")
+    @Max(value = 100, message = "每页大小最大为100")
     private int size = 20;
 
     /** 排序方向：asc/desc */

@@ -6,6 +6,12 @@ spring:
     web-application-type: reactive
   application:
     name: ev-gateway
+
+  # WebFlux 请求体大小限制（1MB，适用于 reactive 栈）
+  # spring.servlet.multipart 不适用于 WebFlux，使用 codec 替代
+  codec:
+    max-in-memory-size: 1MB
+
   cloud:
     nacos:
       discovery:
@@ -14,9 +20,31 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowed-origins: "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5180"
-            allowed-methods: "*"
-            allowed-headers: "*"
+            # 明确列出合法前端源，不使用通配符
+            allowed-origins:
+              - "http://localhost:5173"
+              - "http://localhost:5174"
+              - "http://localhost:5175"
+              - "http://localhost:5176"
+              - "http://localhost:5177"
+            # 允许 credentials 时不能用 *，需显式列出方法
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+            allowed-headers:
+              - Authorization
+              - Content-Type
+              - X-Requested-With
+              - Accept
+              - Origin
+              - X-Token
+              - Idempotency-Key
+            exposed-headers:
+              - X-Request-Id
             allow-credentials: true
             max-age: 3600
       routes:
@@ -40,6 +68,17 @@ spring:
           uri: lb://ev-service-simulator
           predicates:
             - Path=/api/simulator/**
+
+# 管理端点 — 仅暴露 health/info，限制敏感端点（I-003）
+management:
+  endpoints:
+    web:
+      exposure:
+        # 仅暴露 health 和 info，不暴露 env/beans/configprops 等敏感端点
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
 
 logging:
   level:

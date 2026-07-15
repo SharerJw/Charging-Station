@@ -17,7 +17,8 @@ public class EvTenantLineHandler implements TenantLineHandler {
     private static final List<String> IGNORE_TABLES = Arrays.asList(
             "sys_role",
             "sys_permission",
-            "sys_role_permission"
+            "sys_role_permission",
+            "sys_user_role"
     );
 
     @Override
