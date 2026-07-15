@@ -9,4 +9,5 @@ public interface DashboardService {
     List<OrderVO> recentOrders(Integer limit);
     List<AlertVO> alerts(Integer limit);
     List<StationRankVO> stationRank(Integer limit, String sortBy);
+    TodoCountsVO todoCounts();
 }

@@ -264,6 +264,34 @@ public class DashboardServiceImpl implements DashboardService {
             .collect(Collectors.toList());
     }
 
+    @Override
+    public TodoCountsVO todoCounts() {
+        // 待处理告警
+        Integer pendingAlerts = Math.toIntExact(alertMapper.selectCount(
+            new LambdaQueryWrapper<DeviceAlertEntity>()
+                .eq(DeviceAlertEntity::getStatus, "pending")));
+
+        // 待结算订单（SETTLED 状态）
+        Integer settledOrders = Math.toIntExact(orderMapper.selectCount(
+            new LambdaQueryWrapper<ChargingOrderEntity>()
+                .eq(ChargingOrderEntity::getStatus, "SETTLED")));
+
+        // 退款中订单
+        Integer refundingOrders = Math.toIntExact(orderMapper.selectCount(
+            new LambdaQueryWrapper<ChargingOrderEntity>()
+                .eq(ChargingOrderEntity::getStatus, "REFUNDING")));
+
+        // 待办工单（需要调用运维服务，暂时返回 0）
+        Integer pendingWorkOrders = 0;
+
+        return TodoCountsVO.builder()
+            .pendingAlerts(pendingAlerts)
+            .pendingWorkOrders(pendingWorkOrders)
+            .settledOrders(settledOrders)
+            .refundingOrders(refundingOrders)
+            .build();
+    }
+
     private OrderVO toVO(ChargingOrderEntity e) {
         return OrderVO.builder()
                 .id(String.valueOf(e.getId())).orderNo(e.getOrderNo())

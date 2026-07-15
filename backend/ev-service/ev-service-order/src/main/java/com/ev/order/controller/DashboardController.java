@@ -25,6 +25,9 @@ public class DashboardController {
     @Operation(summary = "最近告警") @GetMapping("/alerts")
     public R<List<AlertVO>> alerts(@RequestParam(required = false) Integer limit) { return R.ok(dashboardService.alerts(limit)); }
 
+    @Operation(summary = "待办事项统计") @GetMapping("/todo-counts")
+    public R<TodoCountsVO> todoCounts() { return R.ok(dashboardService.todoCounts()); }
+
     @Operation(summary = "站点排行") @GetMapping("/station-rank")
     public R<List<StationRankVO>> stationRank(
             @RequestParam(required = false) Integer limit,
