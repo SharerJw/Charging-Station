@@ -95,7 +95,38 @@ function updatePosition(lng: number, lat: number) {
 }
 
 function handleConfirm() {
-  if (selectedAddress.value) {
+  // 确认时始终发送当前选择数据
+  if (geocoder) {
+    geocoder.getAddress([selectedLng.value, selectedLat.value], (status: string, result: any) => {
+      let address = selectedAddress.value
+      let province = ''
+      let city = ''
+      let district = ''
+      if (status === 'complete' && result.regeocode) {
+        address = result.regeocode.formattedAddress || address
+        province = result.regeocode.addressComponent?.province || ''
+        city = result.regeocode.addressComponent?.city || ''
+        district = result.regeocode.addressComponent?.district || ''
+      }
+      emit('update:modelValue', {
+        longitude: selectedLng.value,
+        latitude: selectedLat.value,
+        address,
+        province,
+        city,
+        district,
+      })
+      emit('close')
+    })
+  } else {
+    emit('update:modelValue', {
+      longitude: selectedLng.value,
+      latitude: selectedLat.value,
+      address: selectedAddress.value || '',
+      province: '',
+      city: '',
+      district: '',
+    })
     emit('close')
   }
 }
