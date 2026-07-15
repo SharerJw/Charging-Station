@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted, computed, ref, watch } from 'vue'
+import { onMounted, onUnmounted, computed, ref, watch } from 'vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart, BarChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
+import { Loading } from '@element-plus/icons-vue'
 
 use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent, LegendComponent])
 import { useDashboardStore } from '@/store/dashboard'
@@ -16,33 +17,96 @@ const router = useRouter()
 const dashboardStore = useDashboardStore()
 const chartPeriod = ref('7d')
 
-onMounted(() => {
-  dashboardStore.fetchAll()
+// ── Welcome bar ──────────────────────────────────────────────────────────────
+const greeting = computed(() => {
+  const h = new Date().getHours()
+  if (h < 6) return '夜深了'
+  if (h < 12) return '上午好'
+  if (h < 14) return '中午好'
+  if (h < 18) return '下午好'
+  return '晚上好'
+})
+const userName = computed(() => localStorage.getItem('userName') || '管理员')
+const currentDate = computed(() => {
+  const d = new Date()
+  const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${weekdays[d.getDay()]}`
 })
 
-// 切换时间范围时重新加载图表数据
+// ── Auto-refresh ─────────────────────────────────────────────────────────────
+const refreshInterval = ref<ReturnType<typeof setInterval> | null>(null)
+const isRefreshing = ref(false)
+const REFRESH_INTERVAL = 5000
+
+function startAutoRefresh() {
+  stopAutoRefresh()
+  refreshInterval.value = setInterval(async () => {
+    isRefreshing.value = true
+    try {
+      await dashboardStore.fetchAll()
+    } finally {
+      isRefreshing.value = false
+    }
+  }, REFRESH_INTERVAL)
+}
+
+function stopAutoRefresh() {
+  if (refreshInterval.value) {
+    clearInterval(refreshInterval.value)
+    refreshInterval.value = null
+  }
+}
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    stopAutoRefresh()
+  } else {
+    startAutoRefresh()
+  }
+}
+
+onMounted(() => {
+  dashboardStore.fetchAll()
+  startAutoRefresh()
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onUnmounted(() => {
+  stopAutoRefresh()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
+
+// ── Chart period toggle ──────────────────────────────────────────────────────
 watch(chartPeriod, (val) => {
   const days = val === '30d' ? 30 : 7
   dashboardStore.fetchChartData(days)
 })
 
-// KPI 卡片数据（从API获取真实数据）
-const statsCards = computed(() => {
+// ── KPI grouped data ─────────────────────────────────────────────────────────
+const formatNum = (v: number) => v > 0 ? v.toLocaleString('zh-CN') : '0'
+const formatWan = (v: number) => v >= 10000 ? (v / 10000).toFixed(1) + '万' : formatNum(v)
+
+const operationStats = computed(() => {
   const s = dashboardStore.stats
   const t = s.trends || {}
-  const formatNum = (v: number) => v > 0 ? v.toLocaleString('zh-CN') : '0'
-  const formatWan = (v: number) => v >= 10000 ? (v / 10000).toFixed(1) + '万' : formatNum(v)
   return [
-    { title: '今日充电量', value: formatNum(Math.round(s.todayEnergy / 1000)), unit: 'kWh', dailyTrend: t.todayEnergy?.daily ?? 0, weeklyTrend: t.todayEnergy?.weekly ?? 0, color: '#1677FF', icon: '⚡' },
-    { title: '今日营收', value: '¥' + formatWan(Math.round(s.todayRevenue / 100)), unit: '', dailyTrend: t.todayRevenue?.daily ?? 0, weeklyTrend: t.todayRevenue?.weekly ?? 0, color: '#52C41A', icon: '💰' },
-    { title: '今日订单数', value: formatNum(s.todayOrderCount), unit: '笔', dailyTrend: t.todayOrderCount?.daily ?? 0, weeklyTrend: t.todayOrderCount?.weekly ?? 0, color: '#FAAD14', icon: '📋' },
-    { title: '站点总数', value: formatNum(s.stationCount), unit: '个', dailyTrend: t.stationCount?.daily ?? 0, weeklyTrend: t.stationCount?.weekly ?? 0, color: '#FF4D4F', icon: '🏭' },
-    { title: '设备在线率', value: s.deviceCount > 0 ? ((s.onlineDeviceCount / s.deviceCount) * 100).toFixed(1) : '0', unit: '%', dailyTrend: t.onlineDeviceRate?.daily ?? 0, weeklyTrend: t.onlineDeviceRate?.weekly ?? 0, color: '#13C2C2', icon: '🟢' },
-    { title: '累计电量', value: formatNum(Math.round(s.totalEnergy / 1000)), unit: 'kWh', dailyTrend: t.totalEnergy?.daily ?? 0, weeklyTrend: t.totalEnergy?.weekly ?? 0, color: '#722ED1', icon: '📊' },
+    { title: '今日充电量', value: formatNum(Math.round(s.todayEnergy / 1000)), unit: 'kWh', icon: '⚡', color: '#1677FF', dailyTrend: t.todayEnergy?.daily ?? 0, weeklyTrend: t.todayEnergy?.weekly ?? 0 },
+    { title: '今日营收', value: '¥' + formatWan(Math.round(s.todayRevenue / 100)), unit: '', icon: '💰', color: '#52C41A', dailyTrend: t.todayRevenue?.daily ?? 0, weeklyTrend: t.todayRevenue?.weekly ?? 0 },
+    { title: '今日订单数', value: formatNum(s.todayOrderCount), unit: '笔', icon: '📋', color: '#FAAD14', dailyTrend: t.todayOrderCount?.daily ?? 0, weeklyTrend: t.todayOrderCount?.weekly ?? 0 },
   ]
 })
 
-// 营收趋势图
+const deviceStats = computed(() => {
+  const s = dashboardStore.stats
+  const t = s.trends || {}
+  return [
+    { title: '站点总数', value: formatNum(s.stationCount), unit: '个', icon: '🏭', color: '#FF4D4F', dailyTrend: t.stationCount?.daily ?? 0, weeklyTrend: t.stationCount?.weekly ?? 0 },
+    { title: '设备在线率', value: s.deviceCount > 0 ? ((s.onlineDeviceCount / s.deviceCount) * 100).toFixed(1) : '0', unit: '%', icon: '🟢', color: '#13C2C2', dailyTrend: t.onlineDeviceRate?.daily ?? 0, weeklyTrend: t.onlineDeviceRate?.weekly ?? 0 },
+    { title: '累计电量', value: formatNum(Math.round(s.totalEnergy / 1000)), unit: 'kWh', icon: '📊', color: '#722ED1', dailyTrend: t.totalEnergy?.daily ?? 0, weeklyTrend: t.totalEnergy?.weekly ?? 0 },
+  ]
+})
+
+// ── Revenue trend chart ──────────────────────────────────────────────────────
 const revenueChart = computed(() => ({
   tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
   legend: { data: ['电费收入', '服务费收入', '订单量'], top: 0 },
@@ -71,32 +135,33 @@ const revenueChart = computed(() => ({
   ],
 }))
 
-// 站点营收排行
+// ── Station rank chart (real data) ───────────────────────────────────────────
 const stationRankChart = computed(() => ({
   tooltip: { trigger: 'axis' },
   grid: { left: '3%', right: '10%', bottom: '3%', containLabel: true },
   xAxis: { type: 'value', axisLabel: { color: '#666' } },
   yAxis: {
     type: 'category',
-    data: ['杭州西湖慢充站', '深圳南山超充站', '上海浦东快充站', '北京朝阳充电站', '广州天河充电站'].reverse(),
-    axisLabel: { color: '#666' },
+    data: dashboardStore.stationRank.map(s => s.stationName).reverse(),
+    axisLabel: { color: '#666', width: 100, overflow: 'truncate' },
   },
   series: [{
     type: 'bar',
-    data: [45678, 38901, 32456, 28789, 15234].reverse(),
+    data: dashboardStore.stationRank.map(s => Math.floor(s.revenue / 100)).reverse(),
     itemStyle: { color: '#1677FF', borderRadius: [0, 4, 4, 0] },
     label: { show: true, position: 'right', formatter: '¥{c}', color: '#666' },
   }],
 }))
 
-// 待办事项（跳转时携带筛选参数）
-const todoItems = ref([
-  { type: 'alert', label: '待处理告警', count: 5, color: '#FF4D4F', route: '/alert', query: { status: 'pending' } },
-  { type: 'workorder', label: '待办工单', count: 3, color: '#FAAD14', route: '/ops', query: { status: 'pending' } },
-  { type: 'settlement', label: '待结算订单', count: 12, color: '#1677FF', route: '/order', query: { status: 'SETTLED' } },
-  { type: 'refund', label: '退款审批', count: 2, color: '#722ED1', route: '/order', query: { status: 'REFUNDING' } },
+// ── Todo items (real data) ───────────────────────────────────────────────────
+const todoItems = computed(() => [
+  { type: 'alert', label: '待处理告警', count: dashboardStore.todoCounts.pendingAlerts, color: '#FF4D4F', route: '/alert', query: { status: 'pending' } },
+  { type: 'workorder', label: '待办工单', count: dashboardStore.todoCounts.pendingWorkOrders, color: '#FAAD14', route: '/ops', query: { status: 'pending' } },
+  { type: 'settlement', label: '待结算订单', count: dashboardStore.todoCounts.settledOrders, color: '#1677FF', route: '/order', query: { status: 'SETTLED' } },
+  { type: 'refund', label: '退款审批', count: dashboardStore.todoCounts.refundingOrders, color: '#722ED1', route: '/order', query: { status: 'REFUNDING' } },
 ])
 
+// ── Order status helpers ─────────────────────────────────────────────────────
 const statusColors: Record<string, string> = {
   [OrderStatus.CHARGING]: 'warning', [OrderStatus.PAID]: 'success',
   [OrderStatus.REFUNDING]: 'info', [OrderStatus.ABNORMAL]: 'danger',
@@ -113,20 +178,57 @@ function formatTime(time: string) {
 
 <template>
   <div class="dashboard" v-loading="dashboardStore.loading">
-    <!-- KPI 卡片 -->
-    <div class="stats-grid">
-      <KpiCard
-        v-for="stat in statsCards"
-        :key="stat.title"
-        :title="stat.title"
-        :value="stat.value"
-        :unit="stat.unit"
-        :daily-trend="stat.dailyTrend"
-        :weekly-trend="stat.weeklyTrend"
-        :icon="stat.icon"
-        :color="stat.color"
-        :loading="dashboardStore.loading"
-      />
+    <!-- Welcome bar -->
+    <div class="welcome-bar">
+      <div class="welcome-left">
+        <span class="greeting">{{ greeting }}，{{ userName }}</span>
+        <span class="subtitle">欢迎回到 EV 充电管理平台</span>
+      </div>
+      <div class="welcome-right">
+        <span class="datetime">{{ currentDate }}</span>
+        <span class="refresh-indicator" v-if="isRefreshing">
+          <el-icon class="is-loading"><Loading /></el-icon>
+          刷新中...
+        </span>
+      </div>
+    </div>
+
+    <!-- 运营指标 -->
+    <div class="stats-group">
+      <div class="group-title">运营指标</div>
+      <div class="stats-row">
+        <KpiCard
+          v-for="stat in operationStats"
+          :key="stat.title"
+          :title="stat.title"
+          :value="stat.value"
+          :unit="stat.unit"
+          :icon="stat.icon"
+          :color="stat.color"
+          :daily-trend="stat.dailyTrend"
+          :weekly-trend="stat.weeklyTrend"
+          :loading="dashboardStore.loading"
+        />
+      </div>
+    </div>
+
+    <!-- 设备指标 -->
+    <div class="stats-group">
+      <div class="group-title">设备指标</div>
+      <div class="stats-row">
+        <KpiCard
+          v-for="stat in deviceStats"
+          :key="stat.title"
+          :title="stat.title"
+          :value="stat.value"
+          :unit="stat.unit"
+          :icon="stat.icon"
+          :color="stat.color"
+          :daily-trend="stat.dailyTrend"
+          :weekly-trend="stat.weeklyTrend"
+          :loading="dashboardStore.loading"
+        />
+      </div>
     </div>
 
     <!-- 图表区域 -->
@@ -201,39 +303,65 @@ function formatTime(time: string) {
 </template>
 
 <style scoped>
-.dashboard { display: flex; flex-direction: column; gap: 16px; }
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
-.stats-grid {
+/* ── Welcome bar ──────────────────────────────────────────────────────────── */
+.welcome-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #1677FF 0%, #4096FF 100%);
+  color: #fff;
+  border-radius: 10px;
+  padding: 18px 24px;
+}
+.welcome-left { display: flex; flex-direction: column; gap: 4px; }
+.greeting { font-size: 20px; font-weight: 600; }
+.subtitle { font-size: 13px; opacity: 0.85; }
+.welcome-right { display: flex; align-items: center; gap: 16px; }
+.datetime { font-size: 13px; opacity: 0.9; }
+.refresh-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* ── KPI groups ───────────────────────────────────────────────────────────── */
+.stats-group { display: flex; flex-direction: column; gap: 8px; }
+.group-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  padding-left: 2px;
+}
+.stats-row {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
-.stat-card { position: relative; }
-.stat-card :deep(.el-card__body) {
-  display: flex; align-items: center; gap: 12px; padding: 16px;
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
 }
 
-.stat-icon {
-  width: 48px; height: 48px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 24px; flex-shrink: 0;
-}
-
-.stat-body { flex: 1; min-width: 0; }
-.stat-value { font-size: 22px; font-weight: bold; color: #333; white-space: nowrap; }
-.stat-unit { font-size: 12px; font-weight: normal; color: #999; margin-left: 2px; }
-.stat-title { font-size: 12px; color: #999; margin-top: 2px; }
-
-.stat-trend {
-  position: absolute; top: 12px; right: 12px;
-  font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 4px;
-}
-.stat-trend.up { color: #52C41A; background: #F6FFED; }
-.stat-trend.down { color: #FF4D4F; background: #FFF2F0; }
-
+/* ── Card header ──────────────────────────────────────────────────────────── */
 .card-header { display: flex; justify-content: space-between; align-items: center; }
 
+/* ── Todo list ────────────────────────────────────────────────────────────── */
 .todo-list { display: flex; flex-direction: column; gap: 12px; }
 .todo-item {
   display: flex; align-items: center; gap: 12px; padding: 12px;
