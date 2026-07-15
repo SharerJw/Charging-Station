@@ -94,7 +94,7 @@ function startRealtime() {
         d.power = Math.max(0, d.power + (Math.random() - 0.5) * 5)
         d.voltage = Math.max(300, Math.min(500, d.voltage + (Math.random() - 0.5) * 10))
         d.current = Math.max(0, d.current + (Math.random() - 0.5) * 8)
-        d.soc = Math.min(100, d.soc + Math.random() * 0.5)
+        d.soc = Math.min(100, Math.round((d.soc + Math.random() * 0.5) * 10) / 10)
         d.temperature = Math.max(20, Math.min(55, d.temperature + (Math.random() - 0.5) * 2))
       }
     })
@@ -305,7 +305,7 @@ const eventLevelColors: Record<string, string> = {
             </div>
             <div class="device-metrics">
               <div class="metric"><span class="metric-value font-number">{{ device.power.toFixed(1) }}</span><span class="metric-unit">kW</span></div>
-              <div class="metric"><span class="metric-value font-number">{{ device.soc }}</span><span class="metric-unit">%</span></div>
+              <div class="metric"><span class="metric-value font-number">{{ Math.floor(device.soc) }}</span><span class="metric-unit">%</span></div>
               <div class="metric"><span class="metric-value font-number">{{ device.voltage }}</span><span class="metric-unit">V</span></div>
               <div class="metric"><span class="metric-value font-number">{{ device.temperature }}</span><span class="metric-unit">°C</span></div>
             </div>
