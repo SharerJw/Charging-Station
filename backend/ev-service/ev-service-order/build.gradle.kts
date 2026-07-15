@@ -12,6 +12,7 @@ dependencies {
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.data.redis)
     implementation(libs.spring.boot.starter.validation)
+    implementation(libs.spring.boot.starter.websocket) // WebSocket support
     implementation(libs.mybatis.plus.boot)
     implementation(libs.nacos.discovery)
     implementation(libs.spring.cloud.openfeign)

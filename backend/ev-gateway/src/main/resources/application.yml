@@ -59,7 +59,7 @@ spring:
         - id: order-service
           uri: lb://ev-service-order
           predicates:
-            - Path=/api/orders/**,/api/v1/orders/**,/api/dashboard/**,/api/finance/**,/api/v1/ops/alerts/**,/api/v1/ops/workorders/**,/api/v1/ops/inspections/**
+            - Path=/api/orders/**,/api/v1/orders/**,/api/dashboard/**,/api/finance/**,/api/v1/ops/alerts/**,/api/v1/ops/workorders/**,/api/v1/ops/inspections/**,/ws/dashboard/**
         - id: charging-service
           uri: lb://ev-service-charging
           predicates:

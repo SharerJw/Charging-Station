@@ -33,46 +33,96 @@ const currentDate = computed(() => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${weekdays[d.getDay()]}`
 })
 
-// ── Auto-refresh ─────────────────────────────────────────────────────────────
-const refreshInterval = ref<ReturnType<typeof setInterval> | null>(null)
-const isRefreshing = ref(false)
-const REFRESH_INTERVAL = 5000
+// ── WebSocket real-time updates ─────────────────────────────────────────────
+const ws = ref<WebSocket | null>(null)
+const wsStatus = ref<'connecting' | 'connected' | 'disconnected'>('disconnected')
+const reconnectTimer = ref<ReturnType<typeof setTimeout> | null>(null)
+const RECONNECT_DELAY = 3000
 
-function startAutoRefresh() {
-  stopAutoRefresh()
-  refreshInterval.value = setInterval(async () => {
-    isRefreshing.value = true
-    try {
-      await dashboardStore.fetchAll()
-    } finally {
-      isRefreshing.value = false
+function connectWebSocket() {
+  if (ws.value?.readyState === WebSocket.OPEN) return
+
+  wsStatus.value = 'connecting'
+  const token = localStorage.getItem('admin_token')
+  // Connect directly to order-service for WebSocket (gateway doesn't proxy WS well)
+  const wsUrl = `ws://localhost:8083/ws/dashboard?token=${token}`
+
+  try {
+    ws.value = new WebSocket(wsUrl)
+
+    ws.value.onopen = () => {
+      wsStatus.value = 'connected'
+      console.log('[Dashboard] WebSocket connected')
     }
-  }, REFRESH_INTERVAL)
+
+    ws.value.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        if (data.type === 'dashboard_update') {
+          // Update store with real-time data
+          if (data.stats) dashboardStore.stats = data.stats
+          if (data.todoCounts) dashboardStore.todoCounts = data.todoCounts
+          if (data.stationRank) dashboardStore.stationRank = data.stationRank
+          if (data.recentOrders) dashboardStore.recentOrders = data.recentOrders
+        }
+      } catch (e) {
+        console.error('[Dashboard] WebSocket message parse error:', e)
+      }
+    }
+
+    ws.value.onclose = () => {
+      wsStatus.value = 'disconnected'
+      console.log('[Dashboard] WebSocket disconnected, reconnecting...')
+      scheduleReconnect()
+    }
+
+    ws.value.onerror = (error) => {
+      console.error('[Dashboard] WebSocket error:', error)
+      wsStatus.value = 'disconnected'
+    }
+  } catch (e) {
+    console.error('[Dashboard] WebSocket connection error:', e)
+    wsStatus.value = 'disconnected'
+    scheduleReconnect()
+  }
 }
 
-function stopAutoRefresh() {
-  if (refreshInterval.value) {
-    clearInterval(refreshInterval.value)
-    refreshInterval.value = null
+function scheduleReconnect() {
+  if (reconnectTimer.value) clearTimeout(reconnectTimer.value)
+  reconnectTimer.value = setTimeout(() => {
+    if (document.hidden) return // Don't reconnect if page is hidden
+    connectWebSocket()
+  }, RECONNECT_DELAY)
+}
+
+function disconnectWebSocket() {
+  if (reconnectTimer.value) {
+    clearTimeout(reconnectTimer.value)
+    reconnectTimer.value = null
   }
+  if (ws.value) {
+    ws.value.close()
+    ws.value = null
+  }
+  wsStatus.value = 'disconnected'
 }
 
 function handleVisibilityChange() {
   if (document.hidden) {
-    stopAutoRefresh()
+    disconnectWebSocket()
   } else {
-    startAutoRefresh()
+    connectWebSocket()
   }
 }
 
 onMounted(() => {
-  dashboardStore.fetchAll()
-  startAutoRefresh()
+  dashboardStore.fetchAll() // Initial fetch
+  connectWebSocket()
   document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 onUnmounted(() => {
-  stopAutoRefresh()
+  disconnectWebSocket()
   document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 
@@ -186,9 +236,9 @@ function formatTime(time: string) {
       </div>
       <div class="welcome-right">
         <span class="datetime">{{ currentDate }}</span>
-        <span class="refresh-indicator" v-if="isRefreshing">
-          <el-icon class="is-loading"><Loading /></el-icon>
-          刷新中...
+        <span class="ws-status" :class="wsStatus">
+          <span class="ws-dot"></span>
+          {{ wsStatus === 'connected' ? '实时' : wsStatus === 'connecting' ? '连接中...' : '离线' }}
         </span>
       </div>
     </div>
@@ -324,12 +374,38 @@ function formatTime(time: string) {
 .subtitle { font-size: 13px; opacity: 0.85; }
 .welcome-right { display: flex; align-items: center; gap: 16px; }
 .datetime { font-size: 13px; opacity: 0.9; }
-.refresh-indicator {
+
+/* WebSocket status indicator */
+.ws-status {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   font-size: 12px;
-  opacity: 0.8;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+}
+.ws-status .ws-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ccc;
+}
+.ws-status.connected .ws-dot {
+  background: #52C41A;
+  box-shadow: 0 0 6px #52C41A;
+  animation: pulse 2s infinite;
+}
+.ws-status.connecting .ws-dot {
+  background: #FAAD14;
+  animation: pulse 1s infinite;
+}
+.ws-status.disconnected .ws-dot {
+  background: #FF4D4F;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 /* ── KPI groups ───────────────────────────────────────────────────────────── */
