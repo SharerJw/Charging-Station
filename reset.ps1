@@ -7,6 +7,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = $PSScriptRoot
+$SeedDir = Join-Path $ProjectRoot "backend\scripts\seed"
 
 function Log($msg) { Write-Host "[$(Get-Date -Format 'HH:mm:ss')] $msg" -ForegroundColor Cyan }
 function Ok($msg)  { Write-Host "[OK] $msg" -ForegroundColor Green }
@@ -18,12 +19,30 @@ $pgContainer = "ev-postgres"
 $pgUser = "ev"
 $pgPassword = "ev123"
 
-# 执行 SQL 命令
-function Invoke-PgSql($database, $sql) {
-    $env:PGPASSWORD = $pgPassword
-    $result = docker exec $pgContainer psql -U $pgUser -d $database -c $sql 2>&1
-    $env:PGPASSWORD = $null
-    return $result
+# 执行 SQL 文件
+function Invoke-SqlFile($database, $sqlFile) {
+    $fullPath = Join-Path $SeedDir $sqlFile
+    if (-not (Test-Path $fullPath)) {
+        Err "File not found: $fullPath"
+        return $false
+    }
+
+    Log "  Executing: $sqlFile"
+    try {
+        # 复制文件到容器并执行
+        docker cp $fullPath "${pgContainer}:/tmp/$sqlFile" 2>&1 | Out-Null
+        $result = docker exec -e PGPASSWORD=$pgPassword $pgContainer psql -U $pgUser -d $database -f "/tmp/$sqlFile" 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Ok "  Done"
+            return $true
+        } else {
+            Err "  Failed: $result"
+            return $false
+        }
+    } catch {
+        Err "  Error: $_"
+        return $false
+    }
 }
 
 Write-Host ""
@@ -33,7 +52,8 @@ Write-Host ""
 Write-Host "This will:" -ForegroundColor White
 Write-Host "  1. Stop all services" -ForegroundColor Gray
 Write-Host "  2. Drop and recreate all databases" -ForegroundColor Gray
-Write-Host "  3. Restart services (Flyway will populate seed data)" -ForegroundColor Gray
+Write-Host "  3. Execute seed data scripts" -ForegroundColor Gray
+Write-Host "  4. Restart services" -ForegroundColor Gray
 Write-Host ""
 
 # 检查 Docker PostgreSQL 是否运行
@@ -49,7 +69,7 @@ Ok "PostgreSQL container is running"
 # Step 1: Stop services
 # ============================================================
 if (-not $SkipStop) {
-    Log "Step 1/3: Stopping all services..."
+    Log "Step 1/4: Stopping all services..."
     $stopScript = Join-Path $ProjectRoot "stop.ps1"
     if (Test-Path $stopScript) {
         & $stopScript
@@ -58,13 +78,13 @@ if (-not $SkipStop) {
         Warn "stop.ps1 not found, skipping..."
     }
 } else {
-    Log "Step 1/3: Skipping stop (already stopped)"
+    Log "Step 1/4: Skipping stop (already stopped)"
 }
 
 # ============================================================
 # Step 2: Reset databases
 # ============================================================
-Log "Step 2/3: Resetting databases..."
+Log "Step 2/4: Resetting databases..."
 
 $databases = @("ev_identity", "ev_station", "ev_order")
 
@@ -73,13 +93,13 @@ foreach ($db in $databases) {
 
     # 终止现有连接
     try {
-        Invoke-PgSql "postgres" "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$db' AND pid <> pg_backend_pid();" | Out-Null
+        docker exec -e PGPASSWORD=$pgPassword $pgContainer psql -U $pgUser -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$db' AND pid <> pg_backend_pid();" 2>&1 | Out-Null
     } catch {}
 
     # 删除并重建数据库
     try {
-        Invoke-PgSql "postgres" "DROP DATABASE IF EXISTS $db;" | Out-Null
-        Invoke-PgSql "postgres" "CREATE DATABASE $db;" | Out-Null
+        docker exec -e PGPASSWORD=$pgPassword $pgContainer psql -U $pgUser -d postgres -c "DROP DATABASE IF EXISTS $db;" 2>&1 | Out-Null
+        docker exec -e PGPASSWORD=$pgPassword $pgContainer psql -U $pgUser -d postgres -c "CREATE DATABASE $db;" 2>&1 | Out-Null
         Ok "$db reset complete"
     } catch {
         Err "Failed to reset $db : $_"
@@ -88,10 +108,31 @@ foreach ($db in $databases) {
 }
 
 # ============================================================
-# Step 3: Start services
+# Step 3: Execute seed data
+# ============================================================
+Log "Step 3/4: Executing seed data scripts..."
+
+# Identity 种子数据
+Log "  Database: ev_identity"
+Invoke-SqlFile "ev_identity" "identity_truncate.sql"
+Invoke-SqlFile "ev_identity" "identity_seed_users.sql"
+
+# Station 种子数据
+Log "  Database: ev_station"
+Invoke-SqlFile "ev_station" "station_truncate.sql"
+Invoke-SqlFile "ev_station" "station_seed_stations.sql"
+
+# Order 种子数据
+Log "  Database: ev_order"
+Invoke-SqlFile "ev_order" "order_truncate.sql"
+Invoke-SqlFile "ev_order" "order_seed_orders.sql"
+Invoke-SqlFile "ev_order" "order_seed_alerts.sql"
+
+# ============================================================
+# Step 4: Start services
 # ============================================================
 if (-not $SkipStart) {
-    Log "Step 3/3: Starting services (Flyway will populate seed data)..."
+    Log "Step 4/4: Starting services..."
     $startScript = Join-Path $ProjectRoot "start.ps1"
     if (Test-Path $startScript) {
         & $startScript
@@ -100,7 +141,7 @@ if (-not $SkipStart) {
         exit 1
     }
 } else {
-    Log "Step 3/3: Skipping start"
+    Log "Step 4/4: Skipping start"
 }
 
 # ============================================================
@@ -111,9 +152,7 @@ Write-Host "========================================" -ForegroundColor Green
 Write-Host "Database reset complete!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "Seed data will be populated by Flyway on first startup." -ForegroundColor White
-Write-Host ""
-Write-Host "Expected data:" -ForegroundColor White
+Write-Host "Seed data populated:" -ForegroundColor White
 Write-Host "  - Users:        5,000" -ForegroundColor Gray
 Write-Host "  - Stations:     200" -ForegroundColor Gray
 Write-Host "  - Devices:      1,000" -ForegroundColor Gray
