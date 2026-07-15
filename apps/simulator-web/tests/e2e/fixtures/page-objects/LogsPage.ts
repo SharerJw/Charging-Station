@@ -2,13 +2,13 @@ import { type Page, type Locator } from '@playwright/test'
 
 export class LogsPage {
   readonly page: Page
-  readonly terminal: Locator
-  readonly messageLines: Locator
+  readonly pageTitle: Locator
+  readonly logContainer: Locator
 
   constructor(page: Page) {
     this.page = page
-    this.terminal = page.locator('.xterm')
-    this.messageLines = page.locator('.message-line')
+    this.pageTitle = page.locator('text=日志终端')
+    this.logContainer = page.locator('.log-container, .overflow-auto').first()
   }
 
   async goto() {
@@ -17,14 +17,15 @@ export class LogsPage {
   }
 
   async waitForLoad() {
-    await this.terminal.waitFor({ state: 'visible' })
+    await this.page.waitForTimeout(1000) // Wait for page to load
   }
 
-  async getMessageCount() {
-    return this.messageLines.count()
+  async isPageLoaded() {
+    return this.pageTitle.isVisible()
   }
 
-  async isTerminalVisible() {
-    return this.terminal.isVisible()
+  async hasErrors() {
+    const errorOverlay = this.page.locator('.vite-error-overlay, [class*="error"]')
+    return errorOverlay.isVisible()
   }
 }

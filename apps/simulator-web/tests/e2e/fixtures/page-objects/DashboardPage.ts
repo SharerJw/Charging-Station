@@ -3,18 +3,20 @@ import { type Page, type Locator } from '@playwright/test'
 export class DashboardPage {
   readonly page: Page
   readonly statCards: Locator
-  readonly deviceCards: Locator
+  readonly deviceSelector: Locator
   readonly controlBar: Locator
   readonly charts: Locator
   readonly liveIndicator: Locator
+  readonly pauseButton: Locator
 
   constructor(page: Page) {
     this.page = page
-    this.statCards = page.locator('.stat-card')
-    this.deviceCards = page.locator('.device-card')
-    this.controlBar = page.locator('.control-bar')
+    this.statCards = page.locator('text=设备总数').locator('..')
+    this.deviceSelector = page.locator('.el-select')
+    this.controlBar = page.locator('text=暂停').locator('..')
     this.charts = page.locator('canvas')
     this.liveIndicator = page.locator('text=LIVE')
+    this.pauseButton = page.locator('text=暂停')
   }
 
   async goto() {
@@ -23,23 +25,27 @@ export class DashboardPage {
   }
 
   async waitForLoad() {
-    await this.statCards.first().waitFor({ state: 'visible' })
+    await this.page.waitForSelector('text=设备总数', { timeout: 10000 })
     await this.page.waitForTimeout(500)
   }
 
   async getStatCardCount() {
-    return this.statCards.count()
-  }
-
-  async getDeviceCardCount() {
-    return this.deviceCards.count()
+    // Count the 4 stat cards: 设备总数, 在线设备, 充电中, 累计电量
+    const statLabels = ['设备总数', '在线设备', '充电中', '累计电量']
+    let count = 0
+    for (const label of statLabels) {
+      if (await this.page.locator(`text=${label}`).isVisible()) {
+        count++
+      }
+    }
+    return count
   }
 
   async getKpiValues() {
     const values = await this.page.evaluate(() => {
-      const cards = document.querySelectorAll('.stat-card')
-      return Array.from(cards).map(card => {
-        const value = card.querySelector('.stat-value')?.textContent || '0'
+      const items = document.querySelectorAll('.el-col-6')
+      return Array.from(items).map(item => {
+        const value = item.querySelector('.text-2xl')?.textContent || '0'
         return parseInt(value.replace(/[^0-9]/g, ''), 10)
       })
     })
@@ -51,11 +57,16 @@ export class DashboardPage {
     }
   }
 
-  async clickDevice(index: number) {
-    await this.deviceCards.nth(index).click()
+  async selectDevice(index: number) {
+    await this.deviceSelector.click()
+    await this.page.locator('.el-select-dropdown__item').nth(index).click()
   }
 
   async isLiveVisible() {
     return this.liveIndicator.isVisible()
+  }
+
+  async isPauseButtonVisible() {
+    return this.pauseButton.isVisible()
   }
 }

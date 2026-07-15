@@ -16,9 +16,9 @@ test.describe('Dashboard 冒烟测试', () => {
     expect(count).toBeGreaterThanOrEqual(4)
   })
 
-  test('设备卡片显示', async ({ page }) => {
+  test('设备选择器显示', async ({ page }) => {
     await dashboardPage.waitForLoad()
-    await expect(dashboardPage.deviceCards.first()).toBeVisible()
+    await expect(dashboardPage.deviceSelector).toBeVisible()
   })
 
   test('图表渲染完成', async ({ page }) => {
@@ -29,7 +29,7 @@ test.describe('Dashboard 冒烟测试', () => {
 
   test('控制栏功能', async ({ page }) => {
     await dashboardPage.waitForLoad()
-    await expect(dashboardPage.controlBar).toBeVisible()
+    await expect(dashboardPage.pauseButton).toBeVisible()
     const isLive = await dashboardPage.isLiveVisible()
     expect(isLive).toBe(true)
   })

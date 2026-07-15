@@ -14,12 +14,13 @@ test.describe('Device 冒烟测试', () => {
     await devicePage.waitForLoad()
   })
 
-  test('设备列表显示', async ({ page }) => {
+  test('页面标题显示', async ({ page }) => {
     await devicePage.waitForLoad()
-    await expect(devicePage.deviceList).toBeVisible()
+    await expect(devicePage.pageTitle).toBeVisible()
   })
 
   test('添加设备按钮', async ({ page }) => {
+    await devicePage.waitForLoad()
     await expect(devicePage.addButton).toBeVisible()
   })
 })

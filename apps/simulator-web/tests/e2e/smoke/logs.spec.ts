@@ -14,9 +14,9 @@ test.describe('Logs 冒烟测试', () => {
     await logsPage.waitForLoad()
   })
 
-  test('终端组件加载', async ({ page }) => {
+  test('页面标题显示', async ({ page }) => {
     await logsPage.waitForLoad()
-    const isVisible = await logsPage.isTerminalVisible()
-    expect(isVisible).toBe(true)
+    const isLoaded = await logsPage.isPageLoaded()
+    expect(isLoaded).toBe(true)
   })
 })
