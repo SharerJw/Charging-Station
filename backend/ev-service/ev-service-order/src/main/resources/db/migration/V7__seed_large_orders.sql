@@ -1,87 +1,105 @@
 -- V7__seed_large_orders.sql
--- 生成 100,000 个订单和 80,000 条支付记录
+-- 优化版：使用预计算映射表和批量插入
 
--- 1. 生成 100,000 个订单
-WITH order_data AS (
-  SELECT
-    i,
-    (1 + random() * 999)::int AS device_id,
-    (1 + random() * 4999)::int AS user_id,
-    NOW() - (random() * INTERVAL '90 days') AS order_time,
-    CASE
-      WHEN random() < 0.40 THEN 'PAID'
-      WHEN random() < 0.70 THEN 'SETTLED'
-      WHEN random() < 0.75 THEN 'CHARGING'
-      WHEN random() < 0.85 THEN 'STOPPED'
-      WHEN random() < 0.88 THEN 'CREATED'
-      WHEN random() < 0.92 THEN 'REFUNDING'
-      WHEN random() < 0.97 THEN 'ABNORMAL'
-      ELSE 'CANCELLED'
-    END AS status
-  FROM generate_series(1, 100000) AS i
-)
-INSERT INTO charging_order (order_no, station_id, station_name, device_id, device_code,
-  connector_id, user_id, user_nickname, status, version,
-  meter_start, meter_stop, energy_wh, peak_power, avg_power,
-  start_soc, stop_soc, electricity_fee, service_fee, parking_fee,
-  discount_amount, total_amount, pay_method, pay_time, start_time, stop_time,
-  settle_time, tenant_id, created_at, updated_at)
-SELECT
-  'ORD-' || to_char(order_time, 'YYYYMMDD') || '-' || lpad(i::text, 6, '0'),
-  d.station_id,
-  s.name,
-  od.device_id,
-  d.code,
-  1,
-  od.user_id,
-  u.nickname,
-  od.status,
-  1,
-  (random() * 100000)::bigint,
-  CASE WHEN od.status IN ('PAID', 'SETTLED', 'STOPPED', 'REFUNDING', 'ABNORMAL')
-    THEN (random() * 100000 + 50000)::bigint ELSE NULL END,
-  CASE WHEN od.status IN ('PAID', 'SETTLED', 'STOPPED', 'REFUNDING', 'ABNORMAL')
-    THEN (10000 + random() * 90000)::bigint ELSE 0 END,
-  CASE WHEN d.type = 'DC' THEN (60000 + random() * 180000)::int
-    ELSE (3000 + random() * 18000)::int END,
-  CASE WHEN d.type = 'DC' THEN (40000 + random() * 120000)::int
-    ELSE (2000 + random() * 12000)::int END,
-  (10 + random() * 40)::int,
-  CASE WHEN od.status IN ('PAID', 'SETTLED')
-    THEN (60 + random() * 35)::int ELSE NULL END,
-  CASE WHEN od.status IN ('PAID', 'SETTLED', 'STOPPED', 'REFUNDING', 'ABNORMAL')
-    THEN (1000 + random() * 20000)::bigint ELSE 0 END,
-  CASE WHEN od.status IN ('PAID', 'SETTLED', 'STOPPED', 'REFUNDING', 'ABNORMAL')
-    THEN (500 + random() * 5000)::bigint ELSE 0 END,
-  CASE WHEN random() > 0.7 THEN (random() * 2000)::bigint ELSE 0 END,
-  CASE WHEN random() > 0.8 THEN (random() * 1000)::bigint ELSE 0 END,
-  CASE WHEN od.status IN ('PAID', 'SETTLED', 'STOPPED', 'REFUNDING', 'ABNORMAL')
-    THEN (1500 + random() * 25000)::bigint ELSE 0 END,
-  CASE
-    WHEN od.status IN ('PAID', 'SETTLED') THEN
-      CASE (random() * 3)::int
-        WHEN 0 THEN 'WECHAT'
-        WHEN 1 THEN 'ALIPAY'
-        ELSE 'BALANCE'
-      END
-    ELSE NULL
-  END,
-  CASE WHEN od.status IN ('PAID', 'SETTLED')
-    THEN od.order_time + INTERVAL '1 hour' ELSE NULL END,
-  od.order_time,
-  CASE WHEN od.status IN ('PAID', 'SETTLED', 'STOPPED', 'REFUNDING', 'ABNORMAL')
-    THEN od.order_time + INTERVAL '30 minutes' ELSE NULL END,
-  CASE WHEN od.status = 'SETTLED'
-    THEN od.order_time + INTERVAL '2 hours' ELSE NULL END,
-  'T001',
-  od.order_time,
-  od.order_time + INTERVAL '5 minutes'
-FROM order_data od
-JOIN device d ON d.id = od.device_id
-JOIN station s ON s.id = d.station_id
-JOIN sys_user u ON u.id = od.user_id;
+-- 1. 创建设备-站点映射表（避免重复 JOIN）
+CREATE TEMP TABLE IF NOT EXISTS device_station_map AS
+SELECT d.id AS device_id, d.code AS device_code, d.station_id,
+       s.name AS station_name, d.type AS device_type
+FROM device d
+JOIN station s ON s.id = d.station_id;
 
--- 2. 生成支付记录（PAID 和 SETTLED 订单）
+-- 2. 创建用户昵称映射表
+CREATE TEMP TABLE IF NOT EXISTS user_map AS
+SELECT id, nickname FROM sys_user LIMIT 5000;
+
+-- 3. 批量生成订单（每批 10,000 条）
+DO $$
+DECLARE
+  batch_size INT := 10000;
+  total_batches INT := 10;
+  batch_num INT;
+  order_time TIMESTAMP;
+BEGIN
+  FOR batch_num IN 0..(total_batches - 1) LOOP
+    INSERT INTO charging_order (
+      order_no, station_id, station_name, device_id, device_code,
+      connector_id, user_id, user_nickname, status, version,
+      meter_start, meter_stop, energy_wh, peak_power, avg_power,
+      start_soc, stop_soc, electricity_fee, service_fee, parking_fee,
+      discount_amount, total_amount, pay_method, pay_time,
+      start_time, stop_time, settle_time, tenant_id, created_at, updated_at
+    )
+    SELECT
+      'ORD-' || to_char(o.order_time, 'YYYYMMDD') || '-' || lpad(o.idx::text, 6, '0'),
+      dsm.station_id,
+      dsm.station_name,
+      dsm.device_id,
+      dsm.device_code,
+      1,
+      o.user_id,
+      COALESCE(um.nickname, '用户' || o.user_id),
+      o.status,
+      1,
+      (random() * 100000)::bigint,
+      CASE WHEN o.status NOT IN ('CREATED', 'CHARGING')
+        THEN (random() * 100000 + 50000)::bigint ELSE NULL END,
+      CASE WHEN o.status NOT IN ('CREATED', 'CHARGING')
+        THEN (10000 + random() * 90000)::bigint ELSE 0 END,
+      CASE WHEN dsm.device_type = 'DC' THEN (60000 + random() * 180000)::int
+        ELSE (3000 + random() * 18000)::int END,
+      CASE WHEN dsm.device_type = 'DC' THEN (40000 + random() * 120000)::int
+        ELSE (2000 + random() * 12000)::int END,
+      (10 + random() * 40)::int,
+      CASE WHEN o.status IN ('PAID', 'SETTLED')
+        THEN (60 + random() * 35)::int ELSE NULL END,
+      CASE WHEN o.status NOT IN ('CREATED', 'CHARGING')
+        THEN (1000 + random() * 20000)::bigint ELSE 0 END,
+      CASE WHEN o.status NOT IN ('CREATED', 'CHARGING')
+        THEN (500 + random() * 5000)::bigint ELSE 0 END,
+      CASE WHEN random() > 0.7 THEN (random() * 2000)::bigint ELSE 0 END,
+      CASE WHEN random() > 0.8 THEN (random() * 1000)::bigint ELSE 0 END,
+      CASE WHEN o.status NOT IN ('CREATED', 'CHARGING')
+        THEN (1500 + random() * 25000)::bigint ELSE 0 END,
+      CASE WHEN o.status IN ('PAID', 'SETTLED') THEN
+        CASE (random() * 3)::int
+          WHEN 0 THEN 'WECHAT' WHEN 1 THEN 'ALIPAY' ELSE 'BALANCE'
+        END ELSE NULL END,
+      CASE WHEN o.status IN ('PAID', 'SETTLED')
+        THEN o.order_time + INTERVAL '1 hour' ELSE NULL END,
+      o.order_time,
+      CASE WHEN o.status NOT IN ('CREATED', 'CHARGING')
+        THEN o.order_time + INTERVAL '30 minutes' ELSE NULL END,
+      CASE WHEN o.status = 'SETTLED'
+        THEN o.order_time + INTERVAL '2 hours' ELSE NULL END,
+      'T001',
+      o.order_time,
+      o.order_time + INTERVAL '5 minutes'
+    FROM (
+      SELECT
+        (batch_num * batch_size + i) AS idx,
+        1 + ((batch_num * batch_size + i) % 999) AS device_id,
+        1 + ((batch_num * batch_size + i) % 4999) AS user_id,
+        NOW() - (random() * INTERVAL '90 days') AS order_time,
+        CASE
+          WHEN random() < 0.40 THEN 'PAID'
+          WHEN random() < 0.70 THEN 'SETTLED'
+          WHEN random() < 0.75 THEN 'CHARGING'
+          WHEN random() < 0.85 THEN 'STOPPED'
+          WHEN random() < 0.88 THEN 'CREATED'
+          WHEN random() < 0.92 THEN 'REFUNDING'
+          WHEN random() < 0.97 THEN 'ABNORMAL'
+          ELSE 'CANCELLED'
+        END AS status
+      FROM generate_series(1, batch_size) AS i
+    ) o
+    JOIN device_station_map dsm ON dsm.device_id = o.device_id
+    LEFT JOIN user_map um ON um.id = o.user_id;
+
+    RAISE NOTICE 'Batch % complete: % orders inserted', batch_num + 1, (batch_num + 1) * batch_size;
+  END LOOP;
+END $$;
+
+-- 4. 生成支付记录
 INSERT INTO payment_record (payment_no, order_id, user_id, channel, amount, status,
   channel_trade_no, created_at)
 SELECT
@@ -101,3 +119,7 @@ SELECT
 FROM charging_order o
 WHERE o.status IN ('PAID', 'SETTLED', 'REFUNDING')
   AND o.pay_time IS NOT NULL;
+
+-- 5. 清理临时表
+DROP TABLE IF EXISTS device_station_map;
+DROP TABLE IF EXISTS user_map;
