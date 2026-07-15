@@ -2,6 +2,7 @@
 import { ref, watch, computed } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useStationStore } from '@/store/station'
+import MapPicker from './MapPicker.vue'
 
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits(['update:visible', 'success'])
@@ -46,6 +47,17 @@ const cityMap: Record<string, string[]> = {
 }
 
 const cities = computed(() => cityMap[stationStore.form.province] || [])
+
+// 地图选点
+const showMapPicker = ref(false)
+function handleMapSelect(val: { longitude: number; latitude: number; address: string; province: string; city: string; district: string }) {
+  stationStore.form.longitude = val.longitude
+  stationStore.form.latitude = val.latitude
+  if (val.address) stationStore.form.address = val.address
+  if (val.province) stationStore.form.province = val.province
+  if (val.city) stationStore.form.city = val.city
+  if (val.district) stationStore.form.district = val.district
+}
 
 watch(() => stationStore.form.province, () => {
   stationStore.form.city = ''
@@ -118,7 +130,11 @@ function handleClose() {
       </el-row>
 
       <el-form-item label="详细地址" prop="address">
-        <el-input v-model="stationStore.form.address" placeholder="请输入详细地址" />
+        <el-input v-model="stationStore.form.address" placeholder="请输入详细地址">
+          <template #append>
+            <el-button @click="showMapPicker = true">📍 地图选点</el-button>
+          </template>
+        </el-input>
       </el-form-item>
 
       <el-row :gutter="16">
@@ -178,4 +194,11 @@ function handleClose() {
       </el-button>
     </template>
   </el-dialog>
+
+  <MapPicker
+    :visible="showMapPicker"
+    :model-value="{ longitude: stationStore.form.longitude, latitude: stationStore.form.latitude }"
+    @update:model-value="handleMapSelect"
+    @close="showMapPicker = false"
+  />
 </template>
