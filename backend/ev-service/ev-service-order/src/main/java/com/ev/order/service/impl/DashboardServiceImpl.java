@@ -1,6 +1,7 @@
 package com.ev.order.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.ev.order.dto.*;
 import com.ev.order.entity.ChargingOrderEntity;
 import com.ev.order.entity.DeviceAlertEntity;
@@ -229,38 +230,41 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public List<StationRankVO> stationRank(Integer limit, String sortBy) {
         if (limit == null) limit = 5;
-        final String sortByField = (sortBy != null) ? sortBy : "revenue";
 
-        List<ChargingOrderEntity> allOrders = orderMapper.selectList(new LambdaQueryWrapper<>());
+        // Validate sortBy parameter - only allow known fields
+        Set<String> allowedSortFields = Set.of("revenue", "orderCount", "energy");
+        String sortByField = (sortBy != null && allowedSortFields.contains(sortBy)) ? sortBy : "revenue";
 
-        Map<Long, StationRankVO> stationMap = new LinkedHashMap<>();
-        for (ChargingOrderEntity order : allOrders) {
-            Long stationId = order.getStationId();
-            if (stationId == null) continue;
-
-            stationMap.computeIfAbsent(stationId, k -> StationRankVO.builder()
-                .stationId(stationId)
-                .stationName(order.getStationName())
-                .revenue(0L)
-                .orderCount(0)
-                .energy(0L)
-                .build());
-
-            StationRankVO rank = stationMap.get(stationId);
-            rank.setRevenue(rank.getRevenue() + (order.getTotalAmount() != null ? order.getTotalAmount() : 0));
-            rank.setOrderCount(rank.getOrderCount() + 1);
-            rank.setEnergy(rank.getEnergy() + (order.getEnergyWh() != null ? order.getEnergyWh() : 0));
+        // Determine ORDER BY SQL to avoid loading all orders into memory
+        String orderBySql;
+        switch (sortByField) {
+            case "orderCount": orderBySql = "order_count DESC"; break;
+            case "energy":     orderBySql = "total_energy DESC"; break;
+            default:           orderBySql = "total_revenue DESC"; break;
         }
 
-        return stationMap.values().stream()
-            .sorted((a, b) -> {
-                switch (sortByField) {
-                    case "orderCount": return b.getOrderCount() - a.getOrderCount();
-                    case "energy": return Long.compare(b.getEnergy(), a.getEnergy());
-                    default: return Long.compare(b.getRevenue(), a.getRevenue());
-                }
-            })
-            .limit(limit)
+        // Use SQL GROUP BY aggregation instead of loading all rows into memory
+        QueryWrapper<ChargingOrderEntity> wrapper = new QueryWrapper<>();
+        wrapper.select(
+                "station_id AS station_id",
+                "MAX(station_name) AS station_name",
+                "COALESCE(SUM(total_amount), 0) AS total_revenue",
+                "COUNT(*) AS order_count",
+                "COALESCE(SUM(energy_wh), 0) AS total_energy");
+        wrapper.groupBy("station_id");
+        wrapper.orderByDesc(orderBySql.contains("total_revenue") ? "total_revenue"
+                : orderBySql.contains("order_count") ? "order_count" : "total_energy");
+        wrapper.last("LIMIT " + limit);
+
+        List<Map<String, Object>> rows = orderMapper.selectMaps(wrapper);
+
+        return rows.stream().map(row -> StationRankVO.builder()
+                .stationId(row.get("station_id") != null ? String.valueOf(row.get("station_id")) : null)
+                .stationName(row.get("station_name") != null ? String.valueOf(row.get("station_name")) : "")
+                .revenue(row.get("total_revenue") != null ? ((Number) row.get("total_revenue")).longValue() : 0L)
+                .orderCount(row.get("order_count") != null ? ((Number) row.get("order_count")).intValue() : 0)
+                .energy(row.get("total_energy") != null ? ((Number) row.get("total_energy")).longValue() : 0L)
+                .build())
             .collect(Collectors.toList());
     }
 

@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class StationRankVO {
-    private Long stationId;
+    private String stationId;
     private String stationName;
     private Long revenue;       // 营收（分）
     private Integer orderCount; // 订单数
