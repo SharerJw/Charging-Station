@@ -1,7 +1,16 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import EventStream from './EventStream.vue'
-import type { OcppMessage } from '@/api/mock'
+
+interface OcppMessage {
+  messageId: string
+  action: string
+  type: 'Call' | 'CallResult' | 'CallError'
+  payload: Record<string, any>
+  timestamp: string
+  direction: 'inbound' | 'outbound'
+  chargePointId: string
+}
 
 const mockEvents: OcppMessage[] = [
   { messageId: 'MSG-001', action: 'Heartbeat', type: 'CallResult', payload: {}, timestamp: '2026-07-13T10:30:00Z', direction: 'inbound', chargePointId: 'EVSE-001' },

@@ -16,47 +16,7 @@ export interface Device {
 }
 
 export const useSimulatorStore = defineStore('simulator', () => {
-  const devices = ref<Device[]>([
-    {
-      id: 'CP001',
-      name: '充电桩-001',
-      ocppId: 'EVSE-001',
-      model: 'AC-7kW',
-      status: 'online',
-      power: 0,
-      voltage: 220,
-      current: 0,
-      soc: 0,
-      temperature: 25,
-      lastHeartbeat: new Date().toISOString(),
-    },
-    {
-      id: 'CP002',
-      name: '充电桩-002',
-      ocppId: 'EVSE-002',
-      model: 'DC-60kW',
-      status: 'charging',
-      power: 45.2,
-      voltage: 400,
-      current: 113,
-      soc: 65,
-      temperature: 38,
-      lastHeartbeat: new Date().toISOString(),
-    },
-    {
-      id: 'CP003',
-      name: '充电桩-003',
-      ocppId: 'EVSE-003',
-      model: 'DC-120kW',
-      status: 'offline',
-      power: 0,
-      voltage: 0,
-      current: 0,
-      soc: 0,
-      temperature: 22,
-      lastHeartbeat: '2024-01-10T10:15:00Z',
-    },
-  ])
+  const devices = ref<Device[]>([])
 
   const connected = ref(true)
 

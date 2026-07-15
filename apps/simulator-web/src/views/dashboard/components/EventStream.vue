@@ -3,7 +3,16 @@
  * EventStream 组件 (simulator-web)
  * 功能: OCPP事件实时滚动列表
  */
-import type { OcppMessage } from '@/api/mock'
+
+interface OcppMessage {
+  messageId: string
+  action: string
+  type: 'Call' | 'CallResult' | 'CallError'
+  payload: Record<string, any>
+  timestamp: string
+  direction: 'inbound' | 'outbound'
+  chargePointId: string
+}
 
 defineProps<{
   events: OcppMessage[]

@@ -7,7 +7,16 @@ import { LineChart, BarChart, PieChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
 import { useSimulatorStore } from '@/store/simulator'
 import { systemApi, deviceApi } from '@/api'
-import type { OcppMessage } from '@/api/mock'
+
+interface OcppMessage {
+  messageId: string
+  action: string
+  type: 'Call' | 'CallResult' | 'CallError'
+  payload: Record<string, any>
+  timestamp: string
+  direction: 'inbound' | 'outbound'
+  chargePointId: string
+}
 
 // 注册 ECharts 组件
 use([
