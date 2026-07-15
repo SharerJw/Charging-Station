@@ -39,6 +39,51 @@ function request<T = any>(options: RequestOptions): Promise<T> {
   })
 }
 
+export interface Station {
+  id: string
+  name: string
+  address: string
+  latitude: number
+  longitude: number
+  distance: number
+  availableCount: number
+  totalCount: number
+  electricityPrice: number
+  servicePrice: number
+}
+
+export interface UserInfo {
+  id: string
+  nickname: string
+  phone: string
+  avatar: string
+  balance: number
+  couponCount: number
+}
+
+export interface Order {
+  id: string
+  orderNo: string
+  stationName: string
+  status: string
+  startTime: string
+  consumedEnergy: number
+  totalAmount: number
+}
+
+export interface ChargingSession {
+  orderId: string
+  stationName: string
+  deviceCode: string
+  status: 'charging' | 'completed'
+  currentSoc: number
+  power: number
+  energy: number
+  duration: number
+  cost: number
+  startTime: string
+}
+
 export const api = {
   // 充电站相关
   getStations: (params?: any) =>

@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { mockApi, type UserInfo } from '@/api/mock'
+import { api, type UserInfo } from '@/api/index'
 
 const userInfo = ref<UserInfo>({
   id: '', nickname: '', phone: '', avatar: '', balance: 0, couponCount: 0,
@@ -89,9 +89,9 @@ function maskPhone(phone: string): string {
 
 onMounted(async () => {
   try {
-    const user = await mockApi.getUserInfo()
+    const user = await api.getUserInfo()
     userInfo.value = user
-    const orders = await mockApi.getOrders()
+    const orders = await api.getOrders()
     orderCount.value = orders.length
   } catch (error) {
     console.error('加载用户信息失败:', error)

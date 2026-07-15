@@ -74,7 +74,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { mockApi, type Station, type UserInfo } from '@/api/mock'
+import { api, type Station, type UserInfo } from '@/api/index'
 
 const userInfo = ref<UserInfo>({
   id: '', nickname: '用户', phone: '', avatar: '', balance: 0, couponCount: 0,
@@ -93,8 +93,8 @@ const greeting = computed(() => {
 onMounted(async () => {
   try {
     const [user, stations] = await Promise.all([
-      mockApi.getUserInfo(),
-      mockApi.getStations(),
+      api.getUserInfo(),
+      api.getStations(),
     ])
     userInfo.value = user
     nearbyStations.value = stations.slice(0, 3)

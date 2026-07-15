@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { api } from '@/api/index'
 
 const phone = ref('')
 const code = ref('')
@@ -71,12 +72,16 @@ function handleLogin() {
     uni.showToast({ title: '请同意用户协议', icon: 'none' })
     return
   }
-  // Mock login
-  uni.setStorageSync('token', 'mock_token_' + Date.now())
-  uni.showToast({ title: '登录成功', icon: 'success' })
-  setTimeout(() => {
-    uni.switchTab({ url: '/pages/index/index' })
-  }, 1000)
+  try {
+    const result: any = await api.login({ phone: phone.value, code: code.value })
+    uni.setStorageSync('token', result.token)
+    uni.showToast({ title: '登录成功', icon: 'success' })
+    setTimeout(() => {
+      uni.switchTab({ url: '/pages/index/index' })
+    }, 1000)
+  } catch (error) {
+    uni.showToast({ title: '登录失败', icon: 'none' })
+  }
 }
 </script>
 

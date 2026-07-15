@@ -65,7 +65,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { mockApi, type ChargingSession } from '@/api/mock'
+import { api, type ChargingSession } from '@/api/index'
 
 const session = ref<ChargingSession>({
   orderId: '',
@@ -99,13 +99,13 @@ function formatDuration(seconds: number): string {
 onMounted(async () => {
   try {
     // 获取当前充电状态
-    const status = await mockApi.getChargingStatus('current')
+    const status = await api.getChargingStatus('current')
     session.value = status
 
     // 每3秒刷新一次
     refreshTimer = setInterval(async () => {
       try {
-        const updated = await mockApi.getChargingStatus(session.value.orderId)
+        const updated = await api.getChargingStatus(session.value.orderId)
         session.value = updated
         if (updated.status === 'completed') {
           if (refreshTimer) clearInterval(refreshTimer)
@@ -131,7 +131,7 @@ async function handleStop() {
     success: async (res) => {
       if (res.confirm) {
         try {
-          const result = await mockApi.stopCharging(session.value.orderId)
+          const result = await api.stopCharging(session.value.orderId)
           session.value = result
           if (refreshTimer) clearInterval(refreshTimer)
           uni.showToast({ title: '充电已停止', icon: 'success' })

@@ -39,7 +39,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { mockApi, type Order } from '@/api/mock'
+import { api, type Order } from '@/api/index'
 
 const currentTab = ref('all')
 const orders = ref<Order[]>([])
@@ -62,7 +62,7 @@ const statusLabels: Record<string, string> = {
 async function loadOrders() {
   loading.value = true
   try {
-    orders.value = await mockApi.getOrders({
+    orders.value = await api.getOrders({
       status: currentTab.value === 'all' ? undefined : currentTab.value,
     })
   } catch (error) {

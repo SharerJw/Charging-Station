@@ -70,7 +70,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
-import { mockApi, type Station } from '@/api/mock'
+import { api, type Station } from '@/api/index'
 
 const AMAP_KEY = 'c86443d9a8cd72e5a26af987f46345ca'
 const keyword = ref('')
@@ -128,7 +128,7 @@ function addMarkers() {
 async function loadStations() {
   loading.value = true
   try {
-    stations.value = await mockApi.getStations({ keyword: keyword.value || undefined })
+    stations.value = await api.getStations({ keyword: keyword.value || undefined })
   } catch (error) {
     uni.showToast({ title: '加载充电站失败', icon: 'none' })
   } finally {
