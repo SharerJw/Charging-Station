@@ -104,17 +104,41 @@ function updatePosition(lng: number, lat: number) {
 }
 
 function handleConfirm() {
-  const data = {
-    longitude: selectedLng.value,
-    latitude: selectedLat.value,
-    address: selectedAddress.value || '',
-    province: '',
-    city: '',
-    district: '',
+  // 确认时强制执行逆地理编码并等待结果
+  if (geocoder && map) {
+    geocoder.getAddress([selectedLng.value, selectedLat.value], (status: string, result: any) => {
+      let address = ''
+      let province = ''
+      let city = ''
+      let district = ''
+      if (status === 'complete' && result.regeocode) {
+        address = result.regeocode.formattedAddress || ''
+        province = result.regeocode.addressComponent?.province || ''
+        city = result.regeocode.addressComponent?.city || ''
+        district = result.regeocode.addressComponent?.district || ''
+      }
+      selectedAddress.value = address
+      emit('update:modelValue', {
+        longitude: selectedLng.value,
+        latitude: selectedLat.value,
+        address,
+        province,
+        city,
+        district,
+      })
+      setTimeout(() => emit('close'), 100)
+    })
+  } else {
+    emit('update:modelValue', {
+      longitude: selectedLng.value,
+      latitude: selectedLat.value,
+      address: '',
+      province: '',
+      city: '',
+      district: '',
+    })
+    emit('close')
   }
-  console.log('[MapPicker] 确认选点:', data)
-  emit('update:modelValue', data)
-  setTimeout(() => emit('close'), 150)
 }
 
 watch(() => props.visible, (val) => {
