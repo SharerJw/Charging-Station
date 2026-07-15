@@ -4,9 +4,39 @@ import { useOrderStore } from '@/store/order'
 import { OrderStatus } from '@/types'
 import type { FormRules } from 'element-plus'
 import DetailDrawer from './components/DetailDrawer.vue'
+import dayjs from 'dayjs'
 
 const orderStore = useOrderStore()
 const detailVisible = ref(false)
+
+// 日期范围（默认近一周）
+const dateRange = ref<[Date, Date]>([
+  dayjs().subtract(7, 'day').toDate(),
+  dayjs().toDate(),
+])
+
+function handleDateChange(dates: [Date, Date] | null) {
+  if (dates) {
+    orderStore.query.startTime = dayjs(dates[0]).format('YYYY-MM-DD')
+    orderStore.query.endTime = dayjs(dates[1]).format('YYYY-MM-DD')
+  } else {
+    orderStore.query.startTime = undefined
+    orderStore.query.endTime = undefined
+  }
+  orderStore.query.page = 1
+  orderStore.fetchList()
+}
+
+function handleReset() {
+  orderStore.query.orderNo = ''
+  orderStore.query.status = undefined
+  orderStore.query.stationId = ''
+  orderStore.query.startTime = dayjs().subtract(7, 'day').format('YYYY-MM-DD')
+  orderStore.query.endTime = dayjs().format('YYYY-MM-DD')
+  dateRange.value = [dayjs().subtract(7, 'day').toDate(), dayjs().toDate()]
+  orderStore.query.page = 1
+  orderStore.fetchList()
+}
 
 const refundRules: FormRules = {
   amount: [{ required: true, message: '请输入退款金额', trigger: 'blur' }],
@@ -51,8 +81,20 @@ function formatDuration(seconds: number): string {
             <el-option v-for="opt in orderStore.statusOptions" :key="opt.label" :label="opt.label" :value="(opt.value as any)" />
           </el-select>
         </el-form-item>
+        <el-form-item label="日期范围">
+          <el-date-picker
+            v-model="dateRange"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            style="width: 260px"
+            @change="handleDateChange"
+          />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="orderStore.handleSearch">搜索</el-button>
+          <el-button @click="handleReset">重置</el-button>
           <el-button>导出</el-button>
         </el-form-item>
       </el-form>

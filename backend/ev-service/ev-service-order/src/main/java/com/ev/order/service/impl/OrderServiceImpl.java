@@ -14,6 +14,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,6 +42,15 @@ public class OrderServiceImpl implements OrderService {
             // 管理端可通过 query.userId 做筛选，但不作为安全约束
             if (oq.getUserId() != null && userId == null) {
                 wrapper.eq(ChargingOrderEntity::getUserId, oq.getUserId());
+            }
+            // 日期范围筛选
+            if (oq.getStartTime() != null && !oq.getStartTime().isBlank()) {
+                LocalDateTime start = LocalDate.parse(oq.getStartTime(), DateTimeFormatter.ISO_LOCAL_DATE).atStartOfDay();
+                wrapper.ge(ChargingOrderEntity::getCreatedAt, start);
+            }
+            if (oq.getEndTime() != null && !oq.getEndTime().isBlank()) {
+                LocalDateTime end = LocalDate.parse(oq.getEndTime(), DateTimeFormatter.ISO_LOCAL_DATE).atTime(LocalTime.MAX);
+                wrapper.le(ChargingOrderEntity::getCreatedAt, end);
             }
         }
 

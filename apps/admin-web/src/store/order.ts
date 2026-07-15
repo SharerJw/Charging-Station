@@ -4,6 +4,7 @@ import { orderApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import type { Order, OrderQuery } from '@/types'
 import { OrderStatus } from '@/types'
+import dayjs from 'dayjs'
 
 export const useOrderStore = defineStore('order', () => {
   const list = ref<Order[]>([])
@@ -14,10 +15,13 @@ export const useOrderStore = defineStore('order', () => {
   const refundDialogVisible = ref(false)
   const refundForm = reactive({ amount: 0, reason: '' })
 
+  // 默认筛选近一周数据
   const query = reactive<OrderQuery>({
     orderNo: '',
     status: undefined,
     stationId: '',
+    startTime: dayjs().subtract(7, 'day').format('YYYY-MM-DD'),
+    endTime: dayjs().format('YYYY-MM-DD'),
     page: 1,
     size: 10,
   })
