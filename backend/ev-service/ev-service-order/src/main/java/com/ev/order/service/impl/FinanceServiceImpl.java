@@ -34,11 +34,18 @@ public class FinanceServiceImpl implements FinanceService {
         long totalElec = orders.stream().mapToLong(o -> o.getElectricityFee() != null ? o.getElectricityFee() : 0).sum();
         long totalSvc = orders.stream().mapToLong(o -> o.getServiceFee() != null ? o.getServiceFee() : 0).sum();
         long totalEnergy = orders.stream().mapToLong(o -> o.getEnergyWh() != null ? o.getEnergyWh() : 0).sum();
+        // 查询实际退款数据
+        List<ChargingOrderEntity> refundedOrders = orderMapper.selectList(
+                new LambdaQueryWrapper<ChargingOrderEntity>()
+                        .eq(ChargingOrderEntity::getStatus, "REFUNDED"));
+        long refundAmount = refundedOrders.stream()
+                .mapToLong(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0).sum();
+
         return FinanceSummaryVO.builder()
                 .totalRevenue(totalRevenue).totalElectricityFee(totalElec).totalServiceFee(totalSvc)
                 .totalOrderCount(orders.size()).totalEnergyWh(totalEnergy)
                 .avgOrderAmount(orders.isEmpty() ? 0 : totalRevenue / orders.size())
-                .refundAmount(125000L).refundCount(8)
+                .refundAmount(refundAmount).refundCount(refundedOrders.size())
                 .build();
     }
 

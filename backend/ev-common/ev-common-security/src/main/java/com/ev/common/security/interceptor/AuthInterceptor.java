@@ -23,6 +23,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             "/api/v1/ops/auth/login",
             "/api/v1/stations",
             "/api/simulator/",
+            "/internal/",
             "/actuator/",
             "/doc.html",
             "/v3/api-docs",
