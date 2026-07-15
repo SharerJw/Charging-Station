@@ -95,40 +95,17 @@ function updatePosition(lng: number, lat: number) {
 }
 
 function handleConfirm() {
-  // 确认时始终发送当前选择数据
-  if (geocoder) {
-    geocoder.getAddress([selectedLng.value, selectedLat.value], (status: string, result: any) => {
-      let address = selectedAddress.value
-      let province = ''
-      let city = ''
-      let district = ''
-      if (status === 'complete' && result.regeocode) {
-        address = result.regeocode.formattedAddress || address
-        province = result.regeocode.addressComponent?.province || ''
-        city = result.regeocode.addressComponent?.city || ''
-        district = result.regeocode.addressComponent?.district || ''
-      }
-      emit('update:modelValue', {
-        longitude: selectedLng.value,
-        latitude: selectedLat.value,
-        address,
-        province,
-        city,
-        district,
-      })
-      emit('close')
-    })
-  } else {
-    emit('update:modelValue', {
-      longitude: selectedLng.value,
-      latitude: selectedLat.value,
-      address: selectedAddress.value || '',
-      province: '',
-      city: '',
-      district: '',
-    })
-    emit('close')
+  const data = {
+    longitude: selectedLng.value,
+    latitude: selectedLat.value,
+    address: selectedAddress.value || '',
+    province: '',
+    city: '',
+    district: '',
   }
+  console.log('[MapPicker] 确认选点:', data)
+  emit('update:modelValue', data)
+  setTimeout(() => emit('close'), 150)
 }
 
 watch(() => props.visible, (val) => {

@@ -57,6 +57,7 @@ function handleMapSelect(val: { longitude: number; latitude: number; address: st
   if (val.province) stationStore.form.province = val.province
   if (val.city) stationStore.form.city = val.city
   if (val.district) stationStore.form.district = val.district
+  console.log('[MapPicker] 数据已回填:', val)
 }
 
 watch(() => stationStore.form.province, () => {
