@@ -34,6 +34,25 @@ function toggleSearch() {
     searchQuery.value = ''
   }
 }
+
+function handleSearch() {
+  if (searchQuery.value.trim()) {
+    searchVisible.value = false
+    router.push({ path: '/station', query: { keyword: searchQuery.value.trim() } })
+  }
+}
+
+function handleNotification() {
+  router.push('/alert')
+}
+
+function handleTodo() {
+  router.push({ path: '/order', query: { status: 'SETTLED' } })
+}
+
+function handleSettings() {
+  router.push('/system')
+}
 </script>
 
 <template>
@@ -57,14 +76,14 @@ function toggleSearch() {
 
       <!-- 通知 -->
       <el-badge :value="notificationCount" :max="99" class="header-badge">
-        <div class="header-icon">
+        <div class="header-icon" @click="handleNotification" title="告警通知">
           <el-icon :size="18"><Bell /></el-icon>
         </div>
       </el-badge>
 
       <!-- 待办 -->
       <el-badge :value="todoCount" :max="99" class="header-badge">
-        <div class="header-icon" title="待办事项">
+        <div class="header-icon" @click="handleTodo" title="待办事项">
           <el-icon :size="18"><el-icon-tickets /></el-icon>
         </div>
       </el-badge>
@@ -77,7 +96,7 @@ function toggleSearch() {
         </div>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item>
+            <el-dropdown-item @click="handleSettings">
               <el-icon><UserIcon /></el-icon>
               个人设置
             </el-dropdown-item>
@@ -98,6 +117,7 @@ function toggleSearch() {
         size="large"
         :prefix-icon="Search"
         autofocus
+        @keyup.enter="handleSearch"
       />
       <div class="search-hint">
         <span>支持搜索：站点名称/编号、设备编号、用户手机号、订单号</span>

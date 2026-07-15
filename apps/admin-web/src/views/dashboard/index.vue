@@ -29,13 +29,15 @@ watch(chartPeriod, (val) => {
 // KPI 卡片数据（从API获取真实数据）
 const statsCards = computed(() => {
   const s = dashboardStore.stats
+  const formatNum = (v: number) => v > 0 ? v.toLocaleString('zh-CN') : '0'
+  const formatWan = (v: number) => v >= 10000 ? (v / 10000).toFixed(1) + '万' : formatNum(v)
   return [
-    { title: '今日充电量', value: (s.todayEnergy / 1000).toFixed(1), unit: 'kWh', trend: '+12.3%', trendUp: true, color: '#1677FF', icon: '⚡' },
-    { title: '今日营收', value: '¥' + (s.todayRevenue / 100).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','), unit: '', trend: '+8.7%', trendUp: true, color: '#52C41A', icon: '💰' },
-    { title: '今日订单数', value: String(s.todayOrderCount), unit: '笔', trend: '+15.2%', trendUp: true, color: '#FAAD14', icon: '📋' },
-    { title: '站点总数', value: String(s.stationCount), unit: '个', trend: '', trendUp: true, color: '#FF4D4F', icon: '🏭' },
-    { title: '设备在线率', value: s.deviceCount > 0 ? ((s.onlineDeviceCount / s.deviceCount) * 100).toFixed(1) : '0', unit: '%', trend: '+0.3%', trendUp: true, color: '#13C2C2', icon: '🟢' },
-    { title: '累计电量', value: (s.totalEnergy / 1000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','), unit: 'kWh', trend: '', trendUp: true, color: '#722ED1', icon: '📊' },
+    { title: '今日充电量', value: formatNum(Math.round(s.todayEnergy / 1000)), unit: 'kWh', trend: '', trendUp: true, color: '#1677FF', icon: '⚡' },
+    { title: '今日营收', value: '¥' + formatWan(Math.round(s.todayRevenue / 100)), unit: '', trend: '', trendUp: true, color: '#52C41A', icon: '💰' },
+    { title: '今日订单数', value: formatNum(s.todayOrderCount), unit: '笔', trend: '', trendUp: true, color: '#FAAD14', icon: '📋' },
+    { title: '站点总数', value: formatNum(s.stationCount), unit: '个', trend: '', trendUp: true, color: '#FF4D4F', icon: '🏭' },
+    { title: '设备在线率', value: s.deviceCount > 0 ? ((s.onlineDeviceCount / s.deviceCount) * 100).toFixed(1) : '0', unit: '%', trend: '', trendUp: true, color: '#13C2C2', icon: '🟢' },
+    { title: '累计电量', value: formatNum(Math.round(s.totalEnergy / 1000)), unit: 'kWh', trend: '', trendUp: true, color: '#722ED1', icon: '📊' },
   ]
 })
 
@@ -86,12 +88,12 @@ const stationRankChart = computed(() => ({
   }],
 }))
 
-// 待办事项
+// 待办事项（跳转时携带筛选参数）
 const todoItems = ref([
-  { type: 'alert', label: '待处理告警', count: 5, color: '#FF4D4F', route: '/alert' },
-  { type: 'workorder', label: '待办工单', count: 3, color: '#FAAD14', route: '/ops' },
-  { type: 'settlement', label: '待结算订单', count: 12, color: '#1677FF', route: '/order' },
-  { type: 'refund', label: '退款审批', count: 2, color: '#722ED1', route: '/order' },
+  { type: 'alert', label: '待处理告警', count: 5, color: '#FF4D4F', route: '/alert', query: { status: 'pending' } },
+  { type: 'workorder', label: '待办工单', count: 3, color: '#FAAD14', route: '/ops', query: { status: 'pending' } },
+  { type: 'settlement', label: '待结算订单', count: 12, color: '#1677FF', route: '/order', query: { status: 'SETTLED' } },
+  { type: 'refund', label: '退款审批', count: 2, color: '#722ED1', route: '/order', query: { status: 'REFUNDING' } },
 ])
 
 const statusColors: Record<string, string> = {
@@ -185,7 +187,7 @@ function formatTime(time: string) {
         <el-card>
           <template #header><span>待办事项</span></template>
           <div class="todo-list">
-            <div v-for="item in todoItems" :key="item.type" class="todo-item" @click="router.push(item.route)">
+            <div v-for="item in todoItems" :key="item.type" class="todo-item" @click="router.push({ path: item.route, query: item.query })">
               <div class="todo-dot" :style="{ background: item.color }"></div>
               <span class="todo-label">{{ item.label }}</span>
               <span class="todo-count font-number" :style="{ color: item.color }">{{ item.count }}</span>
