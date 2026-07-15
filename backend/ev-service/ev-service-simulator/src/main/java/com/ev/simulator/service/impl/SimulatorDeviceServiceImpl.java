@@ -157,7 +157,7 @@ public class SimulatorDeviceServiceImpl implements SimulatorDeviceService {
         }
 
         // 从 station-service 获取设备（使用内部 API）
-        String url = "http://localhost:8082/internal/devices?limit=100";
+        String url = "http://localhost:8082/internal/devices?limit=1000";
         try {
             Map<String, Object> response = restTemplate.getForObject(url, Map.class);
             if (response != null && response.containsKey("data")) {

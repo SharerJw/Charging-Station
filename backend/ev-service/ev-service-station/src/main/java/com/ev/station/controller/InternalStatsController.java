@@ -53,7 +53,7 @@ public class InternalStatsController {
     @Operation(summary = "设备列表（供模拟器使用）")
     @GetMapping("/internal/devices")
     public R<List<Map<String, Object>>> devices(
-            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "100") int limit) {
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "1000") int limit) {
         List<DeviceEntity> devices = deviceMapper.selectList(
                 new LambdaQueryWrapper<DeviceEntity>()
                         .last("LIMIT " + limit));
