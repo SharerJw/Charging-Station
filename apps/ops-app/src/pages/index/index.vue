@@ -117,11 +117,17 @@ function navigateTo(url: string) {
 
 onMounted(async () => {
   try {
-    // 并行获取告警、工单、巡检数据
-    const [alerts, workorders, inspections] = await Promise.all([
+    // 并行获取告警、工单、巡检、设备统计
+    const token = uni.getStorageSync('ops_token')
+    const [alerts, workorders, inspections, deviceStats] = await Promise.all([
       api.getAlerts({ page: 1, size: 3 }).catch(() => ({ list: [] })),
       api.getWorkorders({ page: 1, size: 100 }).catch(() => ({ list: [] })),
       api.getInspections().catch(() => ({ list: [] })),
+      // 通过网关获取设备统计
+      uni.request({
+        url: 'http://localhost:8080/internal/stats',
+        header: { Authorization: `Bearer ${token}` }
+      }).then(res => res.data?.data || { onlineDeviceCount: 0 }).catch(() => ({ onlineDeviceCount: 0 })),
     ])
 
     recentAlerts.value = alerts?.list || alerts || []
@@ -130,7 +136,7 @@ onMounted(async () => {
     const inspectionList = inspections?.list || inspections || []
 
     stats.value = {
-      onlineDevices: 0, // 需要 station API 支持
+      onlineDevices: deviceStats?.onlineDeviceCount || 0,
       pendingAlerts: recentAlerts.value.filter(a => a.status === 'pending').length,
       pendingWorkorders: workorderList.filter(w => w.status === 'pending').length,
       todayInspections: inspectionList.length,
