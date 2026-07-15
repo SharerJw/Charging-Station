@@ -64,17 +64,17 @@ function formatDuration(seconds: number): string {
         <el-table-column prop="orderNo" label="订单号" width="170" />
         <el-table-column label="用户" width="120">
           <template #default="{ row }">
-            <div>{{ row.userName }}</div>
+            <div>{{ row.userNickname }}</div>
             <div class="text-xs text-gray">{{ row.userPhone }}</div>
           </template>
         </el-table-column>
         <el-table-column prop="stationName" label="充电站" min-width="150" show-overflow-tooltip />
         <el-table-column prop="deviceCode" label="设备" width="140" show-overflow-tooltip />
         <el-table-column label="电量" width="100" align="right">
-          <template #default="{ row }"><span class="font-number">{{ row.consumedEnergy || '-' }} kWh</span></template>
+          <template #default="{ row }"><span class="font-number">{{ row.energyWh || '-' }} kWh</span></template>
         </el-table-column>
         <el-table-column label="金额" width="110" align="right">
-          <template #default="{ row }"><span class="font-number amount">¥{{ row.payableAmount.toFixed(2) }}</span></template>
+          <template #default="{ row }"><span class="font-number amount">¥{{ (row.payableAmount || row.totalAmount || 0).toFixed(2) }}</span></template>
         </el-table-column>
         <el-table-column label="时长" width="80" align="center">
           <template #default="{ row }">{{ formatDuration(row.duration) }}</template>
@@ -115,7 +115,7 @@ function formatDuration(seconds: number): string {
     <el-dialog v-model="orderStore.refundDialogVisible" title="申请退款" width="480px">
       <el-form :model="orderStore.refundForm" :rules="refundRules" label-width="80px">
         <el-form-item label="退款金额">
-          <el-input-number v-model="orderStore.refundForm.amount" :min="0.01" :max="orderStore.currentOrder?.payableAmount || 0" :precision="2" style="width: 100%" />
+          <el-input-number v-model="orderStore.refundForm.amount" :min="0.01" :max="orderStore.currentOrder?.payableAmount || orderStore.currentOrder?.totalAmount || 0" :precision="2" style="width: 100%" />
         </el-form-item>
         <el-form-item label="退款原因">
           <el-input v-model="orderStore.refundForm.reason" type="textarea" :rows="3" placeholder="请输入退款原因" />
