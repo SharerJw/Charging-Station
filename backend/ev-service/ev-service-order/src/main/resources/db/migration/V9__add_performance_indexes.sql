@@ -1,5 +1,5 @@
 -- V9__add_performance_indexes.sql
--- 添加性能优化索引
+-- 添加性能优化索引（仅限 order 数据库中的表）
 
 -- ============================================
 -- 订单表索引（最频繁查询）
@@ -72,58 +72,6 @@ ON work_order(device_id);
 -- 复合索引：按租户+状态查询
 CREATE INDEX IF NOT EXISTS idx_work_order_tenant_status
 ON work_order(tenant_id, status);
-
--- ============================================
--- 站点表索引
--- ============================================
-
--- 按状态查询站点
-CREATE INDEX IF NOT EXISTS idx_station_status
-ON station(status);
-
--- 按省份查询站点
-CREATE INDEX IF NOT EXISTS idx_station_province
-ON station(province);
-
--- 按城市查询站点
-CREATE INDEX IF NOT EXISTS idx_station_city
-ON station(city);
-
--- 复合索引：按租户+状态查询
-CREATE INDEX IF NOT EXISTS idx_station_tenant_status
-ON station(tenant_id, status);
-
--- ============================================
--- 设备表索引
--- ============================================
-
--- 按站点查询设备
-CREATE INDEX IF NOT EXISTS idx_device_station_id
-ON device(station_id);
-
--- 按状态查询设备（在线、离线、充电中）
-CREATE INDEX IF NOT EXISTS idx_device_status
-ON device(status);
-
--- 复合索引：按租户+状态查询
-CREATE INDEX IF NOT EXISTS idx_device_tenant_status
-ON device(tenant_id, status);
-
--- ============================================
--- 用户表索引
--- ============================================
-
--- 按用户名查询（登录）
-CREATE UNIQUE INDEX IF NOT EXISTS idx_sys_user_username
-ON sys_user(username);
-
--- 按手机号查询
-CREATE UNIQUE INDEX IF NOT EXISTS idx_sys_user_phone
-ON sys_user(phone);
-
--- 复合索引：按租户+状态查询
-CREATE INDEX IF NOT EXISTS idx_sys_user_tenant_status
-ON sys_user(tenant_id, status);
 
 -- ============================================
 -- 支付记录表索引
