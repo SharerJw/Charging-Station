@@ -22,6 +22,9 @@ let marker: any = null
 let geocoder: any = null
 
 const selectedAddress = ref('')
+const selectedProvince = ref('')
+const selectedCity = ref('')
+const selectedDistrict = ref('')
 const selectedLng = ref(props.modelValue.longitude || 116.46)
 const selectedLat = ref(props.modelValue.latitude || 39.92)
 
@@ -91,54 +94,23 @@ function updatePosition(lng: number, lat: number) {
     if (status === 'complete' && result.regeocode) {
       const addr = result.regeocode
       selectedAddress.value = addr.formattedAddress || ''
-      emit('update:modelValue', {
-        longitude: selectedLng.value,
-        latitude: selectedLat.value,
-        address: addr.formattedAddress || '',
-        province: addr.addressComponent?.province || '',
-        city: addr.addressComponent?.city || '',
-        district: addr.addressComponent?.district || '',
-      })
+      selectedProvince.value = addr.addressComponent?.province || ''
+      selectedCity.value = addr.addressComponent?.city || ''
+      selectedDistrict.value = addr.addressComponent?.district || ''
     }
   })
 }
 
 function handleConfirm() {
-  const lng = selectedLng.value
-  const lat = selectedLat.value
-
-  // 直接发送坐标，不依赖异步地理编码
-  const data = {
-    longitude: lng,
-    latitude: lat,
-    address: selectedAddress.value || `${lng}, ${lat}`,
-    province: '',
-    city: '',
-    district: '',
-  }
-
-  // 尝试同步获取地址（如果geocoder可用）
-  if (geocoder) {
-    try {
-      geocoder.getAddress([lng, lat], (status: string, result: any) => {
-        if (status === 'complete' && result?.regeocode) {
-          const addr = result.regeocode
-          data.address = addr.formattedAddress || data.address
-          data.province = addr.addressComponent?.province || ''
-          data.city = addr.addressComponent?.city || ''
-          data.district = addr.addressComponent?.district || ''
-        }
-        emit('update:modelValue', data)
-        setTimeout(() => emit('close'), 50)
-      })
-      return // geocoder callback will emit
-    } catch (e) {
-      console.warn('[MapPicker] Geocoder error:', e)
-    }
-  }
-
-  // fallback: 直接发送坐标
-  emit('update:modelValue', data)
+  // 直接发送已存储的地理编码结果
+  emit('update:modelValue', {
+    longitude: selectedLng.value,
+    latitude: selectedLat.value,
+    address: selectedAddress.value || `${selectedLng.value}, ${selectedLat.value}`,
+    province: selectedProvince.value,
+    city: selectedCity.value,
+    district: selectedDistrict.value,
+  })
   emit('close')
 }
 
