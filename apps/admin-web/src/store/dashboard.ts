@@ -16,6 +16,13 @@ export const useDashboardStore = defineStore('dashboard', () => {
   })
   const chartData = ref<ChartData>({ dates: [], orderCounts: [], revenues: [], energies: [] })
   const recentOrders = ref<Order[]>([])
+  const stationRank = ref<any[]>([])
+  const todoCounts = ref<any>({
+    pendingAlerts: 0,
+    pendingWorkOrders: 0,
+    settledOrders: 0,
+    refundingOrders: 0,
+  })
   const loading = ref(false)
 
   async function fetchStats() {
@@ -35,14 +42,31 @@ export const useDashboardStore = defineStore('dashboard', () => {
     recentOrders.value = await dashboardApi.getRecentOrders(limit)
   }
 
+  async function fetchStationRank(limit?: number) {
+    stationRank.value = await dashboardApi.getStationRank({ limit })
+  }
+
+  async function fetchTodoCounts() {
+    todoCounts.value = await dashboardApi.getTodoCounts()
+  }
+
   async function fetchAll() {
     loading.value = true
     try {
-      await Promise.all([fetchStats(), fetchChartData(7), fetchRecentOrders(5)])
+      await Promise.all([
+        fetchStats(),
+        fetchChartData(7),
+        fetchRecentOrders(5),
+        fetchStationRank(5),
+        fetchTodoCounts(),
+      ])
     } finally {
       loading.value = false
     }
   }
 
-  return { stats, chartData, recentOrders, loading, fetchStats, fetchChartData, fetchRecentOrders, fetchAll }
+  return {
+    stats, chartData, recentOrders, stationRank, todoCounts, loading,
+    fetchStats, fetchChartData, fetchRecentOrders, fetchStationRank, fetchTodoCounts, fetchAll,
+  }
 })
