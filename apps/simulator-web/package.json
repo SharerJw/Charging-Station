@@ -9,7 +9,15 @@
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "npx playwright test",
+    "test:smoke": "npx playwright test tests/e2e/smoke/",
+    "test:integration": "npx playwright test tests/e2e/integration/",
+    "test:performance": "npx playwright test tests/e2e/performance/",
+    "test:a11y": "npx playwright test tests/e2e/accessibility/",
+    "test:screenshots": "npx playwright test tests/e2e/screenshots/",
+    "test:data": "npx playwright test tests/e2e/data-integrity/",
+    "test:report": "npx playwright show-report test-report"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
@@ -27,6 +35,7 @@
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/vite": "^4.3.2",
     "@types/node": "^24.13.2",
     "@types/nprogress": "^0.2.3",
