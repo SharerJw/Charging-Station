@@ -1,0 +1,9 @@
+TRUNCATE TABLE sys_user_role CASCADE;
+TRUNCATE TABLE sys_role_permission CASCADE;
+TRUNCATE TABLE sys_user CASCADE;
+TRUNCATE TABLE sys_role CASCADE;
+TRUNCATE TABLE sys_permission CASCADE;
+
+ALTER SEQUENCE sys_user_id_seq RESTART WITH 1;
+ALTER SEQUENCE sys_role_id_seq RESTART WITH 1;
+ALTER SEQUENCE sys_permission_id_seq RESTART WITH 1;
