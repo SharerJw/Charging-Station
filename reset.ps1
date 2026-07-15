@@ -13,6 +13,19 @@ function Ok($msg)  { Write-Host "[OK] $msg" -ForegroundColor Green }
 function Err($msg) { Write-Host "[FAIL] $msg" -ForegroundColor Red }
 function Warn($msg) { Write-Host "[WARN] $msg" -ForegroundColor Yellow }
 
+# Docker PostgreSQL 配置
+$pgContainer = "ev-postgres"
+$pgUser = "ev"
+$pgPassword = "ev123"
+
+# 执行 SQL 命令
+function Invoke-PgSql($database, $sql) {
+    $env:PGPASSWORD = $pgPassword
+    $result = docker exec $pgContainer psql -U $pgUser -d $database -c $sql 2>&1
+    $env:PGPASSWORD = $null
+    return $result
+}
+
 Write-Host ""
 Write-Host "EV Charging Platform - Database Reset" -ForegroundColor Yellow
 Write-Host "========================================" -ForegroundColor Yellow
@@ -22,6 +35,15 @@ Write-Host "  1. Stop all services" -ForegroundColor Gray
 Write-Host "  2. Drop and recreate all databases" -ForegroundColor Gray
 Write-Host "  3. Restart services (Flyway will populate seed data)" -ForegroundColor Gray
 Write-Host ""
+
+# 检查 Docker PostgreSQL 是否运行
+$pgRunning = docker ps --filter "name=$pgContainer" --format "{{.Names}}" 2>$null
+if (-not $pgRunning) {
+    Err "PostgreSQL container '$pgContainer' is not running!"
+    Log "Start it with: cd docker && docker compose up -d postgres"
+    exit 1
+}
+Ok "PostgreSQL container is running"
 
 # ============================================================
 # Step 1: Stop services
@@ -49,34 +71,20 @@ $databases = @("ev_identity", "ev_station", "ev_order")
 foreach ($db in $databases) {
     Log "  Resetting $db..."
 
-    # Terminate existing connections
-    $terminateSql = @"
-SELECT pg_terminate_backend(pid)
-FROM pg_stat_activity
-WHERE datname = '$db' AND pid <> pg_backend_pid();
-"@
+    # 终止现有连接
     try {
-        $terminateSql | psql -h localhost -U postgres -d postgres 2>&1 | Out-Null
+        Invoke-PgSql "postgres" "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$db' AND pid <> pg_backend_pid();" | Out-Null
     } catch {}
 
-    # Drop and recreate database
-    $resetSql = "DROP DATABASE IF EXISTS $db; CREATE DATABASE $db;"
+    # 删除并重建数据库
     try {
-        $resetSql | psql -h localhost -U postgres -d postgres 2>&1 | Out-Null
+        Invoke-PgSql "postgres" "DROP DATABASE IF EXISTS $db;" | Out-Null
+        Invoke-PgSql "postgres" "CREATE DATABASE $db;" | Out-Null
         Ok "$db reset complete"
     } catch {
         Err "Failed to reset $db : $_"
         exit 1
     }
-}
-
-# Also reset simulator database if exists
-$simDb = "ev_simulator"
-try {
-    "DROP DATABASE IF EXISTS $simDb; CREATE DATABASE $simDb;" | psql -h localhost -U postgres -d postgres 2>&1 | Out-Null
-    Ok "$simDb reset complete"
-} catch {
-    Warn "$simDb not found or already clean"
 }
 
 # ============================================================
