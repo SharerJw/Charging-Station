@@ -62,8 +62,8 @@ async function loadDevices() {
       keyword: searchText.value || undefined,
       status: filterStatus.value || undefined,
     })
-    simulatorStore.devices = result.list
-    totalDevices.value = result.total
+    simulatorStore.devices = result.list || []
+    totalDevices.value = result.total || 0
   } catch (error) {
     console.error('Failed to load devices:', error)
   } finally {

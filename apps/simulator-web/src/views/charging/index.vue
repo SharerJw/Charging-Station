@@ -39,7 +39,8 @@ const durationDisplay = computed(() => {
 const selectedDeviceInfo = computed(() => simulatorStore.devices.find(d => d.id === selectedDevice.value))
 
 onMounted(async () => {
-  const devices = await deviceApi.list()
+  const devicesResponse = await deviceApi.list()
+  const devices = devicesResponse?.list || devicesResponse || []
   simulatorStore.devices = devices
   // 默认选中第一个充电中的设备
   const chargingDevice = devices.find(d => d.status === 'charging')

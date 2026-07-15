@@ -70,11 +70,13 @@ onUnmounted(() => {
 })
 
 async function loadData() {
-  const [s, devices] = await Promise.all([
+  const [s, devicesResponse] = await Promise.all([
     systemApi.stats(),
     deviceApi.list(),
   ])
   stats.value = s
+  // API returns paginated response: { list: [...], total: ..., page: ..., size: ... }
+  const devices = devicesResponse?.list || devicesResponse || []
   simulatorStore.devices = devices
   selectedDevice.value = devices[0]?.id || ''
   // 初始化历史
