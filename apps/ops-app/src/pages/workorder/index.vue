@@ -53,7 +53,23 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { mockOpsApi, type WorkOrder } from '@/api/mock'
+import { api } from '@/api'
+
+interface WorkOrder {
+  id: string
+  orderNo: string
+  type: string
+  title: string
+  description: string
+  stationName: string
+  deviceCode: string
+  priority: string
+  status: string
+  creator: string
+  assignee?: string
+  result?: string
+  createTime: string
+}
 
 const currentTab = ref('all')
 const workorders = ref<WorkOrder[]>([])
@@ -89,9 +105,10 @@ const typeLabels: Record<string, string> = {
 async function loadWorkorders() {
   loading.value = true
   try {
-    workorders.value = await mockOpsApi.getWorkorders({
+    const result = await api.getWorkorders({
       status: currentTab.value === 'all' ? undefined : currentTab.value,
     })
+    workorders.value = result?.list || result || []
   } catch (error) {
     uni.showToast({ title: '加载工单失败', icon: 'none' })
   } finally {
@@ -111,7 +128,7 @@ function acceptOrder(order: WorkOrder) {
     success: async (res) => {
       if (res.confirm) {
         try {
-          await mockOpsApi.acceptWorkorder(order.id)
+          await api.acceptWorkorder(order.id)
           uni.showToast({ title: '接单成功', icon: 'success' })
           loadWorkorders()
         } catch (error) {
@@ -130,7 +147,7 @@ function completeOrder(order: WorkOrder) {
     success: async (res) => {
       if (res.confirm) {
         try {
-          await mockOpsApi.completeWorkorder(order.id, res.content || '已完成')
+          await api.completeWorkorder(order.id, { result: res.content || '已完成' })
           uni.showToast({ title: '工单已完成', icon: 'success' })
           loadWorkorders()
         } catch (error) {

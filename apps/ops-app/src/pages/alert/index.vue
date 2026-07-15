@@ -47,7 +47,20 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { mockOpsApi, type Alert } from '@/api/mock'
+import { api } from '@/api'
+
+interface Alert {
+  id: string
+  level: string
+  title: string
+  description: string
+  stationName: string
+  deviceCode: string
+  status: string
+  handler?: string
+  handleResult?: string
+  createTime: string
+}
 
 const currentTab = ref('all')
 const alerts = ref<Alert[]>([])
@@ -77,7 +90,8 @@ async function loadAlerts() {
     } else if (currentTab.value !== 'all') {
       params.level = currentTab.value
     }
-    alerts.value = await mockOpsApi.getAlerts(params)
+    const result = await api.getAlerts(params)
+    alerts.value = result?.list || result || []
   } catch (error) {
     uni.showToast({ title: '加载告警失败', icon: 'none' })
   } finally {
@@ -98,7 +112,7 @@ function handleAlert(alert: Alert) {
     success: async (res) => {
       if (res.confirm) {
         try {
-          await mockOpsApi.handleAlert(alert.id, { result: res.content || '已处理' })
+          await api.handleAlert(alert.id, { result: res.content || '已处理' })
           uni.showToast({ title: '处理成功', icon: 'success' })
           loadAlerts()
         } catch (error) {
@@ -116,7 +130,7 @@ function ignoreAlert(alert: Alert) {
     success: async (res) => {
       if (res.confirm) {
         try {
-          await mockOpsApi.ignoreAlert(alert.id)
+          await api.handleAlert(alert.id, { result: '已忽略' })
           uni.showToast({ title: '已忽略', icon: 'success' })
           loadAlerts()
         } catch (error) {

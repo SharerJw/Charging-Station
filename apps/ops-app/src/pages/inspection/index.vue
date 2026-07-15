@@ -59,7 +59,20 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { mockOpsApi, type InspectionTask } from '@/api/mock'
+import { api } from '@/api'
+
+interface InspectionTask {
+  id: string
+  name: string
+  stationName: string
+  deviceCount: number
+  itemCount: number
+  status: string
+  planTime: string
+  startTime?: string
+  completeTime?: string
+  inspector?: string
+}
 
 const tasks = ref<InspectionTask[]>([])
 const loading = ref(false)
@@ -89,7 +102,8 @@ function calculateDuration(start: string, end: string): string {
 async function loadTasks() {
   loading.value = true
   try {
-    tasks.value = await mockOpsApi.getInspections()
+    const result = await api.getInspections()
+    tasks.value = result?.list || result || []
   } catch (error) {
     uni.showToast({ title: '加载巡检任务失败', icon: 'none' })
   } finally {
@@ -104,7 +118,7 @@ function startTask(task: InspectionTask) {
     success: async (res) => {
       if (res.confirm) {
         try {
-          await mockOpsApi.startInspection(task.id)
+          await api.submitInspection(task.id, { status: 'in_progress' })
           uni.showToast({ title: '巡检已开始', icon: 'success' })
           loadTasks()
         } catch (error) {
@@ -122,7 +136,7 @@ function completeTask(task: InspectionTask) {
     success: async (res) => {
       if (res.confirm) {
         try {
-          await mockOpsApi.completeInspection(task.id)
+          await api.submitInspection(task.id, { status: 'completed' })
           uni.showToast({ title: '巡检已完成', icon: 'success' })
           loadTasks()
         } catch (error) {
