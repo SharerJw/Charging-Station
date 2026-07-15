@@ -117,14 +117,24 @@ function navigateTo(url: string) {
 
 onMounted(async () => {
   try {
-    const alerts = await api.getAlerts({ page: 1, size: 3 })
+    // 并行获取告警、工单、巡检数据
+    const [alerts, workorders, inspections] = await Promise.all([
+      api.getAlerts({ page: 1, size: 3 }).catch(() => ({ list: [] })),
+      api.getWorkorders({ page: 1, size: 100 }).catch(() => ({ list: [] })),
+      api.getInspections().catch(() => ({ list: [] })),
+    ])
+
     recentAlerts.value = alerts?.list || alerts || []
+
+    const workorderList = workorders?.list || workorders || []
+    const inspectionList = inspections?.list || inspections || []
+
     stats.value = {
-      onlineDevices: 0,
+      onlineDevices: 0, // 需要 station API 支持
       pendingAlerts: recentAlerts.value.filter(a => a.status === 'pending').length,
-      pendingWorkorders: 0,
-      todayInspections: 0,
-      completedInspections: 0,
+      pendingWorkorders: workorderList.filter(w => w.status === 'pending').length,
+      todayInspections: inspectionList.length,
+      completedInspections: inspectionList.filter(i => i.status === 'completed').length,
     }
   } catch (error) {
     console.error('加载数据失败:', error)

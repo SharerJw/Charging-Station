@@ -32,14 +32,16 @@
           <text class="workorder-time">创建: {{ order.createTime }}</text>
           <view class="workorder-actions">
             <button v-if="order.status === 'pending'" class="action-btn primary" size="mini" @tap="acceptOrder(order)">接单</button>
-            <button v-if="order.status === 'accepted'" class="action-btn success" size="mini" @tap="completeOrder(order)">完成</button>
-            <button v-if="order.status === 'completed'" class="action-btn" size="mini" disabled>已完成</button>
+            <button v-else-if="order.status === 'accepted'" class="action-btn success" size="mini" @tap="completeOrder(order)">完成</button>
+            <button v-else-if="order.status === 'completed'" class="action-btn" size="mini" disabled>已完成</button>
+            <button v-else class="action-btn" size="mini" disabled>{{ statusLabels[order.status] }}</button>
           </view>
         </view>
         <view class="workorder-result" v-if="order.result">
           <text class="result-label">处理结果:</text>
           <text class="result-text">{{ order.result }}</text>
         </view>
+        <view class="workorder-result-placeholder" v-else></view>
       </view>
     </view>
 
@@ -337,6 +339,10 @@ onMounted(() => {
   color: #333;
   margin-top: 4rpx;
   display: block;
+}
+
+.workorder-result-placeholder {
+  min-height: 24rpx;
 }
 
 .empty-state {
