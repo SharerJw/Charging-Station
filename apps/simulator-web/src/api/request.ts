@@ -47,6 +47,4 @@ export function del<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
   return service.delete(url, config)
 }
 
-export const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
-
 export default service
