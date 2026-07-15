@@ -86,6 +86,17 @@ if (-not $SkipStop) {
 # ============================================================
 Log "Step 2/4: Resetting databases..."
 
+# 确保 Docker PostgreSQL 正在运行
+$pgRunning = docker ps --filter "name=$pgContainer" --format "{{.Names}}" 2>$null
+if (-not $pgRunning) {
+    Log "  Starting PostgreSQL container..."
+    $dockerDir = Join-Path $ProjectRoot "docker"
+    Set-Location $dockerDir
+    docker compose up -d postgres 2>&1 | Out-Null
+    Set-Location $ProjectRoot
+    Start-Sleep -Seconds 5
+}
+
 $databases = @("ev_identity", "ev_station", "ev_order")
 
 foreach ($db in $databases) {
