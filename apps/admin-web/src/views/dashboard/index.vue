@@ -29,15 +29,16 @@ watch(chartPeriod, (val) => {
 // KPI 卡片数据（从API获取真实数据）
 const statsCards = computed(() => {
   const s = dashboardStore.stats
+  const t = s.trends || {}
   const formatNum = (v: number) => v > 0 ? v.toLocaleString('zh-CN') : '0'
   const formatWan = (v: number) => v >= 10000 ? (v / 10000).toFixed(1) + '万' : formatNum(v)
   return [
-    { title: '今日充电量', value: formatNum(Math.round(s.todayEnergy / 1000)), unit: 'kWh', trend: '', trendUp: true, color: '#1677FF', icon: '⚡' },
-    { title: '今日营收', value: '¥' + formatWan(Math.round(s.todayRevenue / 100)), unit: '', trend: '', trendUp: true, color: '#52C41A', icon: '💰' },
-    { title: '今日订单数', value: formatNum(s.todayOrderCount), unit: '笔', trend: '', trendUp: true, color: '#FAAD14', icon: '📋' },
-    { title: '站点总数', value: formatNum(s.stationCount), unit: '个', trend: '', trendUp: true, color: '#FF4D4F', icon: '🏭' },
-    { title: '设备在线率', value: s.deviceCount > 0 ? ((s.onlineDeviceCount / s.deviceCount) * 100).toFixed(1) : '0', unit: '%', trend: '', trendUp: true, color: '#13C2C2', icon: '🟢' },
-    { title: '累计电量', value: formatNum(Math.round(s.totalEnergy / 1000)), unit: 'kWh', trend: '', trendUp: true, color: '#722ED1', icon: '📊' },
+    { title: '今日充电量', value: formatNum(Math.round(s.todayEnergy / 1000)), unit: 'kWh', dailyTrend: t.todayEnergy?.daily ?? 0, weeklyTrend: t.todayEnergy?.weekly ?? 0, color: '#1677FF', icon: '⚡' },
+    { title: '今日营收', value: '¥' + formatWan(Math.round(s.todayRevenue / 100)), unit: '', dailyTrend: t.todayRevenue?.daily ?? 0, weeklyTrend: t.todayRevenue?.weekly ?? 0, color: '#52C41A', icon: '💰' },
+    { title: '今日订单数', value: formatNum(s.todayOrderCount), unit: '笔', dailyTrend: t.todayOrderCount?.daily ?? 0, weeklyTrend: t.todayOrderCount?.weekly ?? 0, color: '#FAAD14', icon: '📋' },
+    { title: '站点总数', value: formatNum(s.stationCount), unit: '个', dailyTrend: t.stationCount?.daily ?? 0, weeklyTrend: t.stationCount?.weekly ?? 0, color: '#FF4D4F', icon: '🏭' },
+    { title: '设备在线率', value: s.deviceCount > 0 ? ((s.onlineDeviceCount / s.deviceCount) * 100).toFixed(1) : '0', unit: '%', dailyTrend: t.onlineDeviceRate?.daily ?? 0, weeklyTrend: t.onlineDeviceRate?.weekly ?? 0, color: '#13C2C2', icon: '🟢' },
+    { title: '累计电量', value: formatNum(Math.round(s.totalEnergy / 1000)), unit: 'kWh', dailyTrend: t.totalEnergy?.daily ?? 0, weeklyTrend: t.totalEnergy?.weekly ?? 0, color: '#722ED1', icon: '📊' },
   ]
 })
 
@@ -120,8 +121,8 @@ function formatTime(time: string) {
         :title="stat.title"
         :value="stat.value"
         :unit="stat.unit"
-        :trend="stat.trend"
-        :trend-up="stat.trendUp"
+        :daily-trend="stat.dailyTrend"
+        :weekly-trend="stat.weeklyTrend"
         :icon="stat.icon"
         :color="stat.color"
         :loading="dashboardStore.loading"

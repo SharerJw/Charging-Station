@@ -1,92 +1,142 @@
 <script setup lang="ts">
-/**
- * KpiCard 组件
- * 功能: 展示单个KPI指标，含数值、单位、环比趋势、图标
- *
- * Props:
- *   - title: 指标名称
- *   - value: 当前值
- *   - unit: 单位
- *   - trend: 环比值 (如 "+12.3%")
- *   - trendUp: 趋势方向
- *   - icon: 图标emoji
- *   - color: 主题色
- *   - loading: 加载状态
- */
-
 import { computed } from 'vue'
-import Skeleton from '@/components/Skeleton.vue'
 
 const props = defineProps<{
   title: string
-  value: string | number
-  unit?: string
-  trend?: string
-  trendUp?: boolean
-  icon?: string
-  color?: string
+  value: string
+  unit: string
+  icon: string
+  color: string
+  dailyTrend?: number
+  weeklyTrend?: number
   loading?: boolean
 }>()
 
+function formatTrend(value: number): string {
+  if (value > 0) return `+${value}%`
+  if (value < 0) return `${value}%`
+  return '0%'
+}
+
+function getTrendColor(value: number): string {
+  if (value > 0) return '#52C41A'
+  if (value < 0) return '#FF4D4F'
+  return '#999'
+}
+
+function getTrendIcon(value: number): string {
+  if (value > 0) return '↑'
+  if (value < 0) return '↓'
+  return '→'
+}
+
 const displayValue = computed(() => {
-  if (typeof props.value === 'number') {
-    return props.value.toLocaleString()
-  }
+  if (props.loading) return '...'
+  if (!props.value && props.value !== '0') return '--'
   return props.value
 })
 
-const trendClass = computed(() => {
-  if (!props.trend) return ''
-  return props.trendUp ? 'trend-up' : 'trend-down'
-})
-
-const iconBg = computed(() => {
-  return `${props.color || '#1677FF'}15`
-})
+const displayDailyTrend = computed(() => props.dailyTrend || 0)
+const displayWeeklyTrend = computed(() => props.weeklyTrend || 0)
 </script>
 
 <template>
-  <el-card shadow="hover" class="kpi-card">
-    <Skeleton v-if="loading" :rows="2" />
-    <template v-else>
-      <div class="kpi-icon" :style="{ background: iconBg, color: color || '#1677FF' }">
-        {{ icon || '📊' }}
+  <div class="kpi-card" :class="{ 'is-loading': loading }">
+    <div class="kpi-icon" :style="{ background: color + '15', color }">
+      {{ icon }}
+    </div>
+    <div class="kpi-body">
+      <div class="kpi-value">
+        {{ displayValue }}
+        <span class="kpi-unit">{{ unit }}</span>
       </div>
-      <div class="kpi-body">
-        <div class="kpi-value font-number">
-          {{ displayValue }}<span class="kpi-unit">{{ unit }}</span>
-        </div>
-        <div class="kpi-bottom">
-          <span class="kpi-title">{{ title }}</span>
-          <span v-if="trend" class="kpi-trend" :class="trendClass">{{ trend }}</span>
-        </div>
+      <div class="kpi-title">{{ title }}</div>
+      <div class="kpi-trends">
+        <span class="trend-item" :style="{ color: getTrendColor(displayDailyTrend) }">
+          {{ getTrendIcon(displayDailyTrend) }} {{ formatTrend(displayDailyTrend) }}
+          <span class="trend-label">日环比</span>
+        </span>
+        <span class="trend-item" :style="{ color: getTrendColor(displayWeeklyTrend) }">
+          {{ getTrendIcon(displayWeeklyTrend) }} {{ formatTrend(displayWeeklyTrend) }}
+          <span class="trend-label">周同比</span>
+        </span>
       </div>
-    </template>
-  </el-card>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-.kpi-card { position: relative; }
-.kpi-card :deep(.el-card__body) {
-  display: flex; align-items: center; gap: 12px; padding: 16px;
+.kpi-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  transition: all 0.3s;
+}
+
+.kpi-card:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.kpi-card.is-loading {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .kpi-icon {
-  width: 48px; height: 48px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 24px; flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
 }
 
-.kpi-body { flex: 1; min-width: 0; }
-.kpi-value { font-size: 22px; font-weight: bold; color: #333; white-space: nowrap; }
-.kpi-unit { font-size: 12px; font-weight: normal; color: #999; margin-left: 2px; }
-.kpi-bottom { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
-.kpi-title { font-size: 12px; color: #999; }
+.kpi-body {
+  flex: 1;
+  min-width: 0;
+}
 
-.kpi-trend {
-  font-size: 11px; font-weight: bold; padding: 1px 6px; border-radius: 4px;
+.kpi-value {
+  font-size: 22px;
+  font-weight: bold;
+  color: #333;
   white-space: nowrap;
 }
-.trend-up { color: #52C41A; background: #F6FFED; }
-.trend-down { color: #FF4D4F; background: #FFF2F0; }
+
+.kpi-unit {
+  font-size: 12px;
+  font-weight: normal;
+  color: #999;
+  margin-left: 2px;
+}
+
+.kpi-title {
+  font-size: 12px;
+  color: #999;
+  margin-top: 2px;
+}
+
+.kpi-trends {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.trend-item {
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.trend-label {
+  color: #999;
+  font-weight: normal;
+  margin-left: 2px;
+}
 </style>

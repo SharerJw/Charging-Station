@@ -218,6 +218,11 @@ export interface ApiResponse<T = any> {
 }
 
 // 仪表盘统计
+export interface TrendData {
+  daily: number
+  weekly: number
+}
+
 export interface DashboardStats {
   stationCount: number
   deviceCount: number
@@ -227,6 +232,7 @@ export interface DashboardStats {
   monthRevenue: number
   totalEnergy: number
   todayEnergy: number
+  trends?: Record<string, TrendData>
 }
 
 export interface ChartData {
