@@ -91,6 +91,28 @@ export const mockDashboardApi = {
     await delay(200)
     return MOCK_ORDERS.slice(0, limit)
   },
+
+  async getStationRank(params?: { limit?: number; sortBy?: string }): Promise<any[]> {
+    await delay(200)
+    const limit = params?.limit || 5
+    return MOCK_STATIONS.slice(0, limit).map((s, i) => ({
+      stationId: s.id,
+      stationName: s.name,
+      revenue: Math.floor(50000 - i * 10000 + Math.random() * 5000),
+      orderCount: Math.floor(200 - i * 30 + Math.random() * 20),
+      energy: Math.floor(100000 - i * 20000 + Math.random() * 10000),
+    }))
+  },
+
+  async getTodoCounts(): Promise<any> {
+    await delay(100)
+    return {
+      pendingAlerts: 5,
+      pendingWorkOrders: 3,
+      settledOrders: 12,
+      refundingOrders: 2,
+    }
+  },
 }
 
 export const mockStationApi = {

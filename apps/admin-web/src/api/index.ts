@@ -28,6 +28,10 @@ export const dashboardApi = {
     USE_MOCK ? mockDashboardApi.getChartData(days) : get<any>('/dashboard/trend', { days }),
   getRecentOrders: (limit?: number) =>
     USE_MOCK ? mockDashboardApi.getRecentOrders(limit) : get<any>('/dashboard/recent-orders', { limit }),
+  getStationRank: (params?: { limit?: number; sortBy?: string }) =>
+    USE_MOCK ? mockDashboardApi.getStationRank(params) : get<any>('/dashboard/station-rank', params),
+  getTodoCounts: () =>
+    USE_MOCK ? mockDashboardApi.getTodoCounts() : get<any>('/dashboard/todo-counts'),
 }
 
 // ==================== 充电站管理 ====================

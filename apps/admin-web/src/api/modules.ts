@@ -6,6 +6,8 @@ export const dashboardApi = {
   getStats: () => get<DashboardStats>('/dashboard/stats'),
   getChartData: (days?: number) => get<ChartData>('/dashboard/chart', { days }),
   getRecentOrders: (limit?: number) => get<Order[]>('/dashboard/recent-orders', { limit }),
+  getStationRank: (params?: { limit?: number; sortBy?: string }) => get<any[]>('/dashboard/station-rank', params),
+  getTodoCounts: () => get<any>('/dashboard/todo-counts'),
   getAlerts: (limit?: number) => get<any[]>('/dashboard/alerts', { limit }),
 }
 
