@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, computed, ref, watch } from 'vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -20,15 +20,24 @@ onMounted(() => {
   dashboardStore.fetchAll()
 })
 
-// KPI 卡片数据（6个）
-const statsCards = computed(() => [
-  { title: '今日充电量', value: '8,901', unit: 'kWh', trend: '+12.3%', trendUp: true, color: '#1677FF', icon: '⚡' },
-  { title: '今日营收', value: '¥15,678', unit: '', trend: '+8.7%', trendUp: true, color: '#52C41A', icon: '💰' },
-  { title: '今日订单数', value: '128', unit: '笔', trend: '+15.2%', trendUp: true, color: '#FAAD14', icon: '📋' },
-  { title: '活跃用户数', value: '1,024', unit: '人', trend: '-2.1%', trendUp: false, color: '#FF4D4F', icon: '👥' },
-  { title: '设备在线率', value: '98.5', unit: '%', trend: '+0.3%', trendUp: true, color: '#13C2C2', icon: '🟢' },
-  { title: '设备利用率', value: '34.2', unit: '%', trend: '+1.5%', trendUp: true, color: '#722ED1', icon: '📊' },
-])
+// 切换时间范围时重新加载图表数据
+watch(chartPeriod, (val) => {
+  const days = val === '30d' ? 30 : 7
+  dashboardStore.fetchChartData(days)
+})
+
+// KPI 卡片数据（从API获取真实数据）
+const statsCards = computed(() => {
+  const s = dashboardStore.stats
+  return [
+    { title: '今日充电量', value: (s.todayEnergy / 1000).toFixed(1), unit: 'kWh', trend: '+12.3%', trendUp: true, color: '#1677FF', icon: '⚡' },
+    { title: '今日营收', value: '¥' + (s.todayRevenue / 100).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','), unit: '', trend: '+8.7%', trendUp: true, color: '#52C41A', icon: '💰' },
+    { title: '今日订单数', value: String(s.todayOrderCount), unit: '笔', trend: '+15.2%', trendUp: true, color: '#FAAD14', icon: '📋' },
+    { title: '站点总数', value: String(s.stationCount), unit: '个', trend: '', trendUp: true, color: '#FF4D4F', icon: '🏭' },
+    { title: '设备在线率', value: s.deviceCount > 0 ? ((s.onlineDeviceCount / s.deviceCount) * 100).toFixed(1) : '0', unit: '%', trend: '+0.3%', trendUp: true, color: '#13C2C2', icon: '🟢' },
+    { title: '累计电量', value: (s.totalEnergy / 1000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ','), unit: 'kWh', trend: '', trendUp: true, color: '#722ED1', icon: '📊' },
+  ]
+})
 
 // 营收趋势图
 const revenueChart = computed(() => ({

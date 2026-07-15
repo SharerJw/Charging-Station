@@ -56,10 +56,10 @@ const iconBg = computed(() => {
         <div class="kpi-value font-number">
           {{ displayValue }}<span class="kpi-unit">{{ unit }}</span>
         </div>
-        <div class="kpi-title">{{ title }}</div>
-      </div>
-      <div v-if="trend" class="kpi-trend" :class="trendClass">
-        {{ trend }}
+        <div class="kpi-bottom">
+          <span class="kpi-title">{{ title }}</span>
+          <span v-if="trend" class="kpi-trend" :class="trendClass">{{ trend }}</span>
+        </div>
       </div>
     </template>
   </el-card>
@@ -80,11 +80,12 @@ const iconBg = computed(() => {
 .kpi-body { flex: 1; min-width: 0; }
 .kpi-value { font-size: 22px; font-weight: bold; color: #333; white-space: nowrap; }
 .kpi-unit { font-size: 12px; font-weight: normal; color: #999; margin-left: 2px; }
-.kpi-title { font-size: 12px; color: #999; margin-top: 2px; }
+.kpi-bottom { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.kpi-title { font-size: 12px; color: #999; }
 
 .kpi-trend {
-  position: absolute; top: 12px; right: 12px;
-  font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 4px;
+  font-size: 11px; font-weight: bold; padding: 1px 6px; border-radius: 4px;
+  white-space: nowrap;
 }
 .trend-up { color: #52C41A; background: #F6FFED; }
 .trend-down { color: #FF4D4F; background: #FFF2F0; }
