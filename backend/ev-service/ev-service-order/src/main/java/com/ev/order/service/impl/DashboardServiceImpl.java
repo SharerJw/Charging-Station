@@ -62,6 +62,10 @@ public class DashboardServiceImpl implements DashboardService {
         // 从station-service获取站点和设备统计
         int[] stationDeviceCounts = fetchStationDeviceCounts();
 
+        // 计算趋势数据
+        Map<String, TrendDTO> trends = calculateTrends(
+            todayEnergy, todayRevenue, todayOrderCount, stationDeviceCounts);
+
         return DashboardStatsVO.builder()
                 .stationCount(stationDeviceCounts[0])
                 .deviceCount(stationDeviceCounts[1])
@@ -71,7 +75,73 @@ public class DashboardServiceImpl implements DashboardService {
                 .monthRevenue(monthRevenue)
                 .totalEnergy(totalEnergy)
                 .todayEnergy(todayEnergy)
+                .trends(trends)
                 .build();
+    }
+
+    /**
+     * 计算趋势百分比
+     * @param current 当前值
+     * @param previous 对比值
+     * @return 百分比变化，保留一位小数
+     */
+    private double calcPercent(long current, long previous) {
+        if (previous == 0) return current > 0 ? 100.0 : 0.0;
+        return Math.round((current - previous) * 1000.0 / previous) / 10.0;
+    }
+
+    /**
+     * 获取指定日期的订单列表
+     */
+    private List<ChargingOrderEntity> getOrdersByDate(LocalDate date) {
+        LocalDateTime dayStart = LocalDateTime.of(date, LocalTime.MIN);
+        LocalDateTime dayEnd = LocalDateTime.of(date, LocalTime.MAX);
+        return orderMapper.selectList(
+            new LambdaQueryWrapper<ChargingOrderEntity>()
+                .ge(ChargingOrderEntity::getCreatedAt, dayStart)
+                .le(ChargingOrderEntity::getCreatedAt, dayEnd));
+    }
+
+    /**
+     * 计算趋势数据
+     */
+    private Map<String, TrendDTO> calculateTrends(long todayEnergy, long todayRevenue,
+                                                   int todayOrderCount, int[] stationDeviceCounts) {
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
+        LocalDate lastWeek = today.minusWeeks(1);
+
+        // 昨日数据
+        List<ChargingOrderEntity> yesterdayOrders = getOrdersByDate(yesterday);
+        long yesterdayEnergy = yesterdayOrders.stream()
+            .mapToLong(o -> o.getEnergyWh() != null ? o.getEnergyWh() : 0).sum();
+        long yesterdayRevenue = yesterdayOrders.stream()
+            .mapToLong(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0).sum();
+        int yesterdayOrderCount = yesterdayOrders.size();
+
+        // 上周同日数据
+        List<ChargingOrderEntity> lastWeekOrders = getOrdersByDate(lastWeek);
+        long lastWeekEnergy = lastWeekOrders.stream()
+            .mapToLong(o -> o.getEnergyWh() != null ? o.getEnergyWh() : 0).sum();
+        long lastWeekRevenue = lastWeekOrders.stream()
+            .mapToLong(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0).sum();
+        int lastWeekOrderCount = lastWeekOrders.size();
+
+        Map<String, TrendDTO> trends = new HashMap<>();
+        trends.put("todayEnergy", new TrendDTO(
+            calcPercent(todayEnergy, yesterdayEnergy),
+            calcPercent(todayEnergy, lastWeekEnergy)));
+        trends.put("todayRevenue", new TrendDTO(
+            calcPercent(todayRevenue, yesterdayRevenue),
+            calcPercent(todayRevenue, lastWeekRevenue)));
+        trends.put("todayOrderCount", new TrendDTO(
+            calcPercent(todayOrderCount, yesterdayOrderCount),
+            calcPercent(todayOrderCount, lastWeekOrderCount)));
+        trends.put("stationCount", new TrendDTO(0.0, 0.0));
+        trends.put("onlineDeviceRate", new TrendDTO(0.0, 0.0));
+        trends.put("totalEnergy", new TrendDTO(0.0, 0.0));
+
+        return trends;
     }
 
     /**
