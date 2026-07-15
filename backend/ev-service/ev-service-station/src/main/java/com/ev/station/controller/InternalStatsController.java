@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 内部统计接口 — 供其他微服务调用
@@ -46,5 +48,29 @@ public class InternalStatsController {
         data.put("deviceCount", deviceCount);
         data.put("onlineDeviceCount", onlineDeviceCount);
         return R.ok(data);
+    }
+
+    @Operation(summary = "设备列表（供模拟器使用）")
+    @GetMapping("/internal/devices")
+    public R<List<Map<String, Object>>> devices(
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "100") int limit) {
+        List<DeviceEntity> devices = deviceMapper.selectList(
+                new LambdaQueryWrapper<DeviceEntity>()
+                        .last("LIMIT " + limit));
+
+        List<Map<String, Object>> result = devices.stream()
+                .map(d -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", d.getId());
+                    map.put("ocppId", d.getOcppId());
+                    map.put("name", d.getName());
+                    map.put("model", d.getModel());
+                    map.put("status", d.getStatus());
+                    map.put("ratedPower", d.getRatedPower());
+                    return map;
+                })
+                .collect(Collectors.toList());
+
+        return R.ok(result);
     }
 }
