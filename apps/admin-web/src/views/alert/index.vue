@@ -63,18 +63,33 @@ onMounted(() => {
 
 async function loadAlerts() {
   loading.value = true
-  await new Promise(r => setTimeout(r, 300))
-  const all: Alert[] = [
-    { id: 'A001', level: 'P0', title: '设备离线告警', description: '充电站 北京朝阳充电站 的充电桩 BJ-CY-001-CP03 已离线超过 10 分钟', stationName: '北京朝阳充电站', deviceCode: 'BJ-CY-001-CP03', status: 'pending', createTime: '2026-07-13 10:15:00' },
-    { id: 'A002', level: 'P1', title: '充电中断告警', description: '充电站 上海浦东快充站 的充电桩 SH-PD-001-CP01 充电过程中异常中断', stationName: '上海浦东快充站', deviceCode: 'SH-PD-001-CP01', status: 'processing', handler: '张工', createTime: '2026-07-13 09:30:00' },
-    { id: 'A003', level: 'P2', title: '温度过高告警', description: '充电桩 CP002 温度达到 52°C，超过预警阈值', stationName: '北京朝阳充电站', deviceCode: 'BJ-CY-001-CP02', status: 'pending', createTime: '2026-07-13 09:00:00' },
-    { id: 'A004', level: 'P3', title: '心跳超时告警', description: '充电桩 CP003 心跳间隔超过 60 秒', stationName: '深圳南山超充站', deviceCode: 'SZ-NS-001-CP01', status: 'resolved', handler: '李工', handleTime: '2026-07-12 18:30:00', handleResult: '设备已恢复正常', createTime: '2026-07-12 18:00:00' },
-  ]
-  let filtered = all
-  if (currentTab.value === 'pending') filtered = all.filter(a => a.status === 'pending')
-  else if (['P0', 'P1', 'P2'].includes(currentTab.value)) filtered = all.filter(a => a.level === currentTab.value)
-  alerts.value = filtered
-  loading.value = false
+  try {
+    // 根据当前标签筛选
+    let params: any = {}
+    if (currentTab.value === 'pending') {
+      params.status = 'pending'
+    } else if (['P0', 'P1', 'P2'].includes(currentTab.value)) {
+      params.level = currentTab.value
+    }
+
+    // 调用真实 API
+    const token = localStorage.getItem('admin_token')
+    const response = await fetch(`http://localhost:8080/api/v1/ops/alerts?${new URLSearchParams(params)}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const data = await response.json()
+
+    if (data.code === 0) {
+      alerts.value = data.data || []
+    } else {
+      alerts.value = []
+    }
+  } catch (error) {
+    console.error('Failed to load alerts:', error)
+    alerts.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 function openHandleDialog(alert: Alert) {
