@@ -69,6 +69,15 @@ async function initMap() {
     const lnglat = e.target.getPosition()
     updatePosition(lnglat.lng, lnglat.lat)
   })
+
+  // 点击标记也触发选点（解决标记遮挡地图点击问题）
+  marker.on('click', (e: any) => {
+    const lnglat = e.target.getPosition()
+    updatePosition(lnglat.lng, lnglat.lat)
+  })
+
+  // 初始加载时执行一次逆地理编码
+  updatePosition(selectedLng.value, selectedLat.value)
 }
 
 function updatePosition(lng: number, lat: number) {
