@@ -1,0 +1,190 @@
+{
+  "summary": {
+    "total": 30,
+    "passed": 30,
+    "failed": 0,
+    "passRate": "100.0%"
+  },
+  "results": [
+    {
+      "testId": "FE-014-A",
+      "description": "Dashboard loads and redirects to /dashboard",
+      "status": "PASS",
+      "details": "URL: http://localhost:5177/dashboard"
+    },
+    {
+      "testId": "FE-014-B",
+      "description": "Device cards are displayed on dashboard",
+      "status": "PASS",
+      "details": "Found 4 device cards"
+    },
+    {
+      "testId": "FE-014-C",
+      "description": "Dark theme background is #0B1120",
+      "status": "PASS",
+      "details": "Body background: rgb(11, 17, 32)"
+    },
+    {
+      "testId": "FE-014-D",
+      "description": "Stat cards with real-time data are displayed",
+      "status": "PASS",
+      "details": "Found 4 stat cards"
+    },
+    {
+      "testId": "FE-014-E",
+      "description": "Stat cards show non-zero real-time values",
+      "status": "PASS",
+      "details": "Values: 4, 3, 1, 12,345.67"
+    },
+    {
+      "testId": "FE-014-F",
+      "description": "ECharts canvas elements render on dashboard",
+      "status": "PASS",
+      "details": "Found 3 canvas elements"
+    },
+    {
+      "testId": "FE-014-G",
+      "description": "LIVE indicator is displayed",
+      "status": "PASS",
+      "details": "LIVE text: \"● LIVE\""
+    },
+    {
+      "testId": "FE-014-H",
+      "description": "OCPP event stream section is present",
+      "status": "PASS",
+      "details": "Found 2 events sections"
+    },
+    {
+      "testId": "FE-015-A",
+      "description": "Device management page loads",
+      "status": "PASS",
+      "details": "URL: http://localhost:5177/device"
+    },
+    {
+      "testId": "FE-015-B",
+      "description": "Device page title shows \"设备管理\"",
+      "status": "PASS",
+      "details": "Title: \"设备管理\""
+    },
+    {
+      "testId": "FE-015-C",
+      "description": "Device list loads with device cards",
+      "status": "PASS",
+      "details": "Found 3 device cards"
+    },
+    {
+      "testId": "FE-015-D",
+      "description": "Device card shows device name",
+      "status": "PASS",
+      "details": "Device name: \"充电桩-001\""
+    },
+    {
+      "testId": "FE-015-E",
+      "description": "Device status tags are displayed",
+      "status": "PASS",
+      "details": "Found 3 status tags"
+    },
+    {
+      "testId": "FE-015-F",
+      "description": "Add Device button is present",
+      "status": "PASS",
+      "details": "Found \"添加设备\" button"
+    },
+    {
+      "testId": "FE-015-G",
+      "description": "Device action buttons (reset/delete) are present",
+      "status": "PASS",
+      "details": "Reset: 3, Delete: 3"
+    },
+    {
+      "testId": "FE-016-A",
+      "description": "Accent color is #3B82F6 (tech blue)",
+      "status": "PASS",
+      "details": "--color-primary: #3B82F6"
+    },
+    {
+      "testId": "FE-016-B",
+      "description": "Card background is #111827",
+      "status": "PASS",
+      "details": "--color-bg-card: #111827"
+    },
+    {
+      "testId": "FE-016-C",
+      "description": "Sidebar has dark tech-themed styling (#111827)",
+      "status": "PASS",
+      "details": "Sidebar background: rgb(17, 24, 39)"
+    },
+    {
+      "testId": "FE-016-D",
+      "description": "Header has dark themed styling (#111827)",
+      "status": "PASS",
+      "details": "Header background: rgb(17, 24, 39)"
+    },
+    {
+      "testId": "FE-016-E",
+      "description": "Text primary color is light (#E5E7EB)",
+      "status": "PASS",
+      "details": "--color-text-primary: #E5E7EB"
+    },
+    {
+      "testId": "FE-016-F",
+      "description": "Card border color is dark (#1F2937)",
+      "status": "PASS",
+      "details": "--color-border-light: #1F2937"
+    },
+    {
+      "testId": "FE-016-G",
+      "description": "Charts render with actual data (non-blank canvas)",
+      "status": "PASS",
+      "details": "Found 3 canvas elements, hasContent: true"
+    },
+    {
+      "testId": "FE-016-H",
+      "description": "Code/number fonts use tech-themed monospace",
+      "status": "PASS",
+      "details": "--font-family-code: 'Cascadia Code', 'Fira Code', monospace"
+    },
+    {
+      "testId": "FE-017-A",
+      "description": "Clicking device card applies \"selected\" visual state",
+      "status": "PASS",
+      "details": "Class: \"device-card card selected\""
+    },
+    {
+      "testId": "FE-017-B",
+      "description": "Pause button toggles to resume state",
+      "status": "PASS",
+      "details": "Button changed to \"继续\""
+    },
+    {
+      "testId": "FE-017-C",
+      "description": "LIVE indicator shows paused state",
+      "status": "PASS",
+      "details": "Class: live-indicator paused"
+    },
+    {
+      "testId": "FE-017-D",
+      "description": "Delete button triggers confirmation dialog",
+      "status": "PASS",
+      "details": "Dialog: \"确认删除\n\n确定要删除设备「充电桩-001」吗？\n\nCancel\nOK...\""
+    },
+    {
+      "testId": "FE-017-E",
+      "description": "Add Device button opens dialog",
+      "status": "PASS",
+      "details": "Dialog is visible"
+    },
+    {
+      "testId": "FE-017-F",
+      "description": "Refresh interval selector works (clicked 1s)",
+      "status": "PASS",
+      "details": "Found 4 interval options"
+    },
+    {
+      "testId": "FE-017-G",
+      "description": "All sidebar navigation items work",
+      "status": "PASS",
+      "details": "Navigated to 5/5 pages"
+    }
+  ]
+}
