@@ -230,6 +230,7 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public List<StationRankVO> stationRank(Integer limit, String sortBy) {
         if (limit == null) limit = 5;
+        if (limit > 50) limit = 50;
 
         // Validate sortBy parameter - only allow known fields
         Set<String> allowedSortFields = Set.of("revenue", "orderCount", "energy");
@@ -239,8 +240,8 @@ public class DashboardServiceImpl implements DashboardService {
         String orderBySql;
         switch (sortByField) {
             case "orderCount": orderBySql = "order_count DESC"; break;
-            case "energy":     orderBySql = "total_energy DESC"; break;
-            default:           orderBySql = "total_revenue DESC"; break;
+            case "energy":     orderBySql = "COALESCE(total_energy, 0) DESC"; break;
+            default:           orderBySql = "COALESCE(total_revenue, 0) DESC"; break;
         }
 
         // Use SQL GROUP BY aggregation instead of loading all rows into memory
@@ -252,9 +253,7 @@ public class DashboardServiceImpl implements DashboardService {
                 "COUNT(*) AS order_count",
                 "COALESCE(SUM(energy_wh), 0) AS total_energy");
         wrapper.groupBy("station_id");
-        wrapper.orderByDesc(orderBySql.contains("total_revenue") ? "total_revenue"
-                : orderBySql.contains("order_count") ? "order_count" : "total_energy");
-        wrapper.last("LIMIT " + limit);
+        wrapper.last("ORDER BY " + orderBySql + " LIMIT " + limit);
 
         List<Map<String, Object>> rows = orderMapper.selectMaps(wrapper);
 
