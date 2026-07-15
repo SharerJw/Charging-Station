@@ -8,13 +8,21 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 @Tag(name = "模拟器-设备") @RestController @RequestMapping("/api/simulator/devices") @RequiredArgsConstructor
 public class SimulatorDeviceController {
     private final SimulatorDeviceService deviceService;
 
-    @Operation(summary = "设备列表") @GetMapping
-    public R<List<SimDeviceVO>> list() { return R.ok(deviceService.list()); }
+    @Operation(summary = "设备列表（分页+搜索）")
+    @GetMapping
+    public R<Map<String, Object>> list(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status) {
+        return R.ok(deviceService.list(page, size, keyword, status));
+    }
 
     @Operation(summary = "设备详情") @GetMapping("/{id}")
     public R<SimDeviceVO> getById(@PathVariable String id) {
@@ -41,7 +49,7 @@ public class SimulatorDeviceController {
     }
 
     @Operation(summary = "更新设备状态") @PostMapping("/{id}/status")
-    public R<SimDeviceVO> updateStatus(@PathVariable String id, @RequestBody(required = false) java.util.Map<String, Object> body) {
+    public R<SimDeviceVO> updateStatus(@PathVariable String id, @RequestBody(required = false) Map<String, Object> body) {
         String status = body != null && body.containsKey("status") ? (String) body.get("status") : "online";
         return R.ok(deviceService.updateStatus(id, status));
     }

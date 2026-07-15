@@ -1,10 +1,19 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useSimulatorStore } from '@/store/simulator'
+import { deviceApi } from '@/api'
 import type { Device } from '@/store/simulator'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const simulatorStore = useSimulatorStore()
+
+// 分页和搜索状态
+const currentPage = ref(1)
+const pageSize = ref(10)
+const totalDevices = ref(0)
+const loading = ref(false)
+const searchText = ref('')
+const filterStatus = ref('')
 
 const showAddDialog = ref(false)
 const newDevice = ref({
@@ -34,6 +43,56 @@ const statusLabels: Record<string, string> = {
   charging: '充电中',
   fault: '故障',
 }
+
+const statusOptions = [
+  { label: '全部状态', value: '' },
+  { label: '在线', value: 'online' },
+  { label: '离线', value: 'offline' },
+  { label: '充电中', value: 'charging' },
+  { label: '故障', value: 'fault' },
+]
+
+// 加载设备数据
+async function loadDevices() {
+  loading.value = true
+  try {
+    const result = await deviceApi.list({
+      page: currentPage.value,
+      size: pageSize.value,
+      keyword: searchText.value || undefined,
+      status: filterStatus.value || undefined,
+    })
+    simulatorStore.devices = result.list
+    totalDevices.value = result.total
+  } catch (error) {
+    console.error('Failed to load devices:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 搜索
+function handleSearch() {
+  currentPage.value = 1
+  loadDevices()
+}
+
+// 分页
+function handlePageChange(page: number) {
+  currentPage.value = page
+  loadDevices()
+}
+
+function handleSizeChange(size: number) {
+  pageSize.value = size
+  currentPage.value = 1
+  loadDevices()
+}
+
+// 初始化
+onMounted(() => {
+  loadDevices()
+})
 
 const handleAdd = () => {
   if (!newDevice.value.name || !newDevice.value.ocppId) {
@@ -87,7 +146,24 @@ const handleDelete = (device: Device) => {
       <el-button type="primary" @click="showAddDialog = true">添加设备</el-button>
     </div>
 
-    <div class="device-grid">
+    <!-- 搜索栏 -->
+    <div class="search-bar">
+      <el-input
+        v-model="searchText"
+        placeholder="搜索设备名称/ID/型号"
+        clearable
+        style="width: 250px"
+        @keyup.enter="handleSearch"
+        @clear="handleSearch"
+      />
+      <el-select v-model="filterStatus" placeholder="全部状态" clearable style="width: 120px" @change="handleSearch">
+        <el-option v-for="opt in statusOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+      </el-select>
+      <el-button type="primary" @click="handleSearch">搜索</el-button>
+    </div>
+
+    <!-- 设备网格 -->
+    <div class="device-grid" v-loading="loading">
       <div v-for="device in simulatorStore.devices" :key="device.id" class="device-card card">
         <div class="device-header">
           <div class="device-info">
@@ -124,6 +200,19 @@ const handleDelete = (device: Device) => {
           <el-button size="small" type="danger" @click="handleDelete(device)">删除</el-button>
         </div>
       </div>
+    </div>
+
+    <!-- 分页 -->
+    <div class="pagination-wrapper">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total="totalDevices"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        @current-change="handlePageChange"
+        @size-change="handleSizeChange"
+      />
     </div>
 
     <el-dialog v-model="showAddDialog" title="添加设备" width="500px">
@@ -165,6 +254,12 @@ const handleDelete = (device: Device) => {
   font-size: 20px;
   color: var(--text-primary);
   margin: 0;
+}
+
+.search-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .device-grid {
@@ -243,5 +338,11 @@ const handleDelete = (device: Device) => {
 
 .device-actions .el-button {
   flex: 1;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 0;
 }
 </style>

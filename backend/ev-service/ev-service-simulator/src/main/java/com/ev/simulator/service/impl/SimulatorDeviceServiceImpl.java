@@ -25,7 +25,44 @@ public class SimulatorDeviceServiceImpl implements SimulatorDeviceService {
     private static final long CACHE_TTL = 30_000; // 30秒缓存
 
     @Override
-    public List<SimDeviceVO> list() {
+    public Map<String, Object> list(int page, int size, String keyword, String status) {
+        List<SimDeviceVO> allDevices = listAll();
+
+        // 过滤
+        List<SimDeviceVO> filtered = allDevices.stream()
+            .filter(d -> {
+                if (keyword != null && !keyword.isEmpty()) {
+                    String kw = keyword.toLowerCase();
+                    return d.getName().toLowerCase().contains(kw) ||
+                           d.getOcppId().toLowerCase().contains(kw) ||
+                           d.getModel().toLowerCase().contains(kw);
+                }
+                return true;
+            })
+            .filter(d -> {
+                if (status != null && !status.isEmpty()) {
+                    return d.getStatus().equalsIgnoreCase(status);
+                }
+                return true;
+            })
+            .collect(java.util.stream.Collectors.toList());
+
+        // 分页
+        int total = filtered.size();
+        int fromIndex = Math.min((page - 1) * size, total);
+        int toIndex = Math.min(fromIndex + size, total);
+        List<SimDeviceVO> paged = filtered.subList(fromIndex, toIndex);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", paged);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("size", size);
+        return result;
+    }
+
+    @Override
+    public List<SimDeviceVO> listAll() {
         List<SimDeviceVO> result = new ArrayList<>();
 
         try {

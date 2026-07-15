@@ -18,7 +18,7 @@ public class StatsController {
 
     @Operation(summary = "统计概览") @GetMapping("/stats")
     public R<SimStatsVO> stats() {
-        var devices = deviceService.list();
+        var devices = deviceService.listAll();
         long online = devices.stream().filter(d -> "online".equals(d.getStatus())).count();
         long charging = chargingSimulator.getAllTransactions().size();
         return R.ok(SimStatsVO.builder()
@@ -31,7 +31,7 @@ public class StatsController {
 
     @Operation(summary = "实时统计") @GetMapping("/stats/realtime")
     public R<Map<String, Object>> realtime() {
-        var devices = deviceService.list();
+        var devices = deviceService.listAll();
         long online = devices.stream().filter(d -> "online".equals(d.getStatus())).count();
         long offline = devices.stream().filter(d -> "offline".equals(d.getStatus())).count();
         long charging = chargingSimulator.getAllTransactions().size();
@@ -46,6 +46,6 @@ public class StatsController {
 
     @Operation(summary = "健康检查") @GetMapping("/health")
     public R<Map<String, Object>> health() {
-        return R.ok(Map.of("status", "UP", "devices", deviceService.list().size(), "uptime", "99.9%"));
+        return R.ok(Map.of("status", "UP", "devices", deviceService.listAll().size(), "uptime", "99.9%"));
     }
 }
