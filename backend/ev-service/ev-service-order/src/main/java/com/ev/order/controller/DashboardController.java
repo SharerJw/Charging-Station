@@ -24,4 +24,11 @@ public class DashboardController {
 
     @Operation(summary = "最近告警") @GetMapping("/alerts")
     public R<List<AlertVO>> alerts(@RequestParam(required = false) Integer limit) { return R.ok(dashboardService.alerts(limit)); }
+
+    @Operation(summary = "站点排行") @GetMapping("/station-rank")
+    public R<List<StationRankVO>> stationRank(
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) String sortBy) {
+        return R.ok(dashboardService.stationRank(limit, sortBy));
+    }
 }

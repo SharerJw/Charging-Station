@@ -8,4 +8,5 @@ public interface DashboardService {
     ChartDataVO chart(Integer days);
     List<OrderVO> recentOrders(Integer limit);
     List<AlertVO> alerts(Integer limit);
+    List<StationRankVO> stationRank(Integer limit, String sortBy);
 }

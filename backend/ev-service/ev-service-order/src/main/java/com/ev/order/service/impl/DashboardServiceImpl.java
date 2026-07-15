@@ -226,6 +226,44 @@ public class DashboardServiceImpl implements DashboardService {
                         .build()).collect(Collectors.toList());
     }
 
+    @Override
+    public List<StationRankVO> stationRank(Integer limit, String sortBy) {
+        if (limit == null) limit = 5;
+        final String sortByField = (sortBy != null) ? sortBy : "revenue";
+
+        List<ChargingOrderEntity> allOrders = orderMapper.selectList(new LambdaQueryWrapper<>());
+
+        Map<Long, StationRankVO> stationMap = new LinkedHashMap<>();
+        for (ChargingOrderEntity order : allOrders) {
+            Long stationId = order.getStationId();
+            if (stationId == null) continue;
+
+            stationMap.computeIfAbsent(stationId, k -> StationRankVO.builder()
+                .stationId(stationId)
+                .stationName(order.getStationName())
+                .revenue(0L)
+                .orderCount(0)
+                .energy(0L)
+                .build());
+
+            StationRankVO rank = stationMap.get(stationId);
+            rank.setRevenue(rank.getRevenue() + (order.getTotalAmount() != null ? order.getTotalAmount() : 0));
+            rank.setOrderCount(rank.getOrderCount() + 1);
+            rank.setEnergy(rank.getEnergy() + (order.getEnergyWh() != null ? order.getEnergyWh() : 0));
+        }
+
+        return stationMap.values().stream()
+            .sorted((a, b) -> {
+                switch (sortByField) {
+                    case "orderCount": return b.getOrderCount() - a.getOrderCount();
+                    case "energy": return Long.compare(b.getEnergy(), a.getEnergy());
+                    default: return Long.compare(b.getRevenue(), a.getRevenue());
+                }
+            })
+            .limit(limit)
+            .collect(Collectors.toList());
+    }
+
     private OrderVO toVO(ChargingOrderEntity e) {
         return OrderVO.builder()
                 .id(String.valueOf(e.getId())).orderNo(e.getOrderNo())
