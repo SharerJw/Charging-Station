@@ -157,7 +157,7 @@ const socColor = computed(() => {
   <div class="charging-page">
     <!-- 左侧配置面板 -->
     <div class="config-section">
-      <div class="card">
+      <div class="card" style="animation: fade-in-up 0.5s var(--easing-spring) both">
         <h3 class="card-title">充电配置</h3>
         <el-form label-position="top">
           <el-form-item label="选择设备">
@@ -210,7 +210,7 @@ const socColor = computed(() => {
     <!-- 右侧监控面板 -->
     <div class="monitor-section">
       <!-- SOC 显示 -->
-      <div class="card soc-card">
+      <div class="card soc-card" style="animation: fade-in-scale 0.6s var(--easing-spring) 0.15s both">
         <div class="soc-display">
           <svg class="soc-ring" viewBox="0 0 200 200">
             <circle cx="100" cy="100" r="85" fill="none" stroke="#1F2937" stroke-width="12" />
@@ -233,7 +233,7 @@ const socColor = computed(() => {
       </div>
 
       <!-- 实时指标 -->
-      <div class="metrics-grid">
+      <div class="metrics-grid" style="animation: fade-in-up 0.6s var(--easing-spring) 0.25s both">
         <div class="metric-card card">
           <div class="metric-icon-wrap metric-icon-blue">
             <SvgIcon name="lightning" :size="20" color="#3B82F6" />
@@ -342,6 +342,7 @@ const socColor = computed(() => {
 
 .soc-progress {
   transition: stroke-dasharray 1s ease;
+  animation: ring-glow 3s ease-in-out infinite;
 }
 
 .soc-center {
@@ -373,6 +374,12 @@ const socColor = computed(() => {
 .metric-card {
   padding: 16px;
   text-align: center;
+  transition: transform var(--duration-normal) var(--easing-spring),
+              box-shadow var(--duration-normal);
+}
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .metric-icon-wrap {
@@ -383,7 +390,18 @@ const socColor = computed(() => {
   align-items: center;
   justify-content: center;
   margin: 0 auto 10px;
+  transition: transform var(--duration-normal) var(--easing-spring),
+              box-shadow var(--duration-normal);
 }
+.metric-card:hover .metric-icon-wrap {
+  transform: scale(1.15) rotate(-5deg);
+}
+.metric-card:hover .metric-icon-blue { box-shadow: var(--glow-blue); }
+.metric-card:hover .metric-icon-green { box-shadow: var(--glow-green); }
+.metric-card:hover .metric-icon-purple { box-shadow: var(--glow-purple); }
+.metric-card:hover .metric-icon-yellow { box-shadow: var(--glow-yellow); }
+.metric-card:hover .metric-icon-cyan { box-shadow: var(--glow-cyan); }
+.metric-card:hover .metric-icon-red { box-shadow: var(--glow-red); }
 .metric-icon-blue { background: rgba(59, 130, 246, 0.15); }
 .metric-icon-green { background: rgba(16, 185, 129, 0.15); }
 .metric-icon-purple { background: rgba(139, 92, 246, 0.15); }

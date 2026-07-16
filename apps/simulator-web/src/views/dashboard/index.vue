@@ -242,8 +242,15 @@ const eventLevelColors: Record<string, string> = {
 
 <template>
   <div class="dashboard">
+    <!-- 环境光斑背景 -->
+    <div class="ambient-bg">
+      <div class="ambient-orb orb-blue"></div>
+      <div class="ambient-orb orb-purple"></div>
+      <div class="ambient-orb orb-green"></div>
+    </div>
+
     <!-- 控制栏 -->
-    <div class="control-bar card">
+    <div class="control-bar card" style="animation: fade-in-up 0.4s var(--easing-spring) both">
       <div class="control-left">
         <span class="control-label">设备:</span>
         <DeviceSelect
@@ -269,7 +276,7 @@ const eventLevelColors: Record<string, string> = {
 
     <!-- 统计卡片 -->
     <div class="stats-grid">
-      <div class="stat-card card">
+      <div class="stat-card card" style="animation: fade-in-up 0.5s var(--easing-spring) 0.1s both">
         <div class="stat-icon-wrap stat-icon-blue">
           <SvgIcon name="device" :size="24" color="#3B82F6" />
         </div>
@@ -278,7 +285,7 @@ const eventLevelColors: Record<string, string> = {
           <div class="stat-label">设备总数</div>
         </div>
       </div>
-      <div class="stat-card card">
+      <div class="stat-card card" style="animation: fade-in-up 0.5s var(--easing-spring) 0.15s both">
         <div class="stat-icon-wrap stat-icon-green">
           <SvgIcon name="online" :size="24" color="#10B981" />
         </div>
@@ -287,7 +294,7 @@ const eventLevelColors: Record<string, string> = {
           <div class="stat-label">在线设备</div>
         </div>
       </div>
-      <div class="stat-card card">
+      <div class="stat-card card" style="animation: fade-in-up 0.5s var(--easing-spring) 0.2s both">
         <div class="stat-icon-wrap stat-icon-yellow">
           <SvgIcon name="lightning" :size="24" color="#F59E0B" />
         </div>
@@ -296,7 +303,7 @@ const eventLevelColors: Record<string, string> = {
           <div class="stat-label">充电中</div>
         </div>
       </div>
-      <div class="stat-card card">
+      <div class="stat-card card" style="animation: fade-in-up 0.5s var(--easing-spring) 0.25s both">
         <div class="stat-icon-wrap stat-icon-purple">
           <SvgIcon name="battery" :size="24" color="#8B5CF6" />
         </div>
@@ -309,24 +316,24 @@ const eventLevelColors: Record<string, string> = {
 
     <!-- 图表区域 -->
     <div class="charts-row">
-      <div class="card chart-main">
+      <div class="card chart-main" style="animation: fade-in-up 0.6s var(--easing-spring) 0.3s both">
         <h3 class="card-title">实时功率/电压/电流</h3>
         <v-chart :option="realtimeChartOption" style="height: 280px" autoresize />
       </div>
-      <div class="card chart-side">
+      <div class="card chart-side" style="animation: fade-in-up 0.6s var(--easing-spring) 0.35s both">
         <h3 class="card-title">设备状态分布</h3>
         <v-chart :option="statusPieOption" style="height: 280px" autoresize />
       </div>
     </div>
 
     <!-- SOC/温度曲线 -->
-    <div class="card">
+    <div class="card" style="animation: fade-in-up 0.6s var(--easing-spring) 0.4s both">
       <h3 class="card-title">SOC & 温度趋势</h3>
       <v-chart :option="socChartOption" style="height: 220px" autoresize />
     </div>
 
     <!-- 事件流 -->
-    <div class="card events-section">
+    <div class="card events-section" style="animation: fade-in-up 0.6s var(--easing-spring) 0.45s both">
       <h3 class="card-title">OCPP 事件流 <span class="event-count">{{ events.length }}</span></h3>
       <div class="events-list">
         <div v-for="event in events.slice(0, 20)" :key="event.messageId" class="event-item">
@@ -341,19 +348,86 @@ const eventLevelColors: Record<string, string> = {
 </template>
 
 <style scoped>
-.dashboard { display: flex; flex-direction: column; gap: 16px; }
+.dashboard { display: flex; flex-direction: column; gap: 16px; position: relative; }
+
+/* 环境光斑背景 */
+.ambient-bg {
+  position: fixed;
+  top: 0;
+  left: 200px;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.07;
+}
+.orb-blue {
+  width: 400px;
+  height: 400px;
+  background: #3B82F6;
+  top: -100px;
+  right: -50px;
+  animation: ambient-float-1 20s ease-in-out infinite;
+}
+.orb-purple {
+  width: 300px;
+  height: 300px;
+  background: #8B5CF6;
+  bottom: 100px;
+  left: 10%;
+  animation: ambient-float-2 25s ease-in-out infinite;
+}
+.orb-green {
+  width: 250px;
+  height: 250px;
+  background: #10B981;
+  top: 40%;
+  right: 20%;
+  animation: ambient-float-3 18s ease-in-out infinite;
+}
+
+/* 让内容在光斑之上 */
+.control-bar, .stats-grid, .charts-row, .events-section { position: relative; z-index: 1; }
 
 .control-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; }
 .control-left, .control-right { display: flex; align-items: center; gap: 8px; }
 .control-label { font-size: 13px; color: var(--color-text-secondary); }
 
-.live-indicator { color: #10B981; font-size: 12px; font-weight: bold; animation: blink 1.5s infinite; }
-.live-indicator.paused { color: #6B7280; animation: none; }
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.live-indicator {
+  color: #10B981;
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+.live-indicator.paused { color: #6B7280; animation: none; text-shadow: none; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .stat-card { display: flex; align-items: center; gap: 12px; padding: 16px; }
-.stat-icon-wrap { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.stat-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform var(--duration-normal) var(--easing-spring),
+              box-shadow var(--duration-normal);
+}
+.stat-card:hover .stat-icon-wrap {
+  transform: scale(1.1);
+}
+.stat-card:hover .stat-icon-blue { box-shadow: var(--glow-blue); }
+.stat-card:hover .stat-icon-green { box-shadow: var(--glow-green); }
+.stat-card:hover .stat-icon-yellow { box-shadow: var(--glow-yellow); }
+.stat-card:hover .stat-icon-purple { box-shadow: var(--glow-purple); }
 .stat-icon-blue { background: rgba(59, 130, 246, 0.15); }
 .stat-icon-green { background: rgba(16, 185, 129, 0.15); }
 .stat-icon-yellow { background: rgba(245, 158, 11, 0.15); }
@@ -369,7 +443,17 @@ const eventLevelColors: Record<string, string> = {
 
 .events-section { padding: 16px; display: flex; flex-direction: column; }
 .events-list { flex: 1; overflow-y: auto; max-height: 300px; }
-.event-item { display: flex; gap: 8px; padding: 3px 0; font-size: 12px; font-family: var(--font-family-code); }
+.event-item {
+  display: flex;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 12px;
+  font-family: var(--font-family-code);
+  animation: event-enter 0.3s var(--easing-spring) both;
+}
+.event-item:first-child {
+  animation: slide-in-left 0.3s var(--easing-spring) both;
+}
 .event-time { color: #6B7280; min-width: 70px; }
 .event-dir { min-width: 14px; text-align: center; font-weight: bold; }
 .event-dir.inbound { color: #10B981; }

@@ -66,6 +66,15 @@
   --duration-normal: 0.25s;
   --duration-slow: 0.35s;
   --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-spring: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ===== 发光效果 ===== */
+  --glow-blue: 0 0 20px rgba(59, 130, 246, 0.3), 0 0 40px rgba(59, 130, 246, 0.1);
+  --glow-green: 0 0 20px rgba(16, 185, 129, 0.3), 0 0 40px rgba(16, 185, 129, 0.1);
+  --glow-yellow: 0 0 20px rgba(245, 158, 11, 0.3), 0 0 40px rgba(245, 158, 11, 0.1);
+  --glow-purple: 0 0 20px rgba(139, 92, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.1);
+  --glow-red: 0 0 20px rgba(239, 68, 68, 0.3), 0 0 40px rgba(239, 68, 68, 0.1);
+  --glow-cyan: 0 0 20px rgba(6, 182, 212, 0.3), 0 0 40px rgba(6, 182, 212, 0.1);
 
   /* ===== 布局 ===== */
   --sidebar-width: 200px;
@@ -174,4 +183,185 @@ html, body, #app {
 .el-dialog {
   --el-dialog-bg-color: #111827;
   --el-dialog-title-font-size: 16px;
+}
+
+/* ===== 增强卡片样式（发光边框 + 悬浮效果） ===== */
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-16);
+  transition: border-color var(--duration-normal) var(--easing-default),
+              box-shadow var(--duration-normal) var(--easing-default),
+              transform var(--duration-fast) var(--easing-spring);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+  opacity: 0;
+  transition: opacity var(--duration-normal);
+}
+
+.card:hover {
+  border-color: rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.08);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+/* ===== 入场动画 ===== */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ===== 发光脉冲 ===== */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px currentColor;
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 16px currentColor, 0 0 32px currentColor;
+    opacity: 0.8;
+  }
+}
+
+/* ===== 数字跳动闪光 ===== */
+@keyframes number-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* ===== 环境光斑动画 ===== */
+@keyframes ambient-float-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.1); }
+  66% { transform: translate(-20px, 15px) scale(0.95); }
+}
+
+@keyframes ambient-float-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-25px, 30px) scale(0.9); }
+  66% { transform: translate(35px, -10px) scale(1.05); }
+}
+
+@keyframes ambient-float-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, 25px) scale(1.08); }
+}
+
+/* ===== 扫描线效果（科技感） ===== */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* ===== 事件流滑入 ===== */
+@keyframes event-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    max-height: 30px;
+  }
+}
+
+/* ===== SOC 进度环发光 ===== */
+@keyframes ring-glow {
+  0%, 100% { filter: drop-shadow(0 0 4px currentColor); }
+  50% { filter: drop-shadow(0 0 12px currentColor); }
+}
+
+/* ===== 按钮发光 ===== */
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-glow::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(from 0deg, transparent, rgba(255,255,255,0.1), transparent 30%);
+  animation: btn-glow-spin 3s linear infinite;
+}
+
+@keyframes btn-glow-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== 状态点脉冲增强 ===== */
+.status-dot.online {
+  background: var(--color-success);
+  box-shadow: 0 0 6px var(--color-success);
+  animation: glow-pulse 2s ease-in-out infinite;
+  color: var(--color-success);
+}
+
+.status-dot.charging {
+  background: var(--color-warning);
+  box-shadow: 0 0 8px var(--color-warning);
+  animation: glow-pulse 1.5s ease-in-out infinite;
+  color: var(--color-warning);
 }
