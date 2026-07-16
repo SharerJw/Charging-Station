@@ -317,10 +317,10 @@ const socColor = computed(() => {
 .info-row span:first-child { color: var(--text-secondary); }
 .info-row span:last-child { color: var(--text-primary); }
 
-.status-text.online { color: var(--color-success); }
-.status-text.offline { color: var(--color-error); }
-.status-text.charging { color: var(--color-warning); }
-.status-text.fault { color: var(--color-error); }
+.status-text.online { color: #10B981; }
+.status-text.offline { color: #EF4444; }
+.status-text.charging { color: #F59E0B; }
+.status-text.fault { color: #EF4444; }
 
 .soc-card {
   display: flex;

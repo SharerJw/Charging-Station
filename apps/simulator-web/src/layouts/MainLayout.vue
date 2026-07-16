@@ -2,12 +2,10 @@
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import SvgIcon from '@/components/SvgIcon.vue'
-import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
 const route = useRoute()
 const isCollapse = ref(false)
-const { theme, toggleTheme } = useTheme()
 
 const menuItems = [
   { index: '/dashboard', icon: 'dashboard', title: '仪表盘' },
@@ -60,9 +58,6 @@ const toggleCollapse = () => {
           </div>
         </div>
         <div class="header-right">
-          <button class="theme-toggle" @click="toggleTheme" :title="theme === 'dark' ? '切换亮色' : '切换暗色'">
-            <SvgIcon :name="theme === 'dark' ? 'sun' : 'moon'" :size="18" />
-          </button>
           <span class="version">v0.1.0</span>
         </div>
       </el-header>
@@ -75,9 +70,9 @@ const toggleCollapse = () => {
 
 <style scoped>
 .sidebar {
-  background-color: var(--color-bg-sidebar);
-  border-right: 1px solid var(--color-border-subtle);
-  transition: width 0.3s, background-color var(--duration-slow);
+  background-color: #0e1525;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  transition: width 0.3s;
   overflow: hidden;
 }
 
@@ -87,7 +82,7 @@ const toggleCollapse = () => {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-bottom: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .logo-icon {
@@ -95,19 +90,18 @@ const toggleCollapse = () => {
 }
 
 .logo-text {
-  color: var(--color-text-primary);
+  color: #E5E7EB;
   font-size: 16px;
   font-weight: bold;
 }
 
 .header {
-  background: var(--color-bg-header);
-  border-bottom: 1px solid var(--color-border-subtle);
+  background: #0e1525;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  transition: background var(--duration-slow);
 }
 
 .header-left {
@@ -119,12 +113,7 @@ const toggleCollapse = () => {
 .collapse-btn {
   font-size: 20px;
   cursor: pointer;
-  color: var(--color-text-secondary);
-  transition: color var(--duration-normal);
-}
-
-.collapse-btn:hover {
-  color: var(--color-text-primary);
+  color: #9CA3AF;
 }
 
 .connection-status {
@@ -135,43 +124,17 @@ const toggleCollapse = () => {
 
 .status-text {
   font-size: 14px;
-  color: var(--color-success);
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.theme-toggle {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: 1px solid var(--color-border-subtle);
-  background: var(--color-bg-hover);
-  color: var(--color-text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all var(--duration-normal) var(--easing-default);
-}
-
-.theme-toggle:hover {
-  background: var(--color-border-light);
-  color: var(--color-text-primary);
+  color: #10B981;
 }
 
 .version {
   font-size: 12px;
-  color: var(--color-text-tertiary);
+  color: #6B7280;
 }
 
 .main-content {
-  background: var(--color-bg-page);
+  background: #0B1120;
   padding: 24px;
   overflow-y: auto;
-  transition: background var(--duration-slow);
 }
 </style>

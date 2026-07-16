@@ -9,7 +9,6 @@ import { useSimulatorStore } from '@/store/simulator'
 import { systemApi, deviceApi } from '@/api'
 import DeviceSelect from '@/components/DeviceSelect.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
-import { useTheme } from '@/composables/useTheme'
 
 interface OcppMessage {
   messageId: string
@@ -33,7 +32,6 @@ use([
 ])
 
 const simulatorStore = useSimulatorStore()
-const { theme } = useTheme()
 const stats = ref<any>({})
 const selectedDevice = ref('')
 const refreshInterval = ref(3000)
@@ -189,30 +187,16 @@ function formatShortTime(d: Date): string {
   return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`
 }
 
-// 主题感知的图表颜色
-const chartColors = computed(() => {
-  const isDark = theme.value === 'dark'
-  return {
-    text: isDark ? '#6B7280' : '#6B7280',
-    axisLine: isDark ? '#374151' : '#E5E7EB',
-    splitLine: isDark ? '#1F2937' : '#F3F4F6',
-    legendText: isDark ? '#9CA3AF' : '#4B5563',
-    tooltipBg: isDark ? '#1F2937' : '#FFFFFF',
-    tooltipBorder: isDark ? '#374151' : '#E5E7EB',
-    tooltipText: isDark ? '#E5E7EB' : '#111827',
-  }
-})
-
 // ===== 图表配置 =====
 
 const realtimeChartOption = computed(() => ({
-  tooltip: { trigger: 'axis', backgroundColor: chartColors.value.tooltipBg, borderColor: chartColors.value.tooltipBorder, textStyle: { color: chartColors.value.tooltipText } },
-  legend: { data: ['功率(kW)', '电压(V)', '电流(A)'], textStyle: { color: chartColors.value.legendText }, top: 0 },
+  tooltip: { trigger: 'axis' },
+  legend: { data: ['功率(kW)', '电压(V)', '电流(A)'], textStyle: { color: '#9CA3AF' }, top: 0 },
   grid: { left: '3%', right: '4%', bottom: '3%', top: '40px', containLabel: true },
-  xAxis: { type: 'category', data: timeLabels.value, axisLabel: { color: chartColors.value.text, fontSize: 10 }, axisLine: { lineStyle: { color: chartColors.value.axisLine } } },
+  xAxis: { type: 'category', data: timeLabels.value, axisLabel: { color: '#6B7280', fontSize: 10 }, axisLine: { lineStyle: { color: '#374151' } } },
   yAxis: [
-    { type: 'value', name: 'kW/A', axisLabel: { color: chartColors.value.text }, splitLine: { lineStyle: { color: chartColors.value.splitLine } } },
-    { type: 'value', name: 'V', axisLabel: { color: chartColors.value.text }, splitLine: { show: false } },
+    { type: 'value', name: 'kW/A', axisLabel: { color: '#6B7280' }, splitLine: { lineStyle: { color: '#1F2937' } } },
+    { type: 'value', name: 'V', axisLabel: { color: '#6B7280' }, splitLine: { show: false } },
   ],
   series: [
     { name: '功率(kW)', type: 'line', smooth: true, data: powerHistory.value, lineStyle: { color: COLORS.primary, width: 2 }, itemStyle: { color: COLORS.primary }, areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(59,130,246,0.2)' }, { offset: 1, color: 'rgba(59,130,246,0)' }] } } },
@@ -222,10 +206,10 @@ const realtimeChartOption = computed(() => ({
 }))
 
 const socChartOption = computed(() => ({
-  tooltip: { trigger: 'axis', backgroundColor: chartColors.value.tooltipBg, borderColor: chartColors.value.tooltipBorder, textStyle: { color: chartColors.value.tooltipText } },
+  tooltip: { trigger: 'axis' },
   grid: { left: '3%', right: '4%', bottom: '3%', top: '10px', containLabel: true },
-  xAxis: { type: 'category', data: timeLabels.value, axisLabel: { color: chartColors.value.text, fontSize: 10 }, axisLine: { lineStyle: { color: chartColors.value.axisLine } } },
-  yAxis: { type: 'value', name: '%', min: 0, max: 100, axisLabel: { color: chartColors.value.text }, splitLine: { lineStyle: { color: chartColors.value.splitLine } } },
+  xAxis: { type: 'category', data: timeLabels.value, axisLabel: { color: '#6B7280', fontSize: 10 }, axisLine: { lineStyle: { color: '#374151' } } },
+  yAxis: { type: 'value', name: '%', min: 0, max: 100, axisLabel: { color: '#6B7280' }, splitLine: { lineStyle: { color: '#1F2937' } } },
   series: [
     { name: 'SOC', type: 'line', smooth: true, data: socHistory.value, lineStyle: { color: COLORS.success, width: 2 }, itemStyle: { color: COLORS.success }, areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(16,185,129,0.3)' }, { offset: 1, color: 'rgba(16,185,129,0)' }] } } },
     { name: '温度(°C)', type: 'line', smooth: true, data: tempHistory.value, lineStyle: { color: COLORS.error, width: 1.5, type: 'dashed' }, itemStyle: { color: COLORS.error } },
@@ -233,10 +217,10 @@ const socChartOption = computed(() => ({
 }))
 
 const statusPieOption = computed(() => ({
-  tooltip: { trigger: 'item', backgroundColor: chartColors.value.tooltipBg, borderColor: chartColors.value.tooltipBorder, textStyle: { color: chartColors.value.tooltipText } },
+  tooltip: { trigger: 'item' },
   series: [{
     type: 'pie', radius: ['45%', '75%'], center: ['50%', '50%'],
-    label: { color: chartColors.value.legendText, fontSize: 11 },
+    label: { color: '#9CA3AF', fontSize: 11 },
     data: [
       { value: simulatorStore.devices.filter(d => d.status === 'online').length, name: '在线', itemStyle: { color: COLORS.success } },
       { value: simulatorStore.devices.filter(d => d.status === 'charging').length, name: '充电中', itemStyle: { color: COLORS.warning } },
@@ -377,9 +361,6 @@ const eventLevelColors: Record<string, string> = {
   z-index: 0;
   overflow: hidden;
 }
-[data-theme="light"] .ambient-bg {
-  display: none;
-}
 .ambient-orb {
   position: absolute;
   border-radius: 50%;
@@ -468,10 +449,10 @@ const eventLevelColors: Record<string, string> = {
 .event-item:first-child {
   animation: slide-in-left 0.3s var(--easing-spring) both;
 }
-.event-time { color: var(--color-text-tertiary); min-width: 70px; }
+.event-time { color: #6B7280; min-width: 70px; }
 .event-dir { min-width: 14px; text-align: center; font-weight: bold; }
-.event-dir.inbound { color: var(--color-success); }
-.event-dir.outbound { color: var(--color-primary); }
-.event-source { color: var(--color-warning); min-width: 100px; }
+.event-dir.inbound { color: #10B981; }
+.event-dir.outbound { color: #3B82F6; }
+.event-source { color: #F59E0B; min-width: 100px; }
 .event-action { font-weight: bold; }
 </style>
