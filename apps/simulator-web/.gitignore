@@ -18,6 +18,11 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+
+# Test artifacts
+test-results/
+test-report/
+playwright-report/
 *.suo
 *.ntvs*
 *.njsproj
