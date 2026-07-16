@@ -68,13 +68,13 @@
   --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
   --easing-spring: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* ===== 发光效果 ===== */
-  --glow-blue: 0 0 20px rgba(59, 130, 246, 0.3), 0 0 40px rgba(59, 130, 246, 0.1);
-  --glow-green: 0 0 20px rgba(16, 185, 129, 0.3), 0 0 40px rgba(16, 185, 129, 0.1);
-  --glow-yellow: 0 0 20px rgba(245, 158, 11, 0.3), 0 0 40px rgba(245, 158, 11, 0.1);
-  --glow-purple: 0 0 20px rgba(139, 92, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.1);
-  --glow-red: 0 0 20px rgba(239, 68, 68, 0.3), 0 0 40px rgba(239, 68, 68, 0.1);
-  --glow-cyan: 0 0 20px rgba(6, 182, 212, 0.3), 0 0 40px rgba(6, 182, 212, 0.1);
+  /* ===== 发光效果（极柔和） ===== */
+  --glow-blue: 0 0 12px rgba(59, 130, 246, 0.15);
+  --glow-green: 0 0 12px rgba(16, 185, 129, 0.15);
+  --glow-yellow: 0 0 12px rgba(245, 158, 11, 0.15);
+  --glow-purple: 0 0 12px rgba(139, 92, 246, 0.15);
+  --glow-red: 0 0 12px rgba(239, 68, 68, 0.15);
+  --glow-cyan: 0 0 12px rgba(6, 182, 212, 0.15);
 
   /* ===== 布局 ===== */
   --sidebar-width: 200px;
@@ -134,14 +134,15 @@ html, body, #app {
 
 .status-dot.online {
   background: var(--color-success);
-  box-shadow: 0 0 6px var(--color-success);
+  box-shadow: 0 0 4px rgba(16, 185, 129, 0.25);
 }
 
 .status-dot.offline { background: var(--color-error); }
 
 .status-dot.charging {
   background: var(--color-warning);
-  animation: pulse 1.5s infinite;
+  box-shadow: 0 0 4px rgba(245, 158, 11, 0.25);
+  animation: glow-pulse 2.5s ease-in-out infinite;
 }
 
 @keyframes pulse {
@@ -185,38 +186,23 @@ html, body, #app {
   --el-dialog-title-font-size: 16px;
 }
 
-/* ===== 增强卡片样式（发光边框 + 悬浮效果） ===== */
+/* ===== 增强卡片样式（无边框 + 微妙深度） ===== */
 .card {
   background: var(--color-bg-card);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
   padding: var(--space-16);
-  transition: border-color var(--duration-normal) var(--easing-default),
+  transition: background var(--duration-normal) var(--easing-default),
               box-shadow var(--duration-normal) var(--easing-default),
               transform var(--duration-fast) var(--easing-spring);
   position: relative;
   overflow: hidden;
-}
-
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
-  opacity: 0;
-  transition: opacity var(--duration-normal);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .card:hover {
-  border-color: rgba(59, 130, 246, 0.2);
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.08);
-}
-
-.card:hover::before {
-  opacity: 1;
+  background: #151d2e;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 /* ===== 入场动画 ===== */
@@ -264,15 +250,13 @@ html, body, #app {
   }
 }
 
-/* ===== 发光脉冲 ===== */
+/* ===== 发光脉冲（柔和版） ===== */
 @keyframes glow-pulse {
   0%, 100% {
-    box-shadow: 0 0 8px currentColor;
     opacity: 1;
   }
   50% {
-    box-shadow: 0 0 16px currentColor, 0 0 32px currentColor;
-    opacity: 0.8;
+    opacity: 0.7;
   }
 }
 
@@ -351,17 +335,17 @@ html, body, #app {
   to { transform: rotate(360deg); }
 }
 
-/* ===== 状态点脉冲增强 ===== */
+/* ===== 状态点脉冲（柔和） ===== */
 .status-dot.online {
   background: var(--color-success);
-  box-shadow: 0 0 6px var(--color-success);
-  animation: glow-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.3);
+  animation: glow-pulse 2.5s ease-in-out infinite;
   color: var(--color-success);
 }
 
 .status-dot.charging {
   background: var(--color-warning);
-  box-shadow: 0 0 8px var(--color-warning);
-  animation: glow-pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.3);
+  animation: glow-pulse 2s ease-in-out infinite;
   color: var(--color-warning);
 }

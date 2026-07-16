@@ -70,8 +70,8 @@ const toggleCollapse = () => {
 
 <style scoped>
 .sidebar {
-  background-color: #111827;
-  border-right: 1px solid #1F2937;
+  background-color: #0e1525;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
   transition: width 0.3s;
   overflow: hidden;
 }
@@ -82,7 +82,7 @@ const toggleCollapse = () => {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-bottom: 1px solid #1F2937;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .logo-icon {
@@ -96,8 +96,8 @@ const toggleCollapse = () => {
 }
 
 .header {
-  background: #111827;
-  border-bottom: 1px solid #1F2937;
+  background: #0e1525;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   display: flex;
   align-items: center;
   justify-content: space-between;

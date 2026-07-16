@@ -364,8 +364,8 @@ const eventLevelColors: Record<string, string> = {
 .ambient-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.07;
+  filter: blur(120px);
+  opacity: 0.03;
 }
 .orb-blue {
   width: 400px;
@@ -402,11 +402,11 @@ const eventLevelColors: Record<string, string> = {
 .live-indicator {
   color: #10B981;
   font-size: 12px;
-  font-weight: bold;
-  text-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
-  animation: glow-pulse 2s ease-in-out infinite;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  animation: glow-pulse 2.5s ease-in-out infinite;
 }
-.live-indicator.paused { color: #6B7280; animation: none; text-shadow: none; }
+.live-indicator.paused { color: #6B7280; animation: none; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .stat-card { display: flex; align-items: center; gap: 12px; padding: 16px; }
@@ -418,16 +418,11 @@ const eventLevelColors: Record<string, string> = {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform var(--duration-normal) var(--easing-spring),
-              box-shadow var(--duration-normal);
+  transition: transform var(--duration-normal) var(--easing-spring);
 }
 .stat-card:hover .stat-icon-wrap {
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
-.stat-card:hover .stat-icon-blue { box-shadow: var(--glow-blue); }
-.stat-card:hover .stat-icon-green { box-shadow: var(--glow-green); }
-.stat-card:hover .stat-icon-yellow { box-shadow: var(--glow-yellow); }
-.stat-card:hover .stat-icon-purple { box-shadow: var(--glow-purple); }
 .stat-icon-blue { background: rgba(59, 130, 246, 0.15); }
 .stat-icon-green { background: rgba(16, 185, 129, 0.15); }
 .stat-icon-yellow { background: rgba(245, 158, 11, 0.15); }

@@ -342,7 +342,7 @@ const socColor = computed(() => {
 
 .soc-progress {
   transition: stroke-dasharray 1s ease;
-  animation: ring-glow 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 3px currentColor);
 }
 
 .soc-center {
@@ -374,12 +374,12 @@ const socColor = computed(() => {
 .metric-card {
   padding: 16px;
   text-align: center;
-  transition: transform var(--duration-normal) var(--easing-spring),
-              box-shadow var(--duration-normal);
+  transition: background var(--duration-normal) var(--easing-default),
+              transform var(--duration-normal) var(--easing-spring);
 }
 .metric-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transform: translateY(-1px);
+  background: #151d2e;
 }
 
 .metric-icon-wrap {
@@ -390,18 +390,11 @@ const socColor = computed(() => {
   align-items: center;
   justify-content: center;
   margin: 0 auto 10px;
-  transition: transform var(--duration-normal) var(--easing-spring),
-              box-shadow var(--duration-normal);
+  transition: transform var(--duration-normal) var(--easing-spring);
 }
 .metric-card:hover .metric-icon-wrap {
-  transform: scale(1.15) rotate(-5deg);
+  transform: scale(1.05);
 }
-.metric-card:hover .metric-icon-blue { box-shadow: var(--glow-blue); }
-.metric-card:hover .metric-icon-green { box-shadow: var(--glow-green); }
-.metric-card:hover .metric-icon-purple { box-shadow: var(--glow-purple); }
-.metric-card:hover .metric-icon-yellow { box-shadow: var(--glow-yellow); }
-.metric-card:hover .metric-icon-cyan { box-shadow: var(--glow-cyan); }
-.metric-card:hover .metric-icon-red { box-shadow: var(--glow-red); }
 .metric-icon-blue { background: rgba(59, 130, 246, 0.15); }
 .metric-icon-green { background: rgba(16, 185, 129, 0.15); }
 .metric-icon-purple { background: rgba(139, 92, 246, 0.15); }
