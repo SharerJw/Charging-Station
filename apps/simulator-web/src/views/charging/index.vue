@@ -4,6 +4,7 @@ import { useSimulatorStore } from '@/store/simulator'
 import { chargingApi, deviceApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import DeviceSelect from '@/components/DeviceSelect.vue'
+import SvgIcon from '@/components/SvgIcon.vue'
 
 const simulatorStore = useSimulatorStore()
 
@@ -181,7 +182,8 @@ const socColor = computed(() => {
               @click="startCharging"
               :disabled="!selectedDevice"
             >
-              ⚡ 开始充电
+              <SvgIcon name="lightning" :size="16" color="#FFFFFF" style="margin-right: 6px;" />
+              开始充电
             </el-button>
             <el-button
               v-else
@@ -190,7 +192,8 @@ const socColor = computed(() => {
               style="width: 100%"
               @click="stopCharging"
             >
-              ⏹ 停止充电
+              <SvgIcon name="stop" :size="16" color="#FFFFFF" style="margin-right: 6px;" />
+              停止充电
             </el-button>
           </el-form-item>
         </el-form>
@@ -232,37 +235,49 @@ const socColor = computed(() => {
       <!-- 实时指标 -->
       <div class="metrics-grid">
         <div class="metric-card card">
-          <div class="metric-icon">⚡</div>
+          <div class="metric-icon-wrap metric-icon-blue">
+            <SvgIcon name="lightning" :size="20" color="#3B82F6" />
+          </div>
           <div class="metric-value font-number">{{ chargingData.power.toFixed(2) }}</div>
           <div class="metric-unit">kW</div>
           <div class="metric-label">实时功率</div>
         </div>
         <div class="metric-card card">
-          <div class="metric-icon">🔋</div>
+          <div class="metric-icon-wrap metric-icon-green">
+            <SvgIcon name="battery" :size="20" color="#10B981" />
+          </div>
           <div class="metric-value font-number">{{ chargingData.energy.toFixed(2) }}</div>
           <div class="metric-unit">kWh</div>
           <div class="metric-label">已充电量</div>
         </div>
         <div class="metric-card card">
-          <div class="metric-icon">⏱</div>
+          <div class="metric-icon-wrap metric-icon-purple">
+            <SvgIcon name="timer" :size="20" color="#8B5CF6" />
+          </div>
           <div class="metric-value font-number">{{ durationDisplay }}</div>
           <div class="metric-unit">&nbsp;</div>
           <div class="metric-label">充电时长</div>
         </div>
         <div class="metric-card card">
-          <div class="metric-icon">💰</div>
+          <div class="metric-icon-wrap metric-icon-yellow">
+            <SvgIcon name="money" :size="20" color="#F59E0B" />
+          </div>
           <div class="metric-value font-number">¥{{ chargingData.cost.toFixed(2) }}</div>
           <div class="metric-unit">&nbsp;</div>
           <div class="metric-label">预计费用</div>
         </div>
         <div class="metric-card card">
-          <div class="metric-icon">🔌</div>
+          <div class="metric-icon-wrap metric-icon-cyan">
+            <SvgIcon name="plug" :size="20" color="#06B6D4" />
+          </div>
           <div class="metric-value font-number">{{ chargingData.voltage.toFixed(2) }}</div>
           <div class="metric-unit">V</div>
           <div class="metric-label">电压</div>
         </div>
         <div class="metric-card card">
-          <div class="metric-icon">🌡</div>
+          <div class="metric-icon-wrap metric-icon-red">
+            <SvgIcon name="temperature" :size="20" color="#EF4444" />
+          </div>
           <div class="metric-value font-number">{{ chargingData.temperature.toFixed(2) }}</div>
           <div class="metric-unit">°C</div>
           <div class="metric-label">温度</div>
@@ -360,10 +375,21 @@ const socColor = computed(() => {
   text-align: center;
 }
 
-.metric-icon {
-  font-size: 24px;
-  margin-bottom: 8px;
+.metric-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
 }
+.metric-icon-blue { background: rgba(59, 130, 246, 0.15); }
+.metric-icon-green { background: rgba(16, 185, 129, 0.15); }
+.metric-icon-purple { background: rgba(139, 92, 246, 0.15); }
+.metric-icon-yellow { background: rgba(245, 158, 11, 0.15); }
+.metric-icon-cyan { background: rgba(6, 182, 212, 0.15); }
+.metric-icon-red { background: rgba(239, 68, 68, 0.15); }
 
 .metric-value {
   font-size: 24px;

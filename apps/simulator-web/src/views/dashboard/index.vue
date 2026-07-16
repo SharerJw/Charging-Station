@@ -8,6 +8,7 @@ import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/compon
 import { useSimulatorStore } from '@/store/simulator'
 import { systemApi, deviceApi } from '@/api'
 import DeviceSelect from '@/components/DeviceSelect.vue'
+import SvgIcon from '@/components/SvgIcon.vue'
 
 interface OcppMessage {
   messageId: string
@@ -269,28 +270,36 @@ const eventLevelColors: Record<string, string> = {
     <!-- 统计卡片 -->
     <div class="stats-grid">
       <div class="stat-card card">
-        <div class="stat-icon">🏭</div>
+        <div class="stat-icon-wrap stat-icon-blue">
+          <SvgIcon name="device" :size="24" color="#3B82F6" />
+        </div>
         <div class="stat-info">
           <div class="stat-value font-number">{{ stats.totalDevices || 0 }}</div>
           <div class="stat-label">设备总数</div>
         </div>
       </div>
       <div class="stat-card card">
-        <div class="stat-icon">🟢</div>
+        <div class="stat-icon-wrap stat-icon-green">
+          <SvgIcon name="online" :size="24" color="#10B981" />
+        </div>
         <div class="stat-info">
           <div class="stat-value font-number">{{ stats.onlineDevices || 0 }}</div>
           <div class="stat-label">在线设备</div>
         </div>
       </div>
       <div class="stat-card card">
-        <div class="stat-icon">⚡</div>
+        <div class="stat-icon-wrap stat-icon-yellow">
+          <SvgIcon name="lightning" :size="24" color="#F59E0B" />
+        </div>
         <div class="stat-info">
           <div class="stat-value font-number">{{ stats.chargingDevices || 0 }}</div>
           <div class="stat-label">充电中</div>
         </div>
       </div>
       <div class="stat-card card">
-        <div class="stat-icon">🔋</div>
+        <div class="stat-icon-wrap stat-icon-purple">
+          <SvgIcon name="battery" :size="24" color="#8B5CF6" />
+        </div>
         <div class="stat-info">
           <div class="stat-value font-number">{{ (stats.totalEnergy || 0).toLocaleString() }}</div>
           <div class="stat-label">累计电量(kWh)</div>
@@ -344,7 +353,11 @@ const eventLevelColors: Record<string, string> = {
 
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .stat-card { display: flex; align-items: center; gap: 12px; padding: 16px; }
-.stat-icon { font-size: 28px; }
+.stat-icon-wrap { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.stat-icon-blue { background: rgba(59, 130, 246, 0.15); }
+.stat-icon-green { background: rgba(16, 185, 129, 0.15); }
+.stat-icon-yellow { background: rgba(245, 158, 11, 0.15); }
+.stat-icon-purple { background: rgba(139, 92, 246, 0.15); }
 .stat-value { font-size: 24px; font-weight: bold; color: var(--color-text-primary); }
 .stat-label { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
 

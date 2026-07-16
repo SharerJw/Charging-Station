@@ -1,26 +1,18 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import {
-  Monitor,
-  Lightning,
-  Cpu,
-  Connection,
-  Document,
-  Fold,
-  Expand,
-} from '@element-plus/icons-vue'
+import SvgIcon from '@/components/SvgIcon.vue'
 
 const router = useRouter()
 const route = useRoute()
 const isCollapse = ref(false)
 
 const menuItems = [
-  { index: '/dashboard', icon: Monitor, title: '仪表盘' },
-  { index: '/charging', icon: Lightning, title: '充电模拟' },
-  { index: '/device', icon: Cpu, title: '设备管理' },
-  { index: '/scenario', icon: Connection, title: '场景编排' },
-  { index: '/logs', icon: Document, title: '日志终端' },
+  { index: '/dashboard', icon: 'dashboard', title: '仪表盘' },
+  { index: '/charging', icon: 'lightning', title: '充电模拟' },
+  { index: '/device', icon: 'device', title: '设备管理' },
+  { index: '/scenario', icon: 'scenario', title: '场景编排' },
+  { index: '/logs', icon: 'terminal', title: '日志终端' },
 ]
 
 const handleMenuSelect = (index: string) => {
@@ -36,7 +28,7 @@ const toggleCollapse = () => {
   <el-container class="h-screen">
     <el-aside :width="isCollapse ? '64px' : '200px'" class="sidebar">
       <div class="logo">
-        <span class="logo-icon">⚡</span>
+        <SvgIcon name="lightning" :size="24" color="#3B82F6" />
         <span v-if="!isCollapse" class="logo-text">EV充电模拟器</span>
       </div>
       <el-menu
@@ -48,7 +40,7 @@ const toggleCollapse = () => {
         @select="handleMenuSelect"
       >
         <el-menu-item v-for="item in menuItems" :key="item.index" :index="item.index">
-          <el-icon><component :is="item.icon" /></el-icon>
+          <el-icon><SvgIcon :name="item.icon" :size="18" /></el-icon>
           <template #title>{{ item.title }}</template>
         </el-menu-item>
       </el-menu>
@@ -57,8 +49,8 @@ const toggleCollapse = () => {
       <el-header class="header">
         <div class="header-left">
           <el-icon class="collapse-btn" @click="toggleCollapse">
-            <Fold v-if="!isCollapse" />
-            <Expand v-else />
+            <SvgIcon v-if="!isCollapse" name="collapse" :size="18" />
+            <SvgIcon v-else name="expand" :size="18" />
           </el-icon>
           <div class="connection-status">
             <span class="status-dot online"></span>
