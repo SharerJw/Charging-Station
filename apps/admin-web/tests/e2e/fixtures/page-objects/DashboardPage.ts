@@ -1,4 +1,5 @@
 import { type Page, type Locator } from '@playwright/test'
+import { setupApiMocks } from '../api-mocks'
 
 export class DashboardPage {
   readonly page: Page
@@ -20,8 +21,9 @@ export class DashboardPage {
   }
 
   async goto() {
+    await setupApiMocks(this.page)
     await this.page.goto('/dashboard')
-    await this.page.waitForLoadState('networkidle')
+    await this.page.waitForLoadState('domcontentloaded')
   }
 
   async waitForLoad() {

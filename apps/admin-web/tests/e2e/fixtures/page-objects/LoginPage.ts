@@ -1,4 +1,5 @@
 import { type Page, type Locator } from '@playwright/test'
+import { setupApiMocks } from '../api-mocks'
 
 export class LoginPage {
   readonly page: Page
@@ -22,8 +23,9 @@ export class LoginPage {
   }
 
   async goto() {
+    await setupApiMocks(this.page)
     await this.page.goto('/login')
-    await this.page.waitForLoadState('networkidle')
+    await this.page.waitForLoadState('domcontentloaded')
   }
 
   async waitForLoad() {

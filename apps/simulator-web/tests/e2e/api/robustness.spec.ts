@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-const API = '/api/simulator'
+const API = 'http://localhost:5177/api/simulator'
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
