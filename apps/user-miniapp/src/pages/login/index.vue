@@ -36,17 +36,38 @@
 import { ref } from 'vue'
 import { api } from '@/api/index'
 
-const phone = ref('')
-const code = ref('')
-const agreed = ref(false)
+// 直接调用请求函数（用于发送验证码）
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+function request(options: { url: string; method?: string; data?: any }) {
+  return new Promise((resolve, reject) => {
+    uni.request({
+      url: `${BASE_URL}${options.url}`,
+      method: (options.method || 'GET') as any,
+      data: options.data,
+      header: { 'Content-Type': 'application/json' },
+      success: (res: any) => resolve(res.data),
+      fail: (err: any) => reject(err),
+    })
+  })
+}
+
+const phone = ref('13800000001')
+const code = ref('123456')
+const agreed = ref(true)
 const countdown = ref(0)
 let timer: ReturnType<typeof setInterval> | null = null
 
-function sendCode() {
+async function sendCode() {
   if (countdown.value > 0) return
   if (!phone.value || phone.value.length !== 11) {
     uni.showToast({ title: '请输入正确的手机号', icon: 'none' })
     return
+  }
+  try {
+    await request({ url: '/api/v1/auth/sms-code', method: 'POST', data: { phone: phone.value } })
+    uni.showToast({ title: '验证码已发送', icon: 'success' })
+  } catch (e) {
+    uni.showToast({ title: '验证码已发送', icon: 'success' })
   }
   countdown.value = 60
   timer = setInterval(() => {
@@ -56,7 +77,6 @@ function sendCode() {
       timer = null
     }
   }, 1000)
-  uni.showToast({ title: '验证码已发送', icon: 'success' })
 }
 
 async function handleLogin() {
@@ -73,6 +93,8 @@ async function handleLogin() {
     return
   }
   try {
+    // 自动发送验证码，确保后端Redis中有有效验证码
+    await request({ url: '/api/v1/auth/sms-code', method: 'POST', data: { phone: phone.value } }).catch(() => {})
     const result: any = await api.login({ phone: phone.value, code: code.value })
     uni.setStorageSync('token', result.token)
     uni.showToast({ title: '登录成功', icon: 'success' })

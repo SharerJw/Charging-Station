@@ -6,8 +6,10 @@ import com.ev.charging.event.ChargingEventPublisher;
 import com.ev.charging.service.ChargingService;
 import com.ev.common.core.event.ChargingStartedEvent;
 import com.ev.common.core.event.ChargingStoppedEvent;
+import com.ev.common.core.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -21,9 +23,12 @@ import java.util.concurrent.ThreadLocalRandom;
 public class ChargingServiceImpl implements ChargingService {
 
     private final ChargingEventPublisher eventPublisher;
+    private final StringRedisTemplate redisTemplate;
 
-    // In-memory charging sessions (L1简化，生产用Redis/DB)
+    // In-memory charging sessions
     private final Map<String, ChargingSessionVO> sessions = new ConcurrentHashMap<>();
+
+    private static final String CURRENT_SESSION_KEY = "charging:current:";
 
     @Override
     public ChargingSessionVO start(StartChargingReq req, Long userId) {
@@ -42,7 +47,9 @@ public class ChargingServiceImpl implements ChargingService {
 
         sessions.put(orderId, session);
 
-        // 发布充电开始事件
+        // 记录用户的当前活跃会话
+        redisTemplate.opsForValue().set(CURRENT_SESSION_KEY + userId, orderId);
+
         eventPublisher.publishStarted(ChargingStartedEvent.of(orderId, Long.parseLong(req.getStationId()),
                 session.getStationName(), 0L, req.getDeviceCode(), Integer.parseInt(req.getConnectorId()), userId));
 
@@ -52,59 +59,92 @@ public class ChargingServiceImpl implements ChargingService {
     @Override
     public ChargingSessionVO stop(String orderId, Long userId) {
         ChargingSessionVO session = sessions.get(orderId);
-        long energy = 45500L;
-        long cost = 7735L;
         if (session == null) {
-            session = ChargingSessionVO.builder()
+            // 没有活跃会话，返回已完成状态
+            return ChargingSessionVO.builder()
                     .orderId(orderId).status("completed").currentSoc(75)
-                    .power(0L).energy(energy).duration(5400L).cost(cost)
+                    .power(0L).energy(45500L).duration(5400L).cost(7735L)
                     .stationName("充电站").deviceCode("DEV-001")
                     .startTime(Instant.now().minusSeconds(5400).toString()).build();
-        } else {
-            energy = session.getEnergy() > 0 ? session.getEnergy() : energy;
-            session = ChargingSessionVO.builder()
-                    .orderId(session.getOrderId()).stationName(session.getStationName())
-                    .deviceCode(session.getDeviceCode()).status("completed")
-                    .currentSoc(75).power(0L).energy(energy).duration(5400L).cost(cost)
-                    .startTime(session.getStartTime()).build();
-            sessions.remove(orderId);
         }
-        log.info("停止充电: orderId={}, energy={}Wh, cost={}cents", orderId, energy, cost);
+        // 停止充电，保留最终数据
+        long finalEnergy = session.getEnergy();
+        long finalCost = finalEnergy * 175 / 1000; // Wh * 1.75元/kWh = 分
+        ChargingSessionVO stopped = ChargingSessionVO.builder()
+                .orderId(session.getOrderId()).stationName(session.getStationName())
+                .deviceCode(session.getDeviceCode()).status("completed")
+                .currentSoc(session.getCurrentSoc()).power(0L)
+                .energy(finalEnergy).duration(session.getDuration()).cost(finalCost)
+                .startTime(session.getStartTime()).build();
+        sessions.remove(orderId);
+        // 清除用户的当前活跃会话（通过遍历找到对应的userId key）
+        redisTemplate.keys(CURRENT_SESSION_KEY + "*").forEach(key -> {
+            if (redisTemplate.opsForValue().get(key).equals(orderId)) {
+                redisTemplate.delete(key);
+            }
+        });
+        log.info("停止充电: orderId={}, energy={}Wh, cost={}cents", orderId, finalEnergy, finalCost);
 
-        // 发布充电结束事件
-        eventPublisher.publishStopped(ChargingStoppedEvent.of(orderId, 1L, energy, cost, 5400L));
+        eventPublisher.publishStopped(ChargingStoppedEvent.of(orderId, 1L, finalEnergy, finalCost, session.getDuration()));
 
-        return session;
+        return stopped;
     }
 
     @Override
     public ChargingSessionVO status(String orderId) {
+        // 支持 "current" 查询：查找用户的当前活跃会话
+        if ("current".equals(orderId)) {
+            Long userId = SecurityUtils.getUserId();
+            if (userId != null) {
+                String currentOrderId = redisTemplate.opsForValue().get(CURRENT_SESSION_KEY + userId);
+                if (currentOrderId != null) {
+                    orderId = currentOrderId;
+                } else {
+                    return ChargingSessionVO.builder()
+                            .orderId("current").status("idle")
+                            .currentSoc(0).power(0L).energy(0L).duration(0L).cost(0L)
+                            .stationName("").deviceCode("")
+                            .startTime("").build();
+                }
+            } else {
+                return ChargingSessionVO.builder()
+                        .orderId("current").status("idle")
+                        .currentSoc(0).power(0L).energy(0L).duration(0L).cost(0L)
+                        .stationName("").deviceCode("")
+                        .startTime("").build();
+            }
+        }
         ChargingSessionVO session = sessions.get(orderId);
         if (session == null) {
-            // 返回模拟充电中数据
+            // 没有活跃会话
             return ChargingSessionVO.builder()
-                    .orderId(orderId).stationName("充电站").deviceCode("DEV-001")
-                    .status("charging")
-                    .currentSoc(45 + ThreadLocalRandom.current().nextInt(20))
-                    .power(50000L + ThreadLocalRandom.current().nextLong(15000L))
-                    .energy(15000L + ThreadLocalRandom.current().nextLong(10000L))
-                    .duration(1800L + ThreadLocalRandom.current().nextLong(3600L))
-                    .cost(2500L + ThreadLocalRandom.current().nextLong(2000L))
-                    .startTime(Instant.now().minusSeconds(3600).toString())
-                    .build();
+                    .orderId(orderId).status("idle")
+                    .currentSoc(0).power(0L).energy(0L).duration(0L).cost(0L)
+                    .stationName("").deviceCode("")
+                    .startTime("").build();
         }
-        // 模拟充电进度
-        int newSoc = Math.min(session.getCurrentSoc() + ThreadLocalRandom.current().nextInt(1, 5), 100);
-        long newEnergy = session.getEnergy() + ThreadLocalRandom.current().nextLong(100, 500);
-        long newDuration = session.getDuration() + 5;
-        return ChargingSessionVO.builder()
+        if (!"charging".equals(session.getStatus())) {
+            return session;
+        }
+        // 模拟充电进度 - 平滑递增，不跳变
+        int soc = session.getCurrentSoc();
+        int increment = soc < 80 ? ThreadLocalRandom.current().nextInt(1, 4) : ThreadLocalRandom.current().nextInt(0, 2);
+        int newSoc = Math.min(soc + increment, 100);
+        long power = soc < 80 ? 90000L + ThreadLocalRandom.current().nextLong(5000L) : 45000L + ThreadLocalRandom.current().nextLong(5000L);
+        long newEnergy = session.getEnergy() + power / 3600; // 每秒增加的Wh
+        long newDuration = session.getDuration() + 1;
+
+        // 成本计算: Wh * 1.75元/kWh = Wh * 175分 / 1000
+        long newCost = newEnergy * 175 / 1000;
+        ChargingSessionVO updated = ChargingSessionVO.builder()
                 .orderId(session.getOrderId()).stationName(session.getStationName())
                 .deviceCode(session.getDeviceCode()).status("charging")
-                .currentSoc(newSoc)
-                .power(90000L + ThreadLocalRandom.current().nextLong(10000L))
-                .energy(newEnergy).duration(newDuration)
-                .cost(newEnergy * 175 / 1000) // 约1.75元/kWh
-                .startTime(session.getStartTime())
-                .build();
+                .currentSoc(newSoc).power(power).energy(newEnergy).duration(newDuration)
+                .cost(newCost)
+                .startTime(session.getStartTime()).build();
+
+        // 更新session
+        sessions.put(orderId, updated);
+        return updated;
     }
 }

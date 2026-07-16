@@ -102,16 +102,34 @@ const menuItems = [
 async function loadProfile() {
   loading.value = true
   try {
-    const [profileData, inspectionData] = await Promise.all([
+    const [profileData, inspectionData, workorders] = await Promise.all([
       api.getUserInfo(),
       api.getInspections({ page: 1, pageSize: 3 }),
+      api.getWorkorders({ page: 1, size: 100 }).catch(() => ({ list: [] })),
     ])
     if (profileData) {
-      userProfile.value = profileData as any
+      const p = profileData as any
+      const workorderList = workorders?.list || workorders || []
+      const completed = workorderList.filter((w: any) => w.status === 'completed').length
+      userProfile.value = {
+        nickname: p.nickname || p.username || '运维工程师',
+        role: Array.isArray(p.roles) ? p.roles.join(' / ') : (p.role || '运维工程师'),
+        stats: {
+          workorders: workorderList.length,
+          completionRate: workorderList.length > 0 ? Math.round(completed / workorderList.length * 100) + '%' : '0%',
+          rating: 4.8,
+          inspections: (inspectionData as any)?.list?.length || (Array.isArray(inspectionData) ? inspectionData.length : 0),
+        },
+      }
     }
     if (inspectionData) {
       const list = (inspectionData as any)?.list || inspectionData
-      recentRecords.value = (Array.isArray(list) ? list : []).slice(0, 3)
+      recentRecords.value = (Array.isArray(list) ? list : []).slice(0, 3).map((i: any) => ({
+        name: i.name || i.stationName || '巡检任务',
+        status: i.status || 'pending',
+        time: i.planTime || i.createdAt || '',
+        result: i.status === 'completed' ? '巡检完成' : (i.status === 'in_progress' ? '巡检中' : '待巡检'),
+      }))
     }
   } catch (e) {
     console.error('获取用户信息失败:', e)
@@ -121,7 +139,27 @@ async function loadProfile() {
 }
 
 function handleMenuTap(action: string) {
-  uni.showToast({ title: action, icon: 'none' })
+  switch (action) {
+    case 'records':
+      uni.navigateTo({ url: '/pages/inspection/index' })
+      break
+    case 'stats':
+      uni.showToast({ title: '工作统计功能开发中', icon: 'none' })
+      break
+    case 'knowledge':
+      uni.showToast({ title: '知识库功能开发中', icon: 'none' })
+      break
+    case 'contact':
+      uni.showModal({
+        title: '联系管理员',
+        content: '联系电话: 400-888-8888\n工作时间: 9:00-18:00',
+        showCancel: false,
+      })
+      break
+    case 'settings':
+      uni.showToast({ title: '设置功能开发中', icon: 'none' })
+      break
+  }
 }
 
 function handleLogout() {
@@ -132,6 +170,9 @@ function handleLogout() {
       if (res.confirm) {
         uni.removeStorageSync('ops_token')
         uni.showToast({ title: '已退出', icon: 'success' })
+        setTimeout(() => {
+          uni.reLaunch({ url: '/pages/login/index' })
+        }, 500)
       }
     }
   })

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useSimulatorStore } from '@/store/simulator'
 import { chargingApi, deviceApi } from '@/api'
 import { ElMessage } from 'element-plus'
@@ -43,17 +43,51 @@ onMounted(async () => {
   const devicesResponse = await deviceApi.list()
   const devices = devicesResponse?.list || devicesResponse || []
   simulatorStore.devices = devices
-  // 默认选中第一个充电中的设备
   const chargingDevice = devices.find(d => d.status === 'charging')
   if (chargingDevice) {
     selectedDevice.value = chargingDevice.id
-    chargingData.value.currentSoc = chargingDevice.soc
-    chargingData.value.power = chargingDevice.power
-    chargingData.value.voltage = chargingDevice.voltage
-    chargingData.value.current = chargingDevice.current
-    chargingData.value.temperature = chargingDevice.temperature
+    updateFromDevice(chargingDevice)
+    // 如果有充电中的设备，自动开始轮询
+    isCharging.value = true
+    startPolling()
   }
 })
+
+function updateFromDevice(device: any) {
+  chargingData.value.currentSoc = device.soc || 0
+  chargingData.value.power = device.power || 0
+  chargingData.value.voltage = device.voltage || 0
+  chargingData.value.current = device.current || 0
+  chargingData.value.temperature = device.temperature || 0
+}
+
+// 监听设备切换
+watch(selectedDevice, () => {
+  const device = simulatorStore.devices.find(d => d.id === selectedDevice.value)
+  if (device) {
+    updateFromDevice(device)
+  }
+})
+
+function startPolling() {
+  if (chargingTimer) clearInterval(chargingTimer)
+  chargingTimer = setInterval(async () => {
+    try {
+      const devicesResponse = await deviceApi.list()
+      const devices = devicesResponse?.list || devicesResponse || []
+      simulatorStore.devices = devices
+      const device = devices.find(d => d.id === selectedDevice.value)
+      if (device) {
+        updateFromDevice(device)
+        chargingData.value.durationSeconds += 1
+        chargingData.value.energy = (chargingData.value.energy || 0) + (device.power || 0) / 3600
+        chargingData.value.cost = chargingData.value.energy * 1.7
+      }
+    } catch (e) {
+      // 静默处理
+    }
+  }, 1000)
+}
 
 onUnmounted(() => {
   if (chargingTimer) clearInterval(chargingTimer)
@@ -73,37 +107,14 @@ async function startCharging() {
     currentTransaction.value = tx
     isCharging.value = true
     chargingStartTime.value = Date.now()
-    chargingData.value.currentSoc = tx.soc
-    chargingData.value.voltage = tx.voltage
+    chargingData.value.currentSoc = tx.soc || 0
+    chargingData.value.voltage = tx.voltage || 0
     chargingData.value.energy = 0
     chargingData.value.durationSeconds = 0
     chargingData.value.cost = 0
 
-    // 模拟充电过程
-    chargingTimer = setInterval(() => {
-      const device = simulatorStore.devices.find(d => d.id === selectedDevice.value)
-      if (!device || chargingData.value.currentSoc >= chargingConfig.value.targetSoc) {
-        stopCharging()
-        return
-      }
-      // 模拟充电数据变化
-      const maxP = chargingConfig.value.maxPower
-      chargingData.value.power = maxP * (0.8 + Math.random() * 0.2) * (1 - chargingData.value.currentSoc / 200)
-      chargingData.value.currentSoc = Math.min(chargingConfig.value.targetSoc, chargingData.value.currentSoc + Math.random() * 0.8)
-      chargingData.value.energy += chargingData.value.power / 3600 * 2
-      chargingData.value.durationSeconds = (Date.now() - chargingStartTime.value) / 1000
-      chargingData.value.cost = chargingData.value.energy * 1.7 // 电价+服务费
-      chargingData.value.current = chargingData.value.power * 1000 / chargingData.value.voltage
-      chargingData.value.temperature = Math.min(55, 25 + chargingData.value.currentSoc * 0.3 + Math.random() * 3)
-
-      // 更新设备状态
-      if (device) {
-        device.power = chargingData.value.power
-        device.soc = chargingData.value.currentSoc
-        device.temperature = chargingData.value.temperature
-        device.status = 'charging'
-      }
-    }, 2000)
+    // 从后端轮询真实数据
+    startPolling()
 
     ElMessage.success('充电已启动')
   } catch (error: any) {
@@ -222,7 +233,7 @@ const socColor = computed(() => {
       <div class="metrics-grid">
         <div class="metric-card card">
           <div class="metric-icon">⚡</div>
-          <div class="metric-value font-number">{{ chargingData.power.toFixed(1) }}</div>
+          <div class="metric-value font-number">{{ chargingData.power.toFixed(2) }}</div>
           <div class="metric-unit">kW</div>
           <div class="metric-label">实时功率</div>
         </div>
@@ -246,13 +257,13 @@ const socColor = computed(() => {
         </div>
         <div class="metric-card card">
           <div class="metric-icon">🔌</div>
-          <div class="metric-value font-number">{{ chargingData.voltage.toFixed(0) }}</div>
+          <div class="metric-value font-number">{{ chargingData.voltage.toFixed(2) }}</div>
           <div class="metric-unit">V</div>
           <div class="metric-label">电压</div>
         </div>
         <div class="metric-card card">
           <div class="metric-icon">🌡</div>
-          <div class="metric-value font-number">{{ chargingData.temperature.toFixed(1) }}</div>
+          <div class="metric-value font-number">{{ chargingData.temperature.toFixed(2) }}</div>
           <div class="metric-unit">°C</div>
           <div class="metric-label">温度</div>
         </div>

@@ -55,17 +55,38 @@
 
     <!-- 退出登录 -->
     <button class="logout-btn" @tap="handleLogout">退出登录</button>
+
+    <!-- 编辑资料弹窗 -->
+    <view class="modal-overlay" v-if="showEditModal" @tap="showEditModal = false">
+      <view class="modal-content" @tap.stop>
+        <text class="modal-title">编辑资料</text>
+        <view class="form-group">
+          <text class="form-label">昵称</text>
+          <input class="form-input" v-model="editForm.nickname" placeholder="请输入昵称" />
+        </view>
+        <view class="form-group">
+          <text class="form-label">头像</text>
+          <input class="form-input" v-model="editForm.avatar" placeholder="输入emoji作为头像" />
+        </view>
+        <view class="modal-actions">
+          <button class="modal-cancel" @tap="showEditModal = false">取消</button>
+          <button class="modal-confirm" @tap="saveProfile">保存</button>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, reactive } from 'vue'
 import { api, type UserInfo } from '@/api/index'
 
 const userInfo = ref<UserInfo>({
   id: '', nickname: '', phone: '', avatar: '', balance: 0, couponCount: 0,
 })
 const orderCount = ref(0)
+const showEditModal = ref(false)
+const editForm = reactive({ nickname: '', avatar: '' })
 
 const menuItems = [
   { icon: '💰', label: '我的钱包', action: 'wallet', extra: '' },
@@ -90,39 +111,112 @@ function maskPhone(phone: string): string {
 onMounted(async () => {
   try {
     const user = await api.getUserInfo()
-    userInfo.value = user
-    const orders = await api.getOrders()
-    orderCount.value = orders.length
+    if (user) userInfo.value = user
   } catch (error) {
     console.error('加载用户信息失败:', error)
+  }
+  try {
+    const orders = await api.getOrders()
+    const orderList = (orders as any)?.list || orders || []
+    orderCount.value = Array.isArray(orderList) ? orderList.length : 0
+  } catch (e) {
+    orderCount.value = 0
   }
 })
 
 function editProfile() {
-  uni.showToast({ title: '编辑资料', icon: 'none' })
+  editForm.nickname = userInfo.value.nickname
+  editForm.avatar = userInfo.value.avatar
+  showEditModal.value = true
+}
+
+function saveProfile() {
+  if (!editForm.nickname.trim()) {
+    uni.showToast({ title: '请输入昵称', icon: 'none' })
+    return
+  }
+  userInfo.value.nickname = editForm.nickname
+  userInfo.value.avatar = editForm.avatar
+  showEditModal.value = false
+  uni.showToast({ title: '保存成功', icon: 'success' })
 }
 
 function goToWallet() {
-  uni.showToast({ title: '我的钱包', icon: 'none' })
+  uni.showModal({
+    title: '我的钱包',
+    content: `当前余额: ¥${userInfo.value.balance.toFixed(2)}`,
+    showCancel: false,
+  })
 }
 
 function goToCoupons() {
-  uni.showToast({ title: '优惠券', icon: 'none' })
+  uni.showModal({
+    title: '优惠券',
+    content: `您有 ${userInfo.value.couponCount} 张优惠券可用`,
+    showCancel: false,
+  })
 }
 
 function handleMenuTap(action: string) {
-  const messages: Record<string, string> = {
-    wallet: '我的钱包',
-    coupons: '优惠券',
-    vehicles: '我的车辆',
-    favorites: '收藏站点',
-    records: '充电记录',
-    support: '联系客服',
-    help: '帮助中心',
-    agreement: '用户协议',
-    settings: '设置',
+  switch (action) {
+    case 'wallet':
+      goToWallet()
+      break
+    case 'coupons':
+      goToCoupons()
+      break
+    case 'vehicles':
+      uni.showModal({
+        title: '我的车辆',
+        content: '暂未添加车辆，点击确定去添加',
+        success: (res) => {
+          if (res.confirm) uni.showToast({ title: '添加车辆功能开发中', icon: 'none' })
+        },
+      })
+      break
+    case 'favorites':
+      uni.showModal({
+        title: '收藏站点',
+        content: '暂无收藏站点',
+        showCancel: false,
+      })
+      break
+    case 'records':
+      uni.switchTab({ url: '/pages/order/index' })
+      break
+    case 'support':
+      uni.showModal({
+        title: '联系客服',
+        content: '客服电话: 400-888-8888\n服务时间: 9:00-21:00',
+        showCancel: false,
+      })
+      break
+    case 'help':
+      uni.showModal({
+        title: '帮助中心',
+        content: '1. 如何扫码充电？\n2. 如何查看充电记录？\n3. 如何申请退款？\n4. 如何联系客服？',
+        showCancel: false,
+      })
+      break
+    case 'agreement':
+      uni.showModal({
+        title: '用户协议',
+        content: '欢迎使用EV充电平台。使用本平台即表示您同意遵守以下条款...',
+        showCancel: false,
+      })
+      break
+    case 'settings':
+      uni.showModal({
+        title: '设置',
+        content: '版本: v1.0.0\n清除缓存: 0KB',
+        success: (res) => {
+          if (res.confirm) {
+            uni.showToast({ title: '缓存已清除', icon: 'success' })
+          }
+        },
+      })
+      break
   }
-  uni.showToast({ title: messages[action] || action, icon: 'none' })
 }
 
 function handleLogout() {
@@ -173,11 +267,7 @@ function handleLogout() {
 .user-info { flex: 1; }
 .username { font-size: 32rpx; font-weight: bold; color: #fff; display: block; }
 .phone { font-size: 24rpx; color: rgba(255, 255, 255, 0.8); margin-top: 8rpx; display: block; }
-
-.edit-btn {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.8);
-}
+.edit-btn { font-size: 24rpx; color: rgba(255, 255, 255, 0.8); }
 
 .account-section {
   display: flex;
@@ -187,30 +277,10 @@ function handleLogout() {
   margin-bottom: 24rpx;
 }
 
-.account-item {
-  flex: 1;
-  text-align: center;
-}
-
-.account-value {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333;
-  display: block;
-}
-
-.account-label {
-  font-size: 22rpx;
-  color: #999;
-  margin-top: 8rpx;
-  display: block;
-}
-
-.account-divider {
-  width: 1rpx;
-  background: #f0f0f0;
-  margin: 8rpx 0;
-}
+.account-item { flex: 1; text-align: center; }
+.account-value { font-size: 36rpx; font-weight: bold; color: #333; display: block; }
+.account-label { font-size: 22rpx; color: #999; margin-top: 8rpx; display: block; }
+.account-divider { width: 1rpx; background: #f0f0f0; margin: 8rpx 0; }
 
 .section-title {
   font-size: 28rpx;
@@ -220,15 +290,8 @@ function handleLogout() {
   display: block;
 }
 
-.menu-section {
-  margin-bottom: 24rpx;
-}
-
-.menu-list {
-  background: #fff;
-  border-radius: 12rpx;
-  overflow: hidden;
-}
+.menu-section { margin-bottom: 24rpx; }
+.menu-list { background: #fff; border-radius: 12rpx; overflow: hidden; }
 
 .menu-item {
   display: flex;
@@ -249,6 +312,81 @@ function handleLogout() {
   color: #FF4D4F;
   border: 2rpx solid #FF4D4F;
   border-radius: 12rpx;
+  font-size: 28rpx;
+}
+
+/* 编辑弹窗 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 40rpx;
+  width: 80%;
+  max-width: 600rpx;
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 32rpx;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 24rpx;
+}
+
+.form-label {
+  font-size: 24rpx;
+  color: #666;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.form-input {
+  border: 1rpx solid #e8e8e8;
+  border-radius: 8rpx;
+  padding: 16rpx 20rpx;
+  font-size: 28rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 32rpx;
+}
+
+.modal-cancel {
+  flex: 1;
+  background: #f5f5f5;
+  color: #666;
+  border: none;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+}
+
+.modal-confirm {
+  flex: 1;
+  background: #07C160;
+  color: #fff;
+  border: none;
+  border-radius: 8rpx;
   font-size: 28rpx;
 }
 </style>

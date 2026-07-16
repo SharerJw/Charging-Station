@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onUnmounted, computed } from 'vue'
+import { ref, onUnmounted, computed, watch } from 'vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -60,6 +60,11 @@ const COLORS = {
   cyan: '#06B6D4',
 }
 
+// 切换设备时重置图表历史
+watch(selectedDevice, () => {
+  resetChartHistory()
+})
+
 // 立即加载数据（不等待）
 loadData().then(() => {
   startRealtime()
@@ -76,40 +81,51 @@ async function loadData() {
     deviceApi.list(),
   ])
   stats.value = s
-  // API returns paginated response: { list: [...], total: ..., page: ..., size: ... }
   const devices = devicesResponse?.list || devicesResponse || []
   simulatorStore.devices = devices
-  selectedDevice.value = devices[0]?.id || ''
-  // 初始化历史
+  if (!selectedDevice.value && devices.length > 0) {
+    selectedDevice.value = devices[0]?.id || ''
+  }
+  resetChartHistory()
+}
+
+function resetChartHistory() {
+  timeLabels.value = []
+  powerHistory.value = []
+  voltageHistory.value = []
+  currentHistory.value = []
+  socHistory.value = []
+  tempHistory.value = []
+  // 填充初始数据点
+  const selected = simulatorStore.devices.find(d => d.id === selectedDevice.value)
   const now = new Date()
   for (let i = 20; i >= 0; i--) {
     const t = new Date(now.getTime() - i * refreshInterval.value)
     timeLabels.value.push(formatShortTime(t))
-    powerHistory.value.push(20 + Math.random() * 40)
-    voltageHistory.value.push(380 + Math.random() * 40)
-    currentHistory.value.push(50 + Math.random() * 60)
-    socHistory.value.push(30 + Math.random() * 40)
-    tempHistory.value.push(25 + Math.random() * 15)
+    powerHistory.value.push(selected?.power || 0)
+    voltageHistory.value.push(selected?.voltage || 0)
+    currentHistory.value.push(selected?.current || 0)
+    socHistory.value.push(selected?.soc || 0)
+    tempHistory.value.push(selected?.temperature || 0)
   }
 }
 
 function startRealtime() {
-  refreshTimer = setInterval(() => {
+  refreshTimer = setInterval(async () => {
     if (isPaused.value) return
+    // 从后端刷新设备数据
+    try {
+      const devicesResponse = await deviceApi.list()
+      const devices = devicesResponse?.list || devicesResponse || []
+      if (devices.length > 0) {
+        simulatorStore.devices = devices
+      }
+    } catch (e) {
+      // 静默处理
+    }
     const now = new Date()
     const ts = formatShortTime(now)
     timeLabels.value.push(ts)
-
-    // 更新设备数据
-    simulatorStore.devices.forEach(d => {
-      if (d.status === 'charging') {
-        d.power = Math.max(0, d.power + (Math.random() - 0.5) * 5)
-        d.voltage = Math.max(300, Math.min(500, d.voltage + (Math.random() - 0.5) * 10))
-        d.current = Math.max(0, d.current + (Math.random() - 0.5) * 8)
-        d.soc = Math.min(100, Math.round((d.soc + Math.random() * 0.5) * 10) / 10)
-        d.temperature = Math.max(20, Math.min(55, d.temperature + (Math.random() - 0.5) * 2))
-      }
-    })
 
     const selected = simulatorStore.devices.find(d => d.id === selectedDevice.value)
     powerHistory.value.push(selected?.power || 0)
@@ -118,7 +134,6 @@ function startRealtime() {
     socHistory.value.push(selected?.soc || 0)
     tempHistory.value.push(selected?.temperature || 0)
 
-    // 保持最近30个点
     const max = 30
     if (timeLabels.value.length > max) {
       timeLabels.value.shift()
@@ -301,42 +316,15 @@ const eventLevelColors: Record<string, string> = {
       <v-chart :option="socChartOption" style="height: 220px" autoresize />
     </div>
 
-    <!-- 设备卡片 + 事件流 -->
-    <div class="bottom-row">
-      <!-- 设备状态卡片 -->
-      <div class="device-section">
-        <h3 class="section-title">设备状态</h3>
-        <div class="device-grid">
-          <div v-for="device in simulatorStore.devices" :key="device.id" class="device-card card" :class="{ selected: device.id === selectedDevice }" @click="selectedDevice = device.id">
-            <div class="device-header">
-              <div>
-                <span class="device-name">{{ device.name }}</span>
-                <span class="device-model">{{ device.model }}</span>
-              </div>
-              <span :class="['status-badge', device.status]">
-                {{ { online: '在线', offline: '离线', charging: '充电中', fault: '故障' }[device.status] }}
-              </span>
-            </div>
-            <div class="device-metrics">
-              <div class="metric"><span class="metric-value font-number">{{ device.power.toFixed(1) }}</span><span class="metric-unit">kW</span></div>
-              <div class="metric"><span class="metric-value font-number">{{ Math.floor(device.soc) }}</span><span class="metric-unit">%</span></div>
-              <div class="metric"><span class="metric-value font-number">{{ device.voltage }}</span><span class="metric-unit">V</span></div>
-              <div class="metric"><span class="metric-value font-number">{{ device.temperature }}</span><span class="metric-unit">°C</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 事件流 -->
-      <div class="events-section card">
-        <h3 class="card-title">OCPP 事件流 <span class="event-count">{{ events.length }}</span></h3>
-        <div class="events-list">
-          <div v-for="event in events.slice(0, 20)" :key="event.messageId" class="event-item">
-            <span class="event-time">{{ formatShortTime(new Date(event.timestamp)) }}</span>
-            <span class="event-dir" :class="event.direction">{{ event.direction === 'inbound' ? '←' : '→' }}</span>
-            <span class="event-source">{{ event.chargePointId }}</span>
-            <span class="event-action" :style="{ color: eventLevelColors[event.action] || '#9CA3AF' }">{{ event.action }}</span>
-          </div>
+    <!-- 事件流 -->
+    <div class="card events-section">
+      <h3 class="card-title">OCPP 事件流 <span class="event-count">{{ events.length }}</span></h3>
+      <div class="events-list">
+        <div v-for="event in events.slice(0, 20)" :key="event.messageId" class="event-item">
+          <span class="event-time">{{ formatShortTime(new Date(event.timestamp)) }}</span>
+          <span class="event-dir" :class="event.direction">{{ event.direction === 'inbound' ? '←' : '→' }}</span>
+          <span class="event-source">{{ event.chargePointId }}</span>
+          <span class="event-action" :style="{ color: eventLevelColors[event.action] || '#9CA3AF' }">{{ event.action }}</span>
         </div>
       </div>
     </div>
@@ -365,29 +353,6 @@ const eventLevelColors: Record<string, string> = {
 .chart-side { padding: 16px; }
 .card-title { color: var(--color-text-primary); font-size: 14px; margin: 0 0 12px; }
 .event-count { font-size: 11px; color: var(--color-text-tertiary); background: var(--color-bg-hover); padding: 2px 6px; border-radius: 4px; margin-left: 8px; }
-
-.bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.section-title { font-size: 14px; color: var(--color-text-primary); margin: 0 0 12px; font-weight: 600; }
-
-.device-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.device-card { padding: 14px; cursor: pointer; transition: border-color 0.2s; border: 1px solid transparent; }
-.device-card.selected { border-color: var(--color-primary); }
-.device-card:hover { border-color: var(--color-primary); }
-
-.device-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-.device-name { font-size: 14px; font-weight: bold; color: var(--color-text-primary); display: block; }
-.device-model { font-size: 11px; color: var(--color-text-secondary); }
-
-.status-badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-.status-badge.online { background: rgba(16,185,129,0.2); color: #10B981; }
-.status-badge.offline { background: rgba(239,68,68,0.2); color: #EF4444; }
-.status-badge.charging { background: rgba(245,158,11,0.2); color: #F59E0B; }
-.status-badge.fault { background: rgba(239,68,68,0.2); color: #EF4444; }
-
-.device-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
-.metric { text-align: center; }
-.metric-value { font-size: 16px; color: var(--color-text-primary); font-weight: bold; }
-.metric-unit { font-size: 10px; color: var(--color-text-secondary); margin-left: 1px; }
 
 .events-section { padding: 16px; display: flex; flex-direction: column; }
 .events-list { flex: 1; overflow-y: auto; max-height: 300px; }

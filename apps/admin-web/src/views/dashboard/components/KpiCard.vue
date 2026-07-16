@@ -7,37 +7,14 @@ const props = defineProps<{
   unit: string
   icon: string
   color: string
-  dailyTrend?: number
-  weeklyTrend?: number
   loading?: boolean
 }>()
-
-function formatTrend(value: number): string {
-  if (value > 0) return `+${value}%`
-  if (value < 0) return `${value}%`
-  return '0%'
-}
-
-function getTrendColor(value: number): string {
-  if (value > 0) return '#52C41A'
-  if (value < 0) return '#FF4D4F'
-  return '#999'
-}
-
-function getTrendIcon(value: number): string {
-  if (value > 0) return '↑'
-  if (value < 0) return '↓'
-  return '→'
-}
 
 const displayValue = computed(() => {
   if (props.loading) return '...'
   if (!props.value && props.value !== '0') return '--'
   return props.value
 })
-
-const displayDailyTrend = computed(() => props.dailyTrend || 0)
-const displayWeeklyTrend = computed(() => props.weeklyTrend || 0)
 </script>
 
 <template>
@@ -51,16 +28,6 @@ const displayWeeklyTrend = computed(() => props.weeklyTrend || 0)
         <span class="kpi-unit">{{ unit }}</span>
       </div>
       <div class="kpi-title">{{ title }}</div>
-      <div class="kpi-trends">
-        <span class="trend-item" :style="{ color: getTrendColor(displayDailyTrend) }">
-          {{ getTrendIcon(displayDailyTrend) }} {{ formatTrend(displayDailyTrend) }}
-          <span class="trend-label">日环比</span>
-        </span>
-        <span class="trend-item" :style="{ color: getTrendColor(displayWeeklyTrend) }">
-          {{ getTrendIcon(displayWeeklyTrend) }} {{ formatTrend(displayWeeklyTrend) }}
-          <span class="trend-label">周同比</span>
-        </span>
-      </div>
     </div>
   </div>
 </template>
@@ -118,25 +85,5 @@ const displayWeeklyTrend = computed(() => props.weeklyTrend || 0)
   font-size: 12px;
   color: #999;
   margin-top: 2px;
-}
-
-.kpi-trends {
-  display: flex;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.trend-item {
-  font-size: 12px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.trend-label {
-  color: #999;
-  font-weight: normal;
-  margin-left: 2px;
 }
 </style>

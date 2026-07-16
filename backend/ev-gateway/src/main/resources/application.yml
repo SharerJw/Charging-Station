@@ -55,7 +55,7 @@ spring:
         - id: station-service
           uri: lb://ev-service-station
           predicates:
-            - Path=/api/stations/**,/api/v1/stations/**,/api/v1/ops/stations/**,/api/devices/**
+            - Path=/api/stations/**,/api/v1/stations/**,/api/v1/ops/stations/**,/api/devices/**,/internal/**
         - id: order-service
           uri: lb://ev-service-order
           predicates:

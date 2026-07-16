@@ -1,5 +1,13 @@
 <template>
   <view class="workorder-page">
+    <!-- 搜索栏 -->
+    <view class="search-bar">
+      <input class="search-input" placeholder="搜索工单标题、站点、设备" v-model="keyword" @confirm="loadWorkorders" />
+      <view class="search-btn" @tap="loadWorkorders">
+        <text class="search-btn-text">搜索</text>
+      </view>
+    </view>
+
     <!-- 筛选标签 -->
     <view class="tabs">
       <text
@@ -76,6 +84,7 @@ interface WorkOrder {
 const currentTab = ref('all')
 const workorders = ref<WorkOrder[]>([])
 const loading = ref(false)
+const keyword = ref('')
 
 const tabs = [
   { label: '全部', value: 'all' },
@@ -107,9 +116,14 @@ const typeLabels: Record<string, string> = {
 async function loadWorkorders() {
   loading.value = true
   try {
-    const result = await api.getWorkorders({
-      status: currentTab.value === 'all' ? undefined : currentTab.value,
-    })
+    const params: any = {}
+    if (currentTab.value !== 'all') {
+      params.status = currentTab.value
+    }
+    if (keyword.value) {
+      params.keyword = keyword.value
+    }
+    const result = await api.getWorkorders(params)
     workorders.value = result?.list || result || []
   } catch (error) {
     uni.showToast({ title: '加载工单失败', icon: 'none' })
@@ -170,6 +184,34 @@ onMounted(() => {
   padding: 24rpx;
   background: #F0F2F5;
   min-height: 100vh;
+}
+
+.search-bar {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.search-input {
+  flex: 1;
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+  font-size: 28rpx;
+}
+
+.search-btn {
+  background: #1677FF;
+  border-radius: 12rpx;
+  padding: 20rpx 32rpx;
+  display: flex;
+  align-items: center;
+}
+
+.search-btn-text {
+  color: #fff;
+  font-size: 28rpx;
+  white-space: nowrap;
 }
 
 .tabs {

@@ -1,65 +1,78 @@
 <template>
   <view class="charging-page">
-    <!-- 充电状态卡片 -->
-    <view class="status-card" :class="session.status">
-      <text class="status-icon">{{ session.status === 'charging' ? '⚡' : '✅' }}</text>
-      <text class="status-text">{{ session.status === 'charging' ? '充电中' : '充电完成' }}</text>
-      <text class="power">{{ session.power.toFixed(1) }} kW</text>
+    <!-- 无充电会话时显示 -->
+    <view class="empty-state" v-if="!hasSession">
+      <text class="empty-icon">🔋</text>
+      <text class="empty-title">暂无充电会话</text>
+      <text class="empty-desc">请先扫码或在找桩页面选择充电桩开始充电</text>
+      <button class="go-map-btn" @tap="goToMap">去找桩</button>
     </view>
 
-    <!-- SOC 显示 -->
-    <view class="soc-section">
-      <view class="soc-bar">
-        <view class="soc-fill" :style="{ width: session.currentSoc + '%' }"></view>
+    <!-- 充电中 -->
+    <template v-else>
+      <!-- 充电状态卡片 -->
+      <view class="status-card" :class="session.status">
+        <text class="status-icon">{{ session.status === 'charging' ? '⚡' : '✅' }}</text>
+        <text class="status-text">{{ statusText }}</text>
+        <text class="power">{{ powerDisplay }}</text>
       </view>
-      <view class="soc-labels">
-        <text class="soc-value">{{ Math.floor(session.currentSoc) }}%</text>
-        <text class="soc-hint">目标 80%</text>
-      </view>
-    </view>
 
-    <!-- 详细数据 -->
-    <view class="info-grid">
-      <view class="info-item">
-        <text class="info-label">已充电量</text>
-        <text class="info-value">{{ session.energy.toFixed(1) }} kWh</text>
+      <!-- SOC 显示 -->
+      <view class="soc-section">
+        <view class="soc-bar">
+          <view class="soc-fill" :style="{ width: Math.min(session.currentSoc, 100) + '%' }"></view>
+        </view>
+        <view class="soc-labels">
+          <text class="soc-value">{{ Math.floor(session.currentSoc) }}%</text>
+          <text class="soc-hint">目标 80%</text>
+        </view>
       </view>
-      <view class="info-item">
-        <text class="info-label">充电时长</text>
-        <text class="info-value">{{ formatDuration(session.duration) }}</text>
-      </view>
-      <view class="info-item">
-        <text class="info-label">已充金额</text>
-        <text class="info-value amount">¥{{ session.cost.toFixed(2) }}</text>
-      </view>
-      <view class="info-item">
-        <text class="info-label">预估剩余</text>
-        <text class="info-value">{{ estimatedRemaining }}</text>
-      </view>
-    </view>
 
-    <!-- 充电站信息 -->
-    <view class="station-info">
-      <text class="info-title">充电站信息</text>
-      <view class="info-row">
-        <text class="row-label">充电站</text>
-        <text class="row-value">{{ session.stationName }}</text>
+      <!-- 详细数据 -->
+      <view class="info-grid">
+        <view class="info-item">
+          <text class="info-label">已充电量</text>
+          <text class="info-value">{{ energyDisplay }}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">充电时长</text>
+          <text class="info-value">{{ formatDuration(session.duration) }}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">已充金额</text>
+          <text class="info-value amount">¥{{ costDisplay }}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">预估剩余</text>
+          <text class="info-value">{{ estimatedRemaining }}</text>
+        </view>
       </view>
-      <view class="info-row">
-        <text class="row-label">设备编号</text>
-        <text class="row-value">{{ session.deviceCode }}</text>
-      </view>
-      <view class="info-row">
-        <text class="row-label">开始时间</text>
-        <text class="row-value">{{ session.startTime }}</text>
-      </view>
-    </view>
 
-    <!-- 操作按钮 -->
-    <view class="actions">
-      <button v-if="session.status === 'charging'" class="stop-btn" @tap="handleStop">停止充电</button>
-      <button v-else class="back-btn" @tap="goBack">返回首页</button>
-    </view>
+      <!-- 充电站信息 -->
+      <view class="station-info">
+        <text class="info-title">充电站信息</text>
+        <view class="info-row">
+          <text class="row-label">充电站</text>
+          <text class="row-value">{{ session.stationName }}</text>
+        </view>
+        <view class="info-row">
+          <text class="row-label">设备编号</text>
+          <text class="row-value">{{ session.deviceCode }}</text>
+        </view>
+        <view class="info-row">
+          <text class="row-label">开始时间</text>
+          <text class="row-value">{{ formatTime(session.startTime) }}</text>
+        </view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="actions">
+        <button v-if="session.status === 'charging'" class="stop-btn" :disabled="stopping" @tap="handleStop">
+          {{ stopping ? '停止中...' : '停止充电' }}
+        </button>
+        <button v-else class="back-btn" @tap="goBack">返回首页</button>
+      </view>
+    </template>
   </view>
 </template>
 
@@ -67,6 +80,8 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { api, type ChargingSession } from '@/api/index'
 
+const hasSession = ref(false)
+const stopping = ref(false)
 const session = ref<ChargingSession>({
   orderId: '',
   stationName: '',
@@ -82,11 +97,43 @@ const session = ref<ChargingSession>({
 
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
+const statusText = computed(() => {
+  if (session.value.status === 'charging') return '充电中'
+  if (session.value.status === 'completed') return '充电完成'
+  if (session.value.status === 'stopped') return '已停止'
+  return '未知状态'
+})
+
+// 功率显示: W → kW
+const powerDisplay = computed(() => {
+  const w = session.value.power
+  if (w >= 1000) return (w / 1000).toFixed(1) + ' kW'
+  return w.toFixed(0) + ' W'
+})
+
+// 电量显示: Wh → kWh
+const energyDisplay = computed(() => {
+  const wh = session.value.energy
+  if (wh >= 1000) return (wh / 1000).toFixed(2) + ' kWh'
+  return wh.toFixed(0) + ' Wh'
+})
+
+// 金额显示: 分 → 元
+const costDisplay = computed(() => {
+  return (session.value.cost / 100).toFixed(2)
+})
+
 const estimatedRemaining = computed(() => {
   if (session.value.status !== 'charging' || session.value.currentSoc >= 80) return '-'
   const remainingSoc = 80 - session.value.currentSoc
-  const minutes = Math.floor(remainingSoc / (session.value.power / 60))
-  return `~${minutes}分钟`
+  const powerW = session.value.power
+  if (powerW <= 0) return '-'
+  // 假设电池容量60kWh，剩余电量 = remainingSoc% * 60kWh
+  const remainingWh = remainingSoc / 100 * 60000
+  const hours = remainingWh / powerW
+  const minutes = Math.ceil(hours * 60)
+  if (minutes < 60) return `~${minutes}分钟`
+  return `~${Math.floor(minutes / 60)}小时${minutes % 60}分钟`
 })
 
 function formatDuration(seconds: number): string {
@@ -96,47 +143,143 @@ function formatDuration(seconds: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-onMounted(async () => {
-  try {
-    // 获取当前充电状态
-    const status = await api.getChargingStatus('current')
-    session.value = status
+function formatTime(time: string): string {
+  if (!time) return '--'
+  const d = new Date(time)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
 
-    // 每3秒刷新一次
-    refreshTimer = setInterval(async () => {
-      try {
-        const updated = await api.getChargingStatus(session.value.orderId)
-        session.value = updated
-        if (updated.status === 'completed') {
-          if (refreshTimer) clearInterval(refreshTimer)
-          uni.showToast({ title: '充电已完成', icon: 'success' })
+async function fetchStatus() {
+  try {
+    const id = currentOrderId || 'current'
+    const status = await api.getChargingStatus(id)
+    if (!status || status.status === 'idle') {
+      hasSession.value = false
+      stopPolling()
+      return
+    }
+    session.value = status
+    hasSession.value = true
+    if (status.status !== 'charging') {
+      stopPolling()
+    }
+  } catch (e) {
+    console.error('fetchStatus error:', e)
+  }
+}
+
+function startPolling() {
+  stopPolling()
+  refreshTimer = setInterval(fetchStatus, 1000) // 每秒更新
+}
+
+function stopPolling() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+}
+
+onMounted(async () => {
+  // 从页面参数获取 orderId 或 stationId
+  const pages = getCurrentPages()
+  const currentPage = pages[pages.length - 1]
+  const options = (currentPage as any)?.$page?.options || (currentPage as any)?.options || {}
+  const orderId = options.orderId
+  const stationId = options.stationId
+
+  if (orderId) {
+    // 从地图页跳转过来，已有 orderId
+    try {
+      const status = await api.getChargingStatus(orderId)
+      if (status && status.status !== 'idle') {
+        session.value = status
+        hasSession.value = true
+        if (status.status === 'charging') {
+          // 存储当前 orderId 用于后续轮询
+          currentOrderId = orderId
+          startPollingWithId(orderId)
         }
-      } catch (e) {
-        console.error('刷新状态失败:', e)
       }
-    }, 3000)
-  } catch (error) {
-    uni.showToast({ title: '获取充电状态失败', icon: 'none' })
+    } catch (e) {
+      console.error('获取充电状态失败:', e)
+    }
+  } else if (stationId) {
+    // 从其他页面跳转，直接启动充电
+    try {
+      uni.showLoading({ title: '启动充电中...' })
+      const result = await api.startCharging({
+        stationId,
+        deviceCode: 'DEV-' + String(stationId).padStart(4, '0'),
+        connectorId: '1',
+      })
+      uni.hideLoading()
+      if (result && (result as any).orderId) {
+        session.value = result as ChargingSession
+        hasSession.value = true
+        currentOrderId = (result as any).orderId
+        startPollingWithId((result as any).orderId)
+      }
+    } catch (e) {
+      uni.hideLoading()
+      uni.showToast({ title: '启动充电失败', icon: 'none' })
+    }
+  } else {
+    // 默认查询当前充电状态
+    await fetchStatus()
+    if (hasSession.value && session.value.status === 'charging') {
+      startPolling()
+    }
   }
 })
 
+let currentOrderId = ''
+
+function startPollingWithId(orderId: string) {
+  stopPolling()
+  currentOrderId = orderId
+  refreshTimer = setInterval(async () => {
+    try {
+      const status = await api.getChargingStatus(orderId)
+      if (!status || status.status === 'idle') {
+        hasSession.value = false
+        stopPolling()
+        return
+      }
+      session.value = status
+      if (status.status !== 'charging') {
+        stopPolling()
+      }
+    } catch (e) {
+      // 静默处理
+    }
+  }, 1000)
+}
+
 onUnmounted(() => {
-  if (refreshTimer) clearInterval(refreshTimer)
+  stopPolling()
 })
 
 async function handleStop() {
+  if (stopping.value) return
   uni.showModal({
     title: '确认停止',
     content: '确定要停止充电吗？',
     success: async (res) => {
       if (res.confirm) {
+        stopping.value = true
         try {
-          const result = await api.stopCharging(session.value.orderId)
-          session.value = result
-          if (refreshTimer) clearInterval(refreshTimer)
+          const orderId = currentOrderId || session.value.orderId
+          const result = await api.stopCharging(orderId)
+          if (result) {
+            session.value = result
+          }
+          stopPolling()
           uni.showToast({ title: '充电已停止', icon: 'success' })
         } catch (error) {
           uni.showToast({ title: '停止失败', icon: 'none' })
+        } finally {
+          stopping.value = false
         }
       }
     }
@@ -145,6 +288,10 @@ async function handleStop() {
 
 function goBack() {
   uni.switchTab({ url: '/pages/index/index' })
+}
+
+function goToMap() {
+  uni.switchTab({ url: '/pages/map/index' })
 }
 </script>
 
@@ -155,6 +302,27 @@ function goBack() {
   min-height: 100vh;
 }
 
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 200rpx 48rpx 0;
+}
+
+.empty-icon { font-size: 96rpx; }
+.empty-title { font-size: 32rpx; font-weight: bold; color: #333; margin-top: 24rpx; }
+.empty-desc { font-size: 24rpx; color: #999; margin-top: 12rpx; text-align: center; }
+
+.go-map-btn {
+  margin-top: 48rpx;
+  background: #07C160;
+  color: #fff;
+  border: none;
+  border-radius: 48rpx;
+  font-size: 30rpx;
+  padding: 20rpx 80rpx;
+}
+
 .status-card {
   border-radius: 16rpx;
   padding: 48rpx;
@@ -163,13 +331,9 @@ function goBack() {
   margin-bottom: 24rpx;
 }
 
-.status-card.charging {
-  background: linear-gradient(135deg, #07C160, #06AD56);
-}
-
-.status-card.completed {
-  background: linear-gradient(135deg, #1677FF, #0958D9);
-}
+.status-card.charging { background: linear-gradient(135deg, #07C160, #06AD56); }
+.status-card.completed { background: linear-gradient(135deg, #1677FF, #0958D9); }
+.status-card.stopped { background: linear-gradient(135deg, #999, #666); }
 
 .status-icon { font-size: 64rpx; display: block; }
 .status-text { font-size: 32rpx; display: block; margin-top: 12rpx; }
@@ -193,15 +357,10 @@ function goBack() {
   height: 100%;
   background: linear-gradient(90deg, #07C160, #52C41A);
   border-radius: 12rpx;
-  transition: width 1s ease;
+  transition: width 0.5s ease;
 }
 
-.soc-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 12rpx;
-}
-
+.soc-labels { display: flex; justify-content: space-between; margin-top: 12rpx; }
 .soc-value { font-size: 32rpx; font-weight: bold; color: #07C160; }
 .soc-hint { font-size: 22rpx; color: #999; }
 
@@ -253,6 +412,8 @@ function goBack() {
   font-size: 30rpx;
   padding: 24rpx;
 }
+
+.stop-btn[disabled] { opacity: 0.6; }
 
 .back-btn {
   background: #07C160;

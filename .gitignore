@@ -7,6 +7,7 @@ node_modules/
 dist/
 build/
 out/
+bin/
 
 # Gradle
 .gradle/
@@ -72,3 +73,18 @@ dist/
 tmp/
 temp/
 *.tmp
+
+# Images / Screenshots (not tracked in git)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.svg
+*.webp
+*.ico
+
+# Documents
+*.pdf
+*.docx
+*.doc

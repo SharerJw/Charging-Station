@@ -20,11 +20,21 @@ public class AlertController {
 
     @Operation(summary = "告警列表") @GetMapping
     public R<List<AlertVO>> list(@RequestParam(required = false) String level,
-                                  @RequestParam(required = false) String status) {
+                                  @RequestParam(required = false) String status,
+                                  @RequestParam(required = false) String keyword,
+                                  @RequestParam(defaultValue = "1") int page,
+                                  @RequestParam(defaultValue = "10") int size) {
         LambdaQueryWrapper<DeviceAlertEntity> wrapper = new LambdaQueryWrapper<>();
         if (level != null && !level.isBlank()) wrapper.eq(DeviceAlertEntity::getLevel, level);
         if (status != null && !status.isBlank()) wrapper.eq(DeviceAlertEntity::getStatus, status);
+        if (keyword != null && !keyword.isBlank()) {
+            wrapper.and(w -> w
+                    .like(DeviceAlertEntity::getTitle, keyword)
+                    .or().like(DeviceAlertEntity::getStationName, keyword)
+                    .or().like(DeviceAlertEntity::getDeviceCode, keyword));
+        }
         wrapper.orderByDesc(DeviceAlertEntity::getCreatedAt);
+        wrapper.last("LIMIT " + size + " OFFSET " + (page - 1) * size);
         List<AlertVO> voList = alertMapper.selectList(wrapper).stream()
                 .map(a -> AlertVO.builder()
                         .id(String.valueOf(a.getId())).level(a.getLevel()).title(a.getTitle())

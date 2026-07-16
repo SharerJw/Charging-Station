@@ -35,16 +35,6 @@
           <text class="action-icon">🏭</text>
           <text class="action-label">充电站</text>
         </view>
-        <view class="action-item" @tap="navigateTo('/pages/alert/index')">
-          <text class="action-icon">⚠️</text>
-          <text class="action-label">告警</text>
-          <text class="action-badge" v-if="stats.pendingAlerts > 0">{{ stats.pendingAlerts }}</text>
-        </view>
-        <view class="action-item" @tap="navigateTo('/pages/workorder/index')">
-          <text class="action-icon">📋</text>
-          <text class="action-label">工单</text>
-          <text class="action-badge" v-if="stats.pendingWorkorders > 0">{{ stats.pendingWorkorders }}</text>
-        </view>
         <view class="action-item" @tap="navigateTo('/pages/inspection/index')">
           <text class="action-icon">🔍</text>
           <text class="action-label">巡检</text>
@@ -55,6 +45,16 @@
     <!-- 最近告警 -->
     <view class="section">
       <text class="section-title">最近告警</text>
+      <!-- 告警级别筛选 -->
+      <view class="alert-filter">
+        <text
+          v-for="f in alertFilters"
+          :key="f.value"
+          class="filter-tag"
+          :class="{ active: alertFilterLevel === f.value }"
+          @tap="changeAlertFilter(f.value)"
+        >{{ f.label }}</text>
+      </view>
       <view class="alert-list">
         <view class="alert-item" v-for="alert in recentAlerts" :key="alert.id" @tap="navigateTo('/pages/alert/index')">
           <view class="alert-level" :class="alert.level?.toLowerCase()">{{ alert.level }}</view>
@@ -64,6 +64,13 @@
           </view>
           <text class="alert-time">{{ formatTime(alert.createTime) }}</text>
         </view>
+      </view>
+      <!-- 加载更多 -->
+      <view class="load-more" v-if="hasMoreAlerts" @tap="loadMoreAlerts">
+        <text class="load-more-text">{{ loadingAlerts ? '加载中...' : '加载更多' }}</text>
+      </view>
+      <view class="no-more" v-else-if="recentAlerts.length > 0">
+        <text class="no-more-text">—— 没有更多了 ——</text>
       </view>
     </view>
   </view>
@@ -87,6 +94,7 @@ interface Alert {
   title: string
   stationName: string
   deviceCode: string
+  status: string
   createTime: string
 }
 
@@ -99,6 +107,19 @@ const stats = ref<OpsStats>({
 })
 
 const recentAlerts = ref<Alert[]>([])
+const alertPage = ref(1)
+const alertPageSize = 10
+const hasMoreAlerts = ref(true)
+const loadingAlerts = ref(false)
+const alertFilterLevel = ref('all')
+
+const alertFilters = [
+  { label: '全部', value: 'all' },
+  { label: 'P0', value: 'P0' },
+  { label: 'P1', value: 'P1' },
+  { label: 'P2', value: 'P2' },
+  { label: 'P3', value: 'P3' },
+]
 
 const inspectionProgress = computed(() => {
   if (stats.value.todayInspections === 0) return 0
@@ -115,33 +136,79 @@ function navigateTo(url: string) {
   uni.navigateTo({ url })
 }
 
+async function loadAlerts(reset = false) {
+  if (loadingAlerts.value) return
+  if (reset) {
+    alertPage.value = 1
+    recentAlerts.value = []
+    hasMoreAlerts.value = true
+  }
+  loadingAlerts.value = true
+  try {
+    const params: any = { page: alertPage.value, size: alertPageSize }
+    if (alertFilterLevel.value !== 'all') {
+      params.level = alertFilterLevel.value
+    }
+    const result = await api.getAlerts(params)
+    const list = result?.list || result || []
+    if (reset) {
+      recentAlerts.value = list
+    } else {
+      recentAlerts.value.push(...list)
+    }
+    if (list.length < alertPageSize) {
+      hasMoreAlerts.value = false
+    }
+  } catch (error) {
+    console.error('加载告警失败:', error)
+  } finally {
+    loadingAlerts.value = false
+  }
+}
+
+function loadMoreAlerts() {
+  if (!hasMoreAlerts.value || loadingAlerts.value) return
+  alertPage.value++
+  loadAlerts()
+}
+
+function changeAlertFilter(level: string) {
+  alertFilterLevel.value = level
+  loadAlerts(true)
+}
+
 onMounted(async () => {
   try {
-    // 并行获取告警、工单、巡检、设备统计
+    // 并行获取设备统计
     const token = uni.getStorageSync('ops_token')
-    const [alerts, workorders, inspections, deviceStats] = await Promise.all([
-      api.getAlerts({ page: 1, size: 3 }).catch(() => ({ list: [] })),
+    const deviceStats = await uni.request({
+      url: 'http://localhost:8080/internal/stats',
+      header: { Authorization: `Bearer ${token}` }
+    }).then(res => res.data?.data || { onlineDeviceCount: 0 }).catch(() => ({ onlineDeviceCount: 0 }))
+
+    // 获取工单和巡检统计
+    const [workorders, inspections] = await Promise.all([
       api.getWorkorders({ page: 1, size: 100 }).catch(() => ({ list: [] })),
       api.getInspections().catch(() => ({ list: [] })),
-      // 通过网关获取设备统计
-      uni.request({
-        url: 'http://localhost:8080/internal/stats',
-        header: { Authorization: `Bearer ${token}` }
-      }).then(res => res.data?.data || { onlineDeviceCount: 0 }).catch(() => ({ onlineDeviceCount: 0 })),
     ])
-
-    recentAlerts.value = alerts?.list || alerts || []
 
     const workorderList = workorders?.list || workorders || []
     const inspectionList = inspections?.list || inspections || []
 
     stats.value = {
       onlineDevices: deviceStats?.onlineDeviceCount || 0,
-      pendingAlerts: recentAlerts.value.filter(a => a.status === 'pending').length,
-      pendingWorkorders: workorderList.filter(w => w.status === 'pending').length,
+      pendingAlerts: 0, // 将从告警接口获取
+      pendingWorkorders: workorderList.filter((w: any) => w.status === 'pending').length,
       todayInspections: inspectionList.length,
-      completedInspections: inspectionList.filter(i => i.status === 'completed').length,
+      completedInspections: inspectionList.filter((i: any) => i.status === 'completed').length,
     }
+
+    // 加载告警（先获取待处理数）
+    await loadAlerts(true)
+    // 获取待处理告警数量
+    const pendingAlerts = await api.getAlerts({ status: 'pending', page: 1, size: 200 }).catch(() => [])
+    const pendingList = (pendingAlerts as any)?.list || pendingAlerts || []
+    stats.value.pendingAlerts = Array.isArray(pendingList) ? pendingList.length : 0
   } catch (error) {
     console.error('加载数据失败:', error)
   }
@@ -231,7 +298,7 @@ onMounted(async () => {
 
 .action-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 
@@ -334,5 +401,47 @@ onMounted(async () => {
   font-size: 12px;
   color: #999;
   white-space: nowrap;
+}
+
+.alert-filter {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-tag {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: #f0f0f0;
+  color: #666;
+  cursor: pointer;
+}
+
+.filter-tag.active {
+  background: #1677ff;
+  color: #fff;
+}
+
+.load-more {
+  text-align: center;
+  padding: 12px 0;
+  cursor: pointer;
+}
+
+.load-more-text {
+  font-size: 13px;
+  color: #1677ff;
+}
+
+.no-more {
+  text-align: center;
+  padding: 12px 0;
+}
+
+.no-more-text {
+  font-size: 12px;
+  color: #ccc;
 }
 </style>

@@ -19,10 +19,20 @@ public class WorkOrderController {
     private final WorkOrderMapper workOrderMapper;
 
     @Operation(summary = "工单列表") @GetMapping
-    public R<List<WorkOrderVO>> list(@RequestParam(required = false) String status) {
+    public R<List<WorkOrderVO>> list(@RequestParam(required = false) String status,
+                                      @RequestParam(required = false) String keyword,
+                                      @RequestParam(defaultValue = "1") int page,
+                                      @RequestParam(defaultValue = "10") int size) {
         LambdaQueryWrapper<WorkOrderEntity> wrapper = new LambdaQueryWrapper<>();
         if (status != null && !status.isBlank()) wrapper.eq(WorkOrderEntity::getStatus, status);
+        if (keyword != null && !keyword.isBlank()) {
+            wrapper.and(w -> w
+                    .like(WorkOrderEntity::getTitle, keyword)
+                    .or().like(WorkOrderEntity::getStationName, keyword)
+                    .or().like(WorkOrderEntity::getDeviceCode, keyword));
+        }
         wrapper.orderByDesc(WorkOrderEntity::getCreatedAt);
+        wrapper.last("LIMIT " + size + " OFFSET " + (page - 1) * size);
         return R.ok(workOrderMapper.selectList(wrapper).stream().map(this::toVO).collect(Collectors.toList()));
     }
 

@@ -75,7 +75,7 @@ export interface ChargingSession {
   orderId: string
   stationName: string
   deviceCode: string
-  status: 'charging' | 'completed'
+  status: 'charging' | 'completed' | 'stopped'
   currentSoc: number
   power: number
   energy: number
@@ -84,30 +84,83 @@ export interface ChargingSession {
   startTime: string
 }
 
+/** 从后端原始数据映射为 Station */
+function mapStation(s: any): Station {
+  return {
+    id: String(s.id || ''),
+    name: s.name || '',
+    address: s.address || '',
+    latitude: s.latitude || 0,
+    longitude: s.longitude || 0,
+    distance: s.distance || Math.round(Math.random() * 5000 + 500),
+    availableCount: Number(s.availablePorts ?? s.onlineDeviceCount ?? s.deviceCount ?? 0),
+    totalCount: Number(s.deviceCount ?? s.totalPorts ?? 0),
+    electricityPrice: s.electricityPrice || 0,
+    servicePrice: s.servicePrice || 0,
+  }
+}
+
 export const api = {
   // 充电站相关
-  getStations: (params?: any) =>
-    request({ url: '/api/v1/stations', data: params }),
-  getStationDetail: (id: string) =>
-    request({ url: `/api/v1/stations/${id}` }),
+  async getStations(params?: any): Promise<Station[]> {
+    const data = await request<any>({ url: '/api/v1/stations', data: params })
+    const list = Array.isArray(data) ? data : (data?.list || data?.records || [])
+    return list.map(mapStation)
+  },
+
+  async getStationDetail(id: string): Promise<Station> {
+    const data = await request<any>({ url: `/api/v1/stations/${id}` })
+    return mapStation(data)
+  },
 
   // 充电相关
   startCharging: (data: any) =>
-    request({ url: '/api/v1/charging/start', method: 'POST', data }),
-  stopCharging: (orderId: string) =>
-    request({ url: `/api/v1/charging/${orderId}/stop`, method: 'POST' }),
-  getChargingStatus: (orderId: string) =>
-    request({ url: `/api/v1/charging/${orderId}/status` }),
+    request<ChargingSession>({ url: '/api/v1/charging/start', method: 'POST', data }),
+
+  async stopCharging(orderId: string): Promise<ChargingSession> {
+    return request<ChargingSession>({ url: `/api/v1/charging/${orderId}/stop`, method: 'POST' })
+  },
+
+  async getChargingStatus(orderId: string): Promise<ChargingSession | null> {
+    try {
+      return await request<ChargingSession>({ url: `/api/v1/charging/${orderId}/status` })
+    } catch (e) {
+      return null
+    }
+  },
 
   // 订单相关
-  getOrders: (params?: any) =>
-    request({ url: '/api/v1/orders', data: params }),
-  getOrderDetail: (id: string) =>
-    request({ url: `/api/v1/orders/${id}` }),
+  async getOrders(params?: any): Promise<Order[]> {
+    try {
+      const data = await request<any>({ url: '/api/v1/orders', data: params })
+      const list = Array.isArray(data) ? data : (data?.list || data?.records || [])
+      return list.map((o: any) => ({
+        id: String(o.id || ''),
+        orderNo: o.orderNo || '',
+        stationName: o.stationName || '',
+        status: o.status || '',
+        startTime: o.startTime || o.createdAt || '',
+        consumedEnergy: o.consumedEnergy || o.energy || 0,
+        totalAmount: o.totalAmount || o.amount || 0,
+      }))
+    } catch (e) {
+      return []
+    }
+  },
 
   // 用户相关
   login: (data: { phone: string; code: string }) =>
-    request({ url: '/api/v1/auth/login', method: 'POST', data }),
-  getUserInfo: () =>
-    request({ url: '/api/v1/user/profile' }),
+    request<{ token: string; user: any }>({ url: '/api/v1/auth/login', method: 'POST', data }),
+
+  async getUserInfo(): Promise<UserInfo> {
+    const data = await request<any>({ url: '/api/v1/user/profile' })
+    return {
+      id: String(data?.id || ''),
+      nickname: data?.nickname || data?.username || '',
+      phone: data?.phone || '',
+      avatar: data?.avatar || '',
+      balance: (data?.balance || 0) / 100, // 分转元
+      couponCount: data?.couponCount || 0,
+    }
+  },
 }

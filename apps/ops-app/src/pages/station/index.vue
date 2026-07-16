@@ -123,7 +123,17 @@ async function loadStations() {
       params.keyword = keyword.value
     }
     const data = await api.getStations(params)
-    stations.value = (data as any)?.list || data || []
+    const list = (data as any)?.list || data || []
+    stations.value = (Array.isArray(list) ? list : []).map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      address: s.address,
+      deviceCount: s.deviceCount || 0,
+      onlineCount: s.onlineDeviceCount || s.onlineCount || 0,
+      price: s.electricityPrice || 0,
+      longitude: s.longitude,
+      latitude: s.latitude,
+    }))
     addMarkers()
   } catch (e) {
     console.error('获取充电站列表失败:', e)

@@ -9,8 +9,6 @@ describe('KpiCard', () => {
     unit: 'kWh',
     icon: '⚡',
     color: '#1677FF',
-    dailyTrend: 12.5,
-    weeklyTrend: 8.3,
     loading: false,
   }
 
@@ -28,49 +26,6 @@ describe('KpiCard', () => {
   it('应正确渲染图标', () => {
     const wrapper = mount(KpiCard, { props: defaultProps })
     expect(wrapper.find('.kpi-icon').text()).toBe('⚡')
-  })
-
-  it('应显示日环比趋势', () => {
-    const wrapper = mount(KpiCard, { props: defaultProps })
-    const trends = wrapper.findAll('.trend-item')
-    expect(trends[0].text()).toContain('+12.5%')
-    expect(trends[0].text()).toContain('日环比')
-  })
-
-  it('应显示周同比趋势', () => {
-    const wrapper = mount(KpiCard, { props: defaultProps })
-    const trends = wrapper.findAll('.trend-item')
-    expect(trends[1].text()).toContain('+8.3%')
-    expect(trends[1].text()).toContain('周同比')
-  })
-
-  it('正趋势应显示绿色和上箭头', () => {
-    const wrapper = mount(KpiCard, { props: defaultProps })
-    const trend = wrapper.find('.trend-item')
-    expect(trend.attributes('style')).toContain('color: rgb(82, 196, 26)')
-    expect(trend.text()).toContain('↑')
-  })
-
-  it('负趋势应显示红色和下箭头', () => {
-    const wrapper = mount(KpiCard, {
-      props: { ...defaultProps, dailyTrend: -5.2, weeklyTrend: -3.1 },
-    })
-    const trends = wrapper.findAll('.trend-item')
-    expect(trends[0].attributes('style')).toContain('color: rgb(255, 77, 79)')
-    expect(trends[0].text()).toContain('↓')
-    expect(trends[0].text()).toContain('-5.2%')
-    expect(trends[1].text()).toContain('↓')
-    expect(trends[1].text()).toContain('-3.1%')
-  })
-
-  it('零趋势应显示灰色和右箭头', () => {
-    const wrapper = mount(KpiCard, {
-      props: { ...defaultProps, dailyTrend: 0, weeklyTrend: 0 },
-    })
-    const trends = wrapper.findAll('.trend-item')
-    expect(trends[0].attributes('style')).toContain('color: rgb(153, 153, 153)')
-    expect(trends[0].text()).toContain('→')
-    expect(trends[0].text()).toContain('0%')
   })
 
   it('loading 状态应显示省略号', () => {
@@ -105,14 +60,5 @@ describe('KpiCard', () => {
       props: { ...defaultProps, loading: true },
     })
     expect(wrapper.find('.kpi-card').classes()).toContain('is-loading')
-  })
-
-  it('未提供 trend 时应默认为 0', () => {
-    const wrapper = mount(KpiCard, {
-      props: { ...defaultProps, dailyTrend: undefined, weeklyTrend: undefined },
-    })
-    const trends = wrapper.findAll('.trend-item')
-    expect(trends[0].text()).toContain('0%')
-    expect(trends[1].text()).toContain('0%')
   })
 })

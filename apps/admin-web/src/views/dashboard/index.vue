@@ -138,21 +138,19 @@ const formatWan = (v: number) => v >= 10000 ? (v / 10000).toFixed(1) + '万' : f
 
 const operationStats = computed(() => {
   const s = dashboardStore.stats
-  const t = s.trends || {}
   return [
-    { title: '今日充电量', value: formatNum(Math.round(s.todayEnergy / 1000)), unit: 'kWh', icon: '⚡', color: '#1677FF', dailyTrend: t.todayEnergy?.daily ?? 0, weeklyTrend: t.todayEnergy?.weekly ?? 0 },
-    { title: '今日营收', value: '¥' + formatWan(Math.round(s.todayRevenue / 100)), unit: '', icon: '💰', color: '#52C41A', dailyTrend: t.todayRevenue?.daily ?? 0, weeklyTrend: t.todayRevenue?.weekly ?? 0 },
-    { title: '今日订单数', value: formatNum(s.todayOrderCount), unit: '笔', icon: '📋', color: '#FAAD14', dailyTrend: t.todayOrderCount?.daily ?? 0, weeklyTrend: t.todayOrderCount?.weekly ?? 0 },
+    { title: '今日充电量', value: formatNum(Math.round(s.todayEnergy / 1000)), unit: 'kWh', icon: '⚡', color: '#1677FF' },
+    { title: '今日营收', value: '¥' + formatWan(Math.round(s.todayRevenue / 100)), unit: '', icon: '💰', color: '#52C41A' },
+    { title: '今日订单数', value: formatNum(s.todayOrderCount), unit: '笔', icon: '📋', color: '#FAAD14' },
   ]
 })
 
 const deviceStats = computed(() => {
   const s = dashboardStore.stats
-  const t = s.trends || {}
   return [
-    { title: '站点总数', value: formatNum(s.stationCount), unit: '个', icon: '🏭', color: '#FF4D4F', dailyTrend: t.stationCount?.daily ?? 0, weeklyTrend: t.stationCount?.weekly ?? 0 },
-    { title: '设备在线率', value: s.deviceCount > 0 ? ((s.onlineDeviceCount / s.deviceCount) * 100).toFixed(1) : '0', unit: '%', icon: '🟢', color: '#13C2C2', dailyTrend: t.onlineDeviceRate?.daily ?? 0, weeklyTrend: t.onlineDeviceRate?.weekly ?? 0 },
-    { title: '累计电量', value: formatNum(Math.round(s.totalEnergy / 1000)), unit: 'kWh', icon: '📊', color: '#722ED1', dailyTrend: t.totalEnergy?.daily ?? 0, weeklyTrend: t.totalEnergy?.weekly ?? 0 },
+    { title: '站点总数', value: formatNum(s.stationCount), unit: '个', icon: '🏭', color: '#FF4D4F' },
+    { title: '设备在线率', value: s.deviceCount > 0 ? ((s.onlineDeviceCount / s.deviceCount) * 100).toFixed(1) : '0', unit: '%', icon: '🟢', color: '#13C2C2' },
+    { title: '累计电量', value: formatNum(Math.round(s.totalEnergy / 1000)), unit: 'kWh', icon: '📊', color: '#722ED1' },
   ]
 })
 
@@ -255,8 +253,6 @@ function formatTime(time: string) {
           :unit="stat.unit"
           :icon="stat.icon"
           :color="stat.color"
-          :daily-trend="stat.dailyTrend"
-          :weekly-trend="stat.weeklyTrend"
           :loading="dashboardStore.loading"
         />
       </div>
@@ -274,8 +270,6 @@ function formatTime(time: string) {
           :unit="stat.unit"
           :icon="stat.icon"
           :color="stat.color"
-          :daily-trend="stat.dailyTrend"
-          :weekly-trend="stat.weeklyTrend"
           :loading="dashboardStore.loading"
         />
       </div>
