@@ -32,4 +32,20 @@ test.describe('性能测试', () => {
     const memory = await getMemoryUsage(page)
     expect(memory).toBeLessThan(testData.thresholds.memoryLimit)
   })
+
+  test('无 JS 控制台错误', async ({ page }) => {
+    const errors: string[] = []
+    page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()) })
+    await page.goto('/dashboard')
+    await page.waitForLoadState('networkidle')
+    expect(errors).toHaveLength(0)
+  })
+
+  test('无未处理的 Promise rejection', async ({ page }) => {
+    const rejections: string[] = []
+    page.on('pageerror', err => rejections.push(err.message))
+    await page.goto('/dashboard')
+    await page.waitForLoadState('networkidle')
+    expect(rejections).toHaveLength(0)
+  })
 })
