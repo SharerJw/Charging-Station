@@ -30,7 +30,7 @@ async function getStoreDeviceIds(page: import('@playwright/test').Page): Promise
     const pinia = app.config.globalProperties.$pinia
     if (!pinia) return []
     const store = pinia.state.value?.simulator
-    if (!store?.devices) return []
+    if (!store?.devices || store.devices.length === 0) return []
     return store.devices.map((d: any) => d.id)
   })
 }
@@ -63,7 +63,8 @@ async function fetchDeviceIds(request: any): Promise<string[]> {
   const resp = await request.get(`${API_BASE}/simulator/devices`)
   const body = await resp.json()
   const devices = body?.data?.list || body?.data || body?.list || body || []
-  return devices.map((d: any) => d.id)
+  // 后端部分数据 id 为 null，统一用 ocppId 作为唯一标识
+  return devices.map((d: any) => d.id || d.ocppId)
 }
 
 /** 调用 API 并返回统计信息 */
@@ -82,8 +83,15 @@ test.describe('幽灵数据检测 - Dashboard', () => {
     for (let i = 0; i < REFRESH_COUNT; i++) {
       await page.goto('/dashboard')
       await page.waitForLoadState('domcontentloaded')
-      await page.waitForSelector('.stat-card', { timeout: 10000 })
-      await page.waitForTimeout(800)
+      // 等待统计卡片数值加载完成（非零值表示数据已加载）
+      await page.waitForFunction(
+        () => {
+          const cards = document.querySelectorAll('.stat-card .stat-value')
+          return cards.length >= 4 && Array.from(cards).some(c => parseInt(c.textContent?.replace(/[^0-9]/g, '') || '0', 10) > 0)
+        },
+        { timeout: 15000 },
+      )
+      await page.waitForTimeout(300)
       const values = await getDashboardStatValues(page)
       readings.push(values)
     }
@@ -100,8 +108,19 @@ test.describe('幽灵数据检测 - Dashboard', () => {
     for (let i = 0; i < REFRESH_COUNT; i++) {
       await page.goto('/dashboard')
       await page.waitForLoadState('domcontentloaded')
-      await page.waitForSelector('.stat-card', { timeout: 10000 })
-      await page.waitForTimeout(800)
+      // 等待 Pinia store 被填充设备数据
+      await page.waitForFunction(
+        () => {
+          const app = (document.querySelector('#app') as any)?.__vue_app__
+          if (!app) return false
+          const pinia = app.config.globalProperties.$pinia
+          if (!pinia) return false
+          const store = pinia.state.value?.simulator
+          return store?.devices && store.devices.length > 0
+        },
+        { timeout: 15000 },
+      )
+      await page.waitForTimeout(300)
       const ids = await getStoreDeviceIds(page)
       readings.push(ids)
     }
@@ -117,8 +136,19 @@ test.describe('幽灵数据检测 - Dashboard', () => {
     for (let i = 0; i < REFRESH_COUNT; i++) {
       await page.goto('/dashboard')
       await page.waitForLoadState('domcontentloaded')
-      await page.waitForSelector('.stat-card', { timeout: 10000 })
-      await page.waitForTimeout(800)
+      // 等待 Pinia store 被填充设备数据
+      await page.waitForFunction(
+        () => {
+          const app = (document.querySelector('#app') as any)?.__vue_app__
+          if (!app) return false
+          const pinia = app.config.globalProperties.$pinia
+          if (!pinia) return false
+          const store = pinia.state.value?.simulator
+          return store?.devices && store.devices.length > 0
+        },
+        { timeout: 15000 },
+      )
+      await page.waitForTimeout(300)
 
       const devices = await page.evaluate(() => {
         const app = (document.querySelector('#app') as any)?.__vue_app__

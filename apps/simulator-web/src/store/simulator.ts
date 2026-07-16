@@ -20,6 +20,11 @@ export const useSimulatorStore = defineStore('simulator', () => {
 
   const connected = ref(true)
 
+  /** Normalize device list: ensure id is always set (backend may return null for id) */
+  function setDevices(list: any[]) {
+    devices.value = list.map(d => ({ ...d, id: d.id || d.ocppId }))
+  }
+
   function updateDeviceStatus(id: string, status: Device['status']) {
     const device = devices.value.find(d => d.id === id)
     if (device) {
@@ -34,5 +39,5 @@ export const useSimulatorStore = defineStore('simulator', () => {
     }
   }
 
-  return { devices, connected, updateDeviceStatus, updateDeviceMetrics }
+  return { devices, connected, setDevices, updateDeviceStatus, updateDeviceMetrics }
 })

@@ -60,7 +60,7 @@ const { realtimeChartOption, socChartOption, statusPieOption } = useChartOptions
   currentHistory,
   socHistory,
   tempHistory,
-  simulatorStore.devices as any,
+  simulatorStore.devices,
 )
 
 // 切换设备时重置图表历史
@@ -85,7 +85,7 @@ async function loadData() {
   ])
   stats.value = s
   const devices = devicesResponse?.list || devicesResponse || []
-  simulatorStore.devices = devices
+  simulatorStore.setDevices(devices)
   if (!selectedDevice.value && devices.length > 0) {
     selectedDevice.value = devices[0]?.id || ''
   }
@@ -121,7 +121,7 @@ function startRealtime() {
       const devicesResponse = await deviceApi.list()
       const devices = devicesResponse?.list || devicesResponse || []
       if (devices.length > 0) {
-        simulatorStore.devices = devices
+        simulatorStore.setDevices(devices)
       }
     } catch (e) {
       // 静默处理

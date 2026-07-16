@@ -12,7 +12,7 @@ export class DashboardPage {
   constructor(page: Page) {
     this.page = page
     this.statCards = page.locator('text=设备总数').locator('..')
-    this.deviceSelector = page.locator('.el-select')
+    this.deviceSelector = page.locator('.device-select .select-trigger').first()
     this.controlBar = page.locator('text=暂停').locator('..')
     this.charts = page.locator('canvas')
     this.liveIndicator = page.locator('text=LIVE')

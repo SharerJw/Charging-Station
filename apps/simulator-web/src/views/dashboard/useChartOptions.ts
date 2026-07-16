@@ -20,7 +20,7 @@ export function useChartOptions(
   currentHistory: Ref<number[]>,
   socHistory: Ref<number[]>,
   tempHistory: Ref<number[]>,
-  devices: Ref<DeviceLike[]>,
+  devices: DeviceLike[],
 ) {
   const realtimeChartOption = computed(() => ({
     tooltip: { trigger: 'axis' },
@@ -55,10 +55,10 @@ export function useChartOptions(
       type: 'pie', radius: ['45%', '75%'], center: ['50%', '50%'],
       label: { color: '#9CA3AF', fontSize: 11 },
       data: [
-        { value: devices.value.filter(d => d.status === 'online').length, name: '在线', itemStyle: { color: COLORS.success } },
-        { value: devices.value.filter(d => d.status === 'charging').length, name: '充电中', itemStyle: { color: COLORS.warning } },
-        { value: devices.value.filter(d => d.status === 'offline').length, name: '离线', itemStyle: { color: COLORS.error } },
-        { value: devices.value.filter(d => d.status === 'fault').length, name: '故障', itemStyle: { color: '#6B7280' } },
+        { value: devices.filter(d => d.status === 'online').length, name: '在线', itemStyle: { color: COLORS.success } },
+        { value: devices.filter(d => d.status === 'charging').length, name: '充电中', itemStyle: { color: COLORS.warning } },
+        { value: devices.filter(d => d.status === 'offline').length, name: '离线', itemStyle: { color: COLORS.error } },
+        { value: devices.filter(d => d.status === 'fault').length, name: '故障', itemStyle: { color: '#6B7280' } },
       ].filter(d => d.value > 0),
     }],
   }))

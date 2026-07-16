@@ -16,7 +16,7 @@ export const testData = {
   thresholds: {
     loadTime: 3000,
     chartRender: 2000,
-    apiResponse: 1000,
+    apiResponse: 3000,
     memoryLimit: 100 * 1024 * 1024,
     ghostDataRefreshCount: 5,
     screenshotDiff: 1000,

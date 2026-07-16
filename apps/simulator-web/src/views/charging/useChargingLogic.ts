@@ -47,7 +47,7 @@ export function useChargingLogic(selectedDevice: Ref<string>) {
       try {
         const devicesResponse = await deviceApi.list()
         const devices = devicesResponse?.list || devicesResponse || []
-        simulatorStore.devices = devices
+        simulatorStore.setDevices(devices)
         const device = devices.find((d: any) => d.id === selectedDevice.value)
         if (device) {
           updateFromDevice(device)

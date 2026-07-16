@@ -36,7 +36,7 @@ const selectedDeviceInfo = computed(() => simulatorStore.devices.find(d => d.id 
 onMounted(async () => {
   const devicesResponse = await deviceApi.list()
   const devices = devicesResponse?.list || devicesResponse || []
-  simulatorStore.devices = devices
+  simulatorStore.setDevices(devices)
   const chargingDevice = devices.find(d => d.status === 'charging')
   if (chargingDevice) {
     selectedDevice.value = chargingDevice.id

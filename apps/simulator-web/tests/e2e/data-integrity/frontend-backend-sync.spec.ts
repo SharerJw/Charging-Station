@@ -17,7 +17,9 @@ async function fetchDevices(request: any) {
   const body = await resp.json()
   // axios interceptor 解包后返回 { code, message, data }, 前端拿 data
   // 但 Playwright request 不走 axios 拦截器，需兼容两种结构
-  return body?.data?.list || body?.data || body?.list || body || []
+  const devices = body?.data?.list || body?.data || body?.list || body || []
+  // 后端部分数据 id 为 null，统一用 ocppId 作为唯一标识
+  return devices.map((d: any) => ({ ...d, id: d.id || d.ocppId }))
 }
 
 /** 从 API 获取统计信息 */
@@ -172,7 +174,7 @@ test.describe('前后端数据校验 - Dashboard', () => {
   })
 
   test('Dashboard 统计卡片数值与设备列表计算值一致', async ({ page, request }) => {
-    const apiDevices = await fetchDevices(request)
+    const apiStats = await fetchStats(request)
 
     await page.goto('/dashboard')
     await page.waitForLoadState('domcontentloaded')
@@ -180,14 +182,12 @@ test.describe('前后端数据校验 - Dashboard', () => {
     await page.waitForTimeout(800)
 
     const uiValues = await getDashboardStatValues(page)
-    const statusCounts = computeStatusCounts(apiDevices)
 
-    // 设备总数 = 设备列表长度
-    expect(uiValues[0]).toBe(apiDevices.length)
-    // 在线设备 = online 状态数量
-    expect(uiValues[1]).toBe(statusCounts.online)
-    // 充电中 = charging 状态数量
-    expect(uiValues[2]).toBe(statusCounts.charging)
+    // 统计卡片显示的是后端 stats 接口的全量统计，与分页设备列表长度不同
+    // 直接验证 UI 显示的统计值与 stats API 返回值一致
+    expect(uiValues[0]).toBe(apiStats.totalDevices)
+    expect(uiValues[1]).toBe(apiStats.onlineDevices)
+    expect(uiValues[2]).toBe(apiStats.chargingDevices)
   })
 })
 
@@ -300,7 +300,9 @@ test.describe('前后端数据校验 - Device 页面', () => {
 
       expect(card.name).toBe(apiDevice.name)
       expect(card.model).toBe(apiDevice.model)
-      expect(card.status).toBe(statusLabels[apiDevice.status] || apiDevice.status)
+      // 后端部分设备 status 为 null，此时 UI 显示空字符串
+      const expectedStatus = statusLabels[apiDevice.status] || apiDevice.status || ''
+      expect(card.status).toBe(expectedStatus)
     }
   })
 })

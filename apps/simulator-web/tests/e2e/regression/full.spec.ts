@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('全量回归测试', () => {
   const pages = [
-    { name: '仪表盘', path: '/dashboard', selector: '.dashboard-page' },
+    { name: '仪表盘', path: '/dashboard', selector: '.dashboard' },
     { name: '充电模拟', path: '/charging', selector: '.charging-page' },
     { name: '设备管理', path: '/device', selector: '.device-page' },
     { name: '场景编排', path: '/scenario', selector: '.scenario-page' },
@@ -12,8 +12,7 @@ test.describe('全量回归测试', () => {
   for (const p of pages) {
     test(`${p.name}页面加载不报错 (${p.path})`, async ({ page }) => {
       await page.goto(p.path, { waitUntil: 'domcontentloaded' })
-      const container = page.locator(p.selector).or(page.locator('[class*="page"]'))
-      await expect(container).toBeVisible({ timeout: 10000 })
+      await expect(page.locator(p.selector)).toBeVisible({ timeout: 10000 })
     })
   }
 

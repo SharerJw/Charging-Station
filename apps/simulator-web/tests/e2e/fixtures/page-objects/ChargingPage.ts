@@ -11,7 +11,7 @@ export class ChargingPage {
     this.page = page
     this.socRing = page.locator('.soc-ring')
     this.metricCards = page.locator('.metric-card')
-    this.startButton = page.locator('text=启动充电')
+    this.startButton = page.locator('text=开始充电')
     this.stopButton = page.locator('text=停止充电')
   }
 
