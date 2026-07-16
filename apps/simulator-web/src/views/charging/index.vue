@@ -1,34 +1,27 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useSimulatorStore } from '@/store/simulator'
-import { chargingApi, deviceApi } from '@/api'
-import { ElMessage } from 'element-plus'
+import { deviceApi } from '@/api'
+import { useChargingLogic } from './useChargingLogic'
 import DeviceSelect from '@/components/DeviceSelect.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 
 const simulatorStore = useSimulatorStore()
 
 const selectedDevice = ref('')
-const isCharging = ref(false)
-const chargingStartTime = ref<number>(0)
-const currentTransaction = ref<any>(null)
-let chargingTimer: ReturnType<typeof setInterval> | null = null
-
 const chargingConfig = ref({
   targetSoc: 80,
   maxPower: 60,
 })
 
-const chargingData = ref({
-  currentSoc: 0,
-  power: 0,
-  energy: 0,
-  voltage: 0,
-  current: 0,
-  temperature: 0,
-  durationSeconds: 0,
-  cost: 0,
-})
+const {
+  isCharging,
+  chargingData,
+  updateFromDevice,
+  startCharging,
+  stopCharging,
+  startPolling,
+} = useChargingLogic(selectedDevice)
 
 const durationDisplay = computed(() => {
   const s = chargingData.value.durationSeconds
@@ -48,21 +41,11 @@ onMounted(async () => {
   if (chargingDevice) {
     selectedDevice.value = chargingDevice.id
     updateFromDevice(chargingDevice)
-    // 如果有充电中的设备，自动开始轮询
     isCharging.value = true
     startPolling()
   }
 })
 
-function updateFromDevice(device: any) {
-  chargingData.value.currentSoc = device.soc || 0
-  chargingData.value.power = device.power || 0
-  chargingData.value.voltage = device.voltage || 0
-  chargingData.value.current = device.current || 0
-  chargingData.value.temperature = device.temperature || 0
-}
-
-// 监听设备切换
 watch(selectedDevice, () => {
   const device = simulatorStore.devices.find(d => d.id === selectedDevice.value)
   if (device) {
@@ -70,81 +53,6 @@ watch(selectedDevice, () => {
   }
 })
 
-function startPolling() {
-  if (chargingTimer) clearInterval(chargingTimer)
-  chargingTimer = setInterval(async () => {
-    try {
-      const devicesResponse = await deviceApi.list()
-      const devices = devicesResponse?.list || devicesResponse || []
-      simulatorStore.devices = devices
-      const device = devices.find(d => d.id === selectedDevice.value)
-      if (device) {
-        updateFromDevice(device)
-        chargingData.value.durationSeconds += 1
-        chargingData.value.energy = (chargingData.value.energy || 0) + (device.power || 0) / 3600
-        chargingData.value.cost = chargingData.value.energy * 1.7
-      }
-    } catch (e) {
-      // 静默处理
-    }
-  }, 1000)
-}
-
-onUnmounted(() => {
-  if (chargingTimer) clearInterval(chargingTimer)
-})
-
-async function startCharging() {
-  if (!selectedDevice.value) {
-    ElMessage.warning('请先选择设备')
-    return
-  }
-  try {
-    const tx = await chargingApi.start({
-      chargePointId: selectedDevice.value,
-      targetSoc: chargingConfig.value.targetSoc,
-      maxPower: chargingConfig.value.maxPower,
-    })
-    currentTransaction.value = tx
-    isCharging.value = true
-    chargingStartTime.value = Date.now()
-    chargingData.value.currentSoc = tx.soc || 0
-    chargingData.value.voltage = tx.voltage || 0
-    chargingData.value.energy = 0
-    chargingData.value.durationSeconds = 0
-    chargingData.value.cost = 0
-
-    // 从后端轮询真实数据
-    startPolling()
-
-    ElMessage.success('充电已启动')
-  } catch (error: any) {
-    ElMessage.error(error.message || '启动失败')
-  }
-}
-
-async function stopCharging() {
-  if (chargingTimer) {
-    clearInterval(chargingTimer)
-    chargingTimer = null
-  }
-  if (currentTransaction.value) {
-    try {
-      await chargingApi.stop(currentTransaction.value.id)
-      ElMessage.success('充电已停止')
-    } catch (error: any) {
-      ElMessage.error(error.message || '停止失败')
-    }
-  }
-  isCharging.value = false
-  const device = simulatorStore.devices.find(d => d.id === selectedDevice.value)
-  if (device) {
-    device.power = 0
-    device.status = 'online'
-  }
-}
-
-// SOC 进度条颜色
 const socColor = computed(() => {
   const soc = chargingData.value.currentSoc
   if (soc < 20) return '#EF4444'
@@ -179,7 +87,7 @@ const socColor = computed(() => {
               type="primary"
               size="large"
               style="width: 100%"
-              @click="startCharging"
+              @click="startCharging({ targetSoc: chargingConfig.targetSoc, maxPower: chargingConfig.maxPower })"
               :disabled="!selectedDevice"
             >
               <SvgIcon name="lightning" :size="16" color="#FFFFFF" style="margin-right: 6px;" />
