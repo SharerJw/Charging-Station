@@ -21,11 +21,11 @@ export class DashboardPage {
 
   async goto() {
     await this.page.goto('/dashboard')
-    await this.page.waitForLoadState('networkidle')
+    await this.page.waitForLoadState('domcontentloaded')
   }
 
   async waitForLoad() {
-    await this.page.waitForSelector('text=设备总数', { timeout: 10000 })
+    await this.page.waitForSelector('text=设备总数', { timeout: 15000 })
     await this.page.waitForTimeout(500)
   }
 

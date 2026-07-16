@@ -38,30 +38,46 @@ const STABLE_RECENT_ORDERS = [
 
 // ── Setup mock routes returning stable data ────────────────────────────────────
 async function setupStableMockRoutes(page: any) {
-  await page.route('**/dashboard/stats', (route: any) =>
-    route.fulfill({ json: { code: 0, data: STABLE_DASHBOARD_STATS } })
+  // Station list
+  await page.route('**/api/stations?**', (route: any) =>
+    route.fulfill({ json: { code: 0, message: 'success', data: STABLE_STATIONS } })
   )
-  await page.route('**/dashboard/recent-orders', (route: any) =>
-    route.fulfill({ json: { code: 0, data: STABLE_RECENT_ORDERS } })
+  await page.route('**/api/stations/[!\\?]*', (route: any) =>
+    route.fulfill({ json: { code: 0, message: 'success', data: null } })
   )
-  await page.route('**/dashboard/station-rank', (route: any) =>
-    route.fulfill({ json: { code: 0, data: [] } })
+  // Device list
+  await page.route('**/api/devices?**', (route: any) =>
+    route.fulfill({ json: { code: 0, message: 'success', data: { list: [], total: 0, page: 1, size: 20 } } })
   )
-  await page.route('**/dashboard/todo-counts', (route: any) =>
-    route.fulfill({ json: { code: 0, data: { pendingAlerts: 0, pendingWorkOrders: 0, settledOrders: 0, refundingOrders: 0 } } })
+  await page.route('**/api/devices/[!\\?]*', (route: any) =>
+    route.fulfill({ json: { code: 0, message: 'success', data: null } })
   )
-  await page.route('**/dashboard/chart', (route: any) =>
-    route.fulfill({ json: { code: 0, data: { dates: [], orderCounts: [], revenues: [], energies: [] } } })
+  // Order list
+  await page.route('**/api/orders?**', (route: any) =>
+    route.fulfill({ json: { code: 0, message: 'success', data: STABLE_ORDERS } })
   )
-  await page.route('**/stations?**', (route: any) =>
-    route.fulfill({ json: { code: 0, data: STABLE_STATIONS } })
-  )
-  await page.route('**/orders?**', (route: any) =>
-    route.fulfill({ json: { code: 0, data: STABLE_ORDERS } })
-  )
-  await page.route('**/devices?**', (route: any) =>
-    route.fulfill({ json: { code: 0, data: { list: [], total: 0, page: 1, size: 20 } } })
-  )
+  // Dashboard APIs - single catch-all with URL-based dispatch
+  await page.route('**/api/dashboard/**', (route: any) => {
+    const url = route.request().url()
+    if (url.includes('/overview')) {
+      return route.fulfill({ json: { code: 0, message: 'success', data: STABLE_DASHBOARD_STATS } })
+    }
+    if (url.includes('/recent-orders')) {
+      return route.fulfill({ json: { code: 0, message: 'success', data: STABLE_RECENT_ORDERS } })
+    }
+    if (url.includes('/station-rank')) {
+      return route.fulfill({ json: { code: 0, message: 'success', data: [] } })
+    }
+    if (url.includes('/todo-counts')) {
+      return route.fulfill({ json: { code: 0, message: 'success', data: { pendingAlerts: 0, pendingWorkOrders: 0, settledOrders: 0, refundingOrders: 0 } } })
+    }
+    if (url.includes('/trend')) {
+      return route.fulfill({ json: { code: 0, message: 'success', data: { dates: [], orderCounts: [], revenues: [], energies: [] } } })
+    }
+    route.fulfill({ json: { code: 0, message: 'success', data: {} } })
+  })
+  // Block WebSocket to avoid connection errors
+  await page.route('ws://**', (route: any) => route.abort('blockedbyclient'))
 }
 
 async function setupAdminAuth(page: any) {
@@ -81,7 +97,7 @@ test.describe('admin-web 数据完整性 - 幽灵数据检测', () => {
 
     // 第一次加载
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(1500)
 
     const kpiCards = page.locator('.kpi-card')
@@ -96,7 +112,7 @@ test.describe('admin-web 数据完整性 - 幽灵数据检测', () => {
 
     // 刷新3次，每次都对比第一轮
     for (let refresh = 1; refresh <= 3; refresh++) {
-      await page.reload({ waitUntil: 'networkidle' })
+      await page.reload({ waitUntil: 'domcontentloaded' })
       await page.waitForTimeout(1500)
       await expect(kpiCards).toHaveCount(6, { timeout: 15000 })
 
@@ -113,7 +129,7 @@ test.describe('admin-web 数据完整性 - 幽灵数据检测', () => {
 
     // 第一次加载
     await page.goto('/station')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(2000)
 
     const rows = page.locator('.el-table .el-table__body-wrapper .el-table__row')
@@ -124,7 +140,7 @@ test.describe('admin-web 数据完整性 - 幽灵数据检测', () => {
 
     // 刷新3次，验证列表一致
     for (let refresh = 1; refresh <= 3; refresh++) {
-      await page.reload({ waitUntil: 'networkidle' })
+      await page.reload({ waitUntil: 'domcontentloaded' })
       await page.waitForTimeout(2000)
       await expect(rows).toHaveCount(STABLE_STATIONS.list.length, { timeout: 15000 })
 
@@ -139,7 +155,7 @@ test.describe('admin-web 数据完整性 - 幽灵数据检测', () => {
 
     // 第一次加载
     await page.goto('/order')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(2000)
 
     const rows = page.locator('.el-table .el-table__body-wrapper .el-table__row')
@@ -150,7 +166,7 @@ test.describe('admin-web 数据完整性 - 幽灵数据检测', () => {
 
     // 刷新3次，验证列表一致
     for (let refresh = 1; refresh <= 3; refresh++) {
-      await page.reload({ waitUntil: 'networkidle' })
+      await page.reload({ waitUntil: 'domcontentloaded' })
       await page.waitForTimeout(2000)
       await expect(rows).toHaveCount(STABLE_ORDERS.list.length, { timeout: 15000 })
 

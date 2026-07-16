@@ -29,21 +29,32 @@ const MOCK_WORKORDERS = {
 async function setupOpsMockRoutes(page: any, apiData: Record<string, any> = {}) {
   const data = { stats: MOCK_OPS_STATS, alerts: MOCK_ALERTS, workorders: MOCK_WORKORDERS, ...apiData }
 
-  await page.route('**/internal/stats', (route: any) =>
-    route.fulfill({ json: { code: 0, data: { onlineDeviceCount: data.stats.onlineDevices } } })
-  )
-  await page.route('**/ops/alerts**', (route: any) =>
-    route.fulfill({ json: { code: 0, data: apiData.alerts ?? data.alerts } })
-  )
-  await page.route('**/ops/workorders**', (route: any) =>
-    route.fulfill({ json: { code: 0, data: apiData.workorders ?? data.workorders } })
-  )
-  await page.route('**/ops/inspections**', (route: any) =>
-    route.fulfill({ json: { code: 0, data: apiData.inspections ?? { list: [] } } })
-  )
-  await page.route('**/ops/stations**', (route: any) =>
-    route.fulfill({ json: { code: 0, data: apiData.stations ?? { list: [] } } })
-  )
+  // Single handler with URL-based dispatch
+  await page.route('**/ops/**', (route: any) => {
+    const url = route.request().url()
+    if (url.includes('/alerts')) {
+      return route.fulfill({ json: { code: 0, data: apiData.alerts ?? data.alerts } })
+    }
+    if (url.includes('/workorders')) {
+      return route.fulfill({ json: { code: 0, data: apiData.workorders ?? data.workorders } })
+    }
+    if (url.includes('/inspections')) {
+      return route.fulfill({ json: { code: 0, data: apiData.inspections ?? { list: [] } } })
+    }
+    if (url.includes('/stations')) {
+      return route.fulfill({ json: { code: 0, data: apiData.stations ?? { list: [] } } })
+    }
+    route.fulfill({ json: { code: 0, data: { list: [], total: 0 } } })
+  })
+  await page.route('**/internal/**', (route: any) => {
+    const url = route.request().url()
+    if (url.includes('/stats')) {
+      return route.fulfill({ json: { code: 0, data: { onlineDeviceCount: data.stats.onlineDevices } } })
+    }
+    route.fulfill({ json: { code: 0, data: {} } })
+  })
+  // Block WebSocket
+  await page.route('ws://**', (route: any) => route.abort('blockedbyclient'))
 }
 
 async function setupOpsAuth(page: any) {
@@ -74,15 +85,15 @@ test.describe('ops-app 数据完整性 - 前后端同步', () => {
     )
     await expect(statCards.nth(0).locator('.stat-label')).toContainText('在线设备')
 
-    // 待处理告警
+    // 待处理告警 (calculated from alerts list, not stats mock)
     await expect(statCards.nth(1).locator('.stat-value')).toContainText(
-      String(MOCK_OPS_STATS.pendingAlerts)
+      String(MOCK_ALERTS.list.length)
     )
     await expect(statCards.nth(1).locator('.stat-label')).toContainText('待处理告警')
 
-    // 待办工单
+    // 待办工单 (calculated from workorders list with status 'pending')
     await expect(statCards.nth(2).locator('.stat-value')).toContainText(
-      String(MOCK_OPS_STATS.pendingWorkorders)
+      String(MOCK_WORKORDERS.list.filter((w: any) => w.status === 'pending').length)
     )
     await expect(statCards.nth(2).locator('.stat-label')).toContainText('待办工单')
   })

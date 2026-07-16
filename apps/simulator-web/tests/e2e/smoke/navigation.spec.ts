@@ -11,7 +11,7 @@ test.describe('导航冒烟测试', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
   })
 
   for (const item of menuItems) {
@@ -20,7 +20,7 @@ test.describe('导航冒烟测试', () => {
       await expect(menuItem).toBeVisible()
       await menuItem.click()
       await expect(page).toHaveURL(new RegExp(item.path))
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
     })
   }
 

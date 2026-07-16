@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { setupApiMocks } from '../fixtures/api-mocks'
 
 const VIEWPORTS = [
   { name: 'Desktop 1920', width: 1920, height: 1080 },
@@ -10,13 +11,27 @@ test.describe('视口兼容性', () => {
   for (const vp of VIEWPORTS) {
     test(`${vp.name} 页面正常渲染`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height })
+      await setupApiMocks(page)
+      await page.route('**/api/auth/**', route =>
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            code: 0, message: 'success',
+            data: {
+              token: 'mock-token',
+              user: { id: 'A001', username: 'admin', nickname: '超级管理员', avatar: '', roles: ['admin'] },
+            },
+          }),
+        }),
+      )
       await page.addInitScript(() => {
         localStorage.setItem('admin_token', 'mock-token-for-test')
       })
       await page.goto('/dashboard')
-      await page.waitForLoadState('networkidle')
-      // 验证关键元素可见
-      await expect(page.locator('text=工作台')).toBeVisible({ timeout: 15000 })
+      await page.waitForLoadState('domcontentloaded')
+      // 验证关键元素可见 — 侧边栏菜单项
+      await expect(page.locator('.el-menu-item').first()).toBeVisible({ timeout: 15000 })
       // 验证无水平滚动
       const scrollWidth = await page.evaluate(() => document.body.scrollWidth)
       const clientWidth = await page.evaluate(() => document.body.clientWidth)

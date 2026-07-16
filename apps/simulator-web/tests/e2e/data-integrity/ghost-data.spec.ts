@@ -81,7 +81,7 @@ test.describe('幽灵数据检测 - Dashboard', () => {
 
     for (let i = 0; i < REFRESH_COUNT; i++) {
       await page.goto('/dashboard')
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
       await page.waitForSelector('.stat-card', { timeout: 10000 })
       await page.waitForTimeout(800)
       const values = await getDashboardStatValues(page)
@@ -99,7 +99,7 @@ test.describe('幽灵数据检测 - Dashboard', () => {
 
     for (let i = 0; i < REFRESH_COUNT; i++) {
       await page.goto('/dashboard')
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
       await page.waitForSelector('.stat-card', { timeout: 10000 })
       await page.waitForTimeout(800)
       const ids = await getStoreDeviceIds(page)
@@ -116,7 +116,7 @@ test.describe('幽灵数据检测 - Dashboard', () => {
 
     for (let i = 0; i < REFRESH_COUNT; i++) {
       await page.goto('/dashboard')
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
       await page.waitForSelector('.stat-card', { timeout: 10000 })
       await page.waitForTimeout(800)
 
@@ -148,7 +148,7 @@ test.describe('幽灵数据检测 - Charging 页面', () => {
 
     for (let i = 0; i < REFRESH_COUNT; i++) {
       await page.goto('/charging')
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
       await page.waitForSelector('.charging-page', { timeout: 10000 })
       await page.waitForTimeout(800)
       const ids = await getChargingDeviceIds(page)
@@ -167,7 +167,7 @@ test.describe('幽灵数据检测 - Device 页面', () => {
 
     for (let i = 0; i < REFRESH_COUNT; i++) {
       await page.goto('/device')
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
       await page.waitForSelector('.device-card', { timeout: 10000 })
       await page.waitForTimeout(800)
       const ids = await getDevicePageOcppIds(page)
@@ -184,7 +184,7 @@ test.describe('幽灵数据检测 - Device 页面', () => {
 
     for (let i = 0; i < REFRESH_COUNT; i++) {
       await page.goto('/device')
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
       await page.waitForSelector('.device-card', { timeout: 10000 })
       await page.waitForTimeout(800)
 
@@ -245,7 +245,7 @@ test.describe('反复查询检测 - API 一致性', () => {
 
     // UI 加载
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.stat-card', { timeout: 10000 })
     await page.waitForTimeout(800)
 

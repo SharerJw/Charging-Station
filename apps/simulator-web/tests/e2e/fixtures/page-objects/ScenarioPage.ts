@@ -17,7 +17,7 @@ export class ScenarioPage {
 
   async goto() {
     await this.page.goto('/scenario')
-    await this.page.waitForLoadState('networkidle')
+    await this.page.waitForLoadState('domcontentloaded')
   }
 
   async waitForLoad() {

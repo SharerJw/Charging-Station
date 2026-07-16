@@ -11,7 +11,7 @@ test.describe('视口兼容性', () => {
     test(`${vp.name} 页面正常渲染`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height })
       await page.goto('/dashboard')
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
       // 验证关键元素可见
       await expect(page.locator('text=仪表盘')).toBeVisible({ timeout: 15000 })
       // 验证无水平滚动

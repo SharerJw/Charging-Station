@@ -10,16 +10,23 @@ test.describe('视口兼容性', () => {
   for (const vp of VIEWPORTS) {
     test(`${vp.name} 页面正常渲染`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height })
+      await page.route('**/ops/**', (route: any) =>
+        route.fulfill({ json: { code: 0, data: { list: [], total: 0 } } })
+      )
+      await page.route('**/internal/**', (route: any) =>
+        route.fulfill({ json: { code: 0, data: { onlineDeviceCount: 0 } } })
+      )
+      await page.route('ws://**', (route: any) => route.abort('blockedbyclient'))
+      await page.addInitScript(() => {
+        localStorage.setItem('ops_token', 'mock-ops-token')
+      })
       await page.goto('/#/pages/index/index')
-      await page.waitForLoadState('networkidle')
-      // 验证关键元素可见（UniApp H5 工作台页）
-      await expect(
-        page.locator('.workbench-page').or(page.locator('.stats-row')),
-      ).toBeVisible({ timeout: 15000 })
-      // 验证无水平滚动
+      await page.waitForLoadState('domcontentloaded')
+      await page.waitForTimeout(1000)
+      await expect(page.locator('.workbench-page')).toBeVisible({ timeout: 15000 })
       const scrollWidth = await page.evaluate(() => document.body.scrollWidth)
       const clientWidth = await page.evaluate(() => document.body.clientWidth)
-      expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 5) // 5px tolerance
+      expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 5)
     })
   }
 })

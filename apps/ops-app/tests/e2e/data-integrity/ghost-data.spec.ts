@@ -19,9 +19,14 @@ const STABLE_ALERTS = {
 
 // ── Setup mock routes returning stable data ────────────────────────────────────
 async function setupStableMockRoutes(page: any) {
-  await page.route('**/internal/stats', (route: any) =>
+  // Catch-all for ops API calls (Playwright uses last matching route)
+  await page.route('**/ops/**', (route: any) =>
+    route.fulfill({ json: { code: 0, data: { list: [], total: 0 } } })
+  )
+  await page.route('**/internal/**', (route: any) =>
     route.fulfill({ json: { code: 0, data: { onlineDeviceCount: STABLE_OPS_STATS.onlineDevices } } })
   )
+  // Specific routes (registered after catch-all, so they WIN)
   await page.route('**/ops/alerts**', (route: any) =>
     route.fulfill({ json: { code: 0, data: STABLE_ALERTS } })
   )
@@ -34,6 +39,8 @@ async function setupStableMockRoutes(page: any) {
   await page.route('**/ops/stations**', (route: any) =>
     route.fulfill({ json: { code: 0, data: { list: [] } } })
   )
+  // Block WebSocket
+  await page.route('ws://**', (route: any) => route.abort('blockedbyclient'))
 }
 
 async function setupOpsAuth(page: any) {

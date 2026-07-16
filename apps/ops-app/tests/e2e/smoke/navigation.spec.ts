@@ -1,26 +1,32 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('底部导航栏', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/ops/**', (route: any) =>
+      route.fulfill({ json: { code: 0, data: { list: [], total: 0 } } })
+    )
+    await page.route('**/internal/**', (route: any) =>
+      route.fulfill({ json: { code: 0, data: { onlineDeviceCount: 0 } } })
+    )
+    await page.route('ws://**', (route: any) => route.abort('blockedbyclient'))
+    await page.addInitScript(() => {
+      localStorage.setItem('ops_token', 'mock-ops-token')
+    })
+  })
+
   test('底部导航栏应可点击', async ({ page }) => {
     await page.goto('/#/pages/index/index')
-    const tabBar = page.locator('.uni-tabbar').or(page.locator('[class*="tabbar"]'))
-    await expect(tabBar).toBeVisible({ timeout: 10000 })
-    // tabBar 内应有至少4个tab项
-    const tabItems = tabBar.locator('.uni-tabbar__item, [class*="tab-item"]')
+    await expect(page.locator('.uni-tabbar')).toBeVisible({ timeout: 10000 })
+    const tabItems = page.locator('.uni-tabbar__item')
     const count = await tabItems.count()
     expect(count).toBeGreaterThanOrEqual(4)
   })
 
   test('点击告警tab应跳转到告警页面', async ({ page }) => {
     await page.goto('/#/pages/index/index')
-    const tabBar = page.locator('.uni-tabbar').or(page.locator('[class*="tabbar"]'))
-    await expect(tabBar).toBeVisible({ timeout: 10000 })
-
-    // 点击告警tab（第二个tab）
-    const alertTab = tabBar.locator('.uni-tabbar__item, [class*="tab-item"]').nth(1)
+    await expect(page.locator('.uni-tabbar')).toBeVisible({ timeout: 10000 })
+    const alertTab = page.locator('.uni-tabbar__item').nth(1)
     await alertTab.click()
-
-    // 等待页面跳转
     await page.waitForURL('**/pages/alert/index**', { timeout: 10000 })
     await expect(page.locator('.alert-page')).toBeVisible({ timeout: 10000 })
   })

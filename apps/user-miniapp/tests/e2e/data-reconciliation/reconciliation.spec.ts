@@ -1,6 +1,21 @@
 import { test, expect } from '@playwright/test'
 
-const API = '/api'
+const API = 'http://localhost:8080/api'
+
+// Set auth token and mock page-level API routes before each test
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('token', 'mock-e2e-token')
+  })
+
+  // Mock page-level API responses to prevent 401 redirects when visiting pages
+  await page.route('**/api/v1/user/profile', (route) =>
+    route.fulfill({ json: { code: 0, data: { id: 'U001', nickname: '测试用户', phone: '13800138000', avatar: '', balance: 12350, couponCount: 5 } } })
+  )
+  await page.route('**/api/v1/charging/**', (route) =>
+    route.fulfill({ json: { code: 0, data: null } })
+  )
+})
 
 test.describe('数据对账', () => {
   test('余额与API返回一致', async ({ page, request }) => {
@@ -24,7 +39,7 @@ test.describe('数据对账', () => {
 
     // 从个人中心页面获取余额
     await page.goto('/#/pages/profile/index')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(1000)
 
     // 查找余额显示元素
@@ -52,7 +67,7 @@ test.describe('数据对账', () => {
 
     // 从首页获取显示的充电站数
     await page.goto('/#/pages/index/index')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(1000)
 
     const stationList = page.locator('.station-list')
@@ -82,8 +97,8 @@ test.describe('数据对账', () => {
     const apiCount = Array.isArray(apiOrders) ? apiOrders.length : 0
 
     // 从订单页面获取显示的订单数
-    await page.goto('/#/pages/orders/index')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/#/pages/order/index')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(1000)
 
     const orderList = page.locator('.order-list')

@@ -21,7 +21,7 @@ export async function takeTimestampedScreenshot(page: Page, name: string) {
 export async function measureLoadTime(page: Page, url: string): Promise<number> {
   const start = Date.now()
   await page.goto(url)
-  await page.waitForLoadState('networkidle')
+  await page.waitForLoadState('domcontentloaded')
   return Date.now() - start
 }
 

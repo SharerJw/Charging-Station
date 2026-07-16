@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { setupApiMocks } from '../fixtures/api-mocks'
 
 test.describe('全量回归 - 所有页面可访问', () => {
   const PAGES = [
@@ -18,11 +19,14 @@ test.describe('全量回归 - 所有页面可访问', () => {
 
   for (const pg of PAGES) {
     test(`${pg.path} 页面可正常访问`, async ({ page }) => {
-      await page.goto(pg.path)
-      await page.waitForLoadState('networkidle')
-      // 无JS错误
+      await setupApiMocks(page)
+      await page.addInitScript(() => {
+        localStorage.setItem('admin_token', 'mock-token-for-test')
+      })
       const errors: string[] = []
       page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()) })
+      await page.goto(pg.path)
+      await page.waitForLoadState('domcontentloaded')
       await page.waitForTimeout(1000)
       // 页面不为空白
       const bodyText = await page.locator('body').textContent()

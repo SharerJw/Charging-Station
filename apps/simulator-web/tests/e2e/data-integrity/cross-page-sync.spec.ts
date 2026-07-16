@@ -51,14 +51,14 @@ test.describe('跨页面数据联动 - Dashboard vs Charging', () => {
   test('Dashboard 设备列表 == Charging 设备列表', async ({ page }) => {
     // 1. 打开 Dashboard，获取设备列表
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.stat-card', { timeout: 10000 })
     await page.waitForTimeout(800)
     const dashboardIds = await getStoreDeviceIds(page)
 
     // 2. 打开 Charging，获取设备列表
     await page.goto('/charging')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.charging-page', { timeout: 10000 })
     await page.waitForTimeout(800)
     const chargingIds = await getStoreDeviceIds(page)
@@ -70,14 +70,14 @@ test.describe('跨页面数据联动 - Dashboard vs Charging', () => {
   test('Dashboard 设备状态与 Charging 设备状态一致', async ({ page }) => {
     // 1. Dashboard
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.stat-card', { timeout: 10000 })
     await page.waitForTimeout(800)
     const dashboardDevices = await getStoreDevices(page)
 
     // 2. Charging
     await page.goto('/charging')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.charging-page', { timeout: 10000 })
     await page.waitForTimeout(800)
     const chargingDevices = await getStoreDevices(page)
@@ -100,14 +100,14 @@ test.describe('跨页面数据联动 - Dashboard vs Device', () => {
   test('Dashboard 设备列表 == Device 页面设备列表（首页）', async ({ page }) => {
     // 1. Dashboard - 全量设备列表
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.stat-card', { timeout: 10000 })
     await page.waitForTimeout(800)
     const dashboardIds = await getStoreDeviceIds(page)
 
     // 2. Device 页面 - 分页，默认前 10 个
     await page.goto('/device')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.device-card', { timeout: 10000 })
     await page.waitForTimeout(800)
     const devicePageIds = await getDevicePageOcppIds(page)
@@ -133,14 +133,14 @@ test.describe('跨页面数据联动 - 三端与 API 一致性', () => {
 
     // 2. Dashboard
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.stat-card', { timeout: 10000 })
     await page.waitForTimeout(800)
     const dashboardIds = await getStoreDeviceIds(page)
 
     // 3. Charging
     await page.goto('/charging')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.charging-page', { timeout: 10000 })
     await page.waitForTimeout(800)
     const chargingIds = await getStoreDeviceIds(page)
@@ -155,7 +155,7 @@ test.describe('跨页面数据联动 - 页面跳转数据一致性', () => {
   test('从 Dashboard 跳转到 Charging，设备数据一致', async ({ page }) => {
     // 1. 先在 Dashboard 获取数据
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.stat-card', { timeout: 10000 })
     await page.waitForTimeout(800)
 
@@ -165,7 +165,7 @@ test.describe('跨页面数据联动 - 页面跳转数据一致性', () => {
     // 2. 通过导航跳转到 Charging（模拟用户点击菜单）
     //    直接 goto 也能验证路由切换后的数据加载
     await page.goto('/charging')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.charging-page', { timeout: 10000 })
     await page.waitForTimeout(800)
 
@@ -193,7 +193,7 @@ test.describe('跨页面数据联动 - 页面跳转数据一致性', () => {
   test('从 Dashboard 跳转到 Device，设备数据一致', async ({ page }) => {
     // 1. Dashboard
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.stat-card', { timeout: 10000 })
     await page.waitForTimeout(800)
 
@@ -201,7 +201,7 @@ test.describe('跨页面数据联动 - 页面跳转数据一致性', () => {
 
     // 2. Device 页面
     await page.goto('/device')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.device-card', { timeout: 10000 })
     await page.waitForTimeout(800)
 

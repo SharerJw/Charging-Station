@@ -17,7 +17,7 @@ export class LogsPage {
 
   async goto() {
     await this.page.goto('/logs')
-    await this.page.waitForLoadState('networkidle')
+    await this.page.waitForLoadState('domcontentloaded')
   }
 
   async waitForLoad() {

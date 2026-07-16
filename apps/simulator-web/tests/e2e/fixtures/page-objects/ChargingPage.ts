@@ -17,7 +17,7 @@ export class ChargingPage {
 
   async goto() {
     await this.page.goto('/charging')
-    await this.page.waitForLoadState('networkidle')
+    await this.page.waitForLoadState('domcontentloaded')
   }
 
   async waitForLoad() {

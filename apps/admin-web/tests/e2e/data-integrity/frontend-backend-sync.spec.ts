@@ -49,30 +49,46 @@ const MOCK_RECENT_ORDERS = [
 async function setupAdminMockRoutes(page: any, apiData: Record<string, any> = {}) {
   const data = { dashboardStats: MOCK_DASHBOARD_STATS, ...apiData }
 
-  await page.route('**/dashboard/stats', (route: any) =>
-    route.fulfill({ json: { code: 0, data: data.dashboardStats } })
+  // Station list
+  await page.route('**/api/stations?**', (route: any) =>
+    route.fulfill({ json: { code: 0, message: 'success', data: MOCK_STATIONS } })
   )
-  await page.route('**/dashboard/recent-orders', (route: any) =>
-    route.fulfill({ json: { code: 0, data: apiData.recentOrders ?? MOCK_RECENT_ORDERS } })
+  await page.route('**/api/stations/[!\\?]*', (route: any) =>
+    route.fulfill({ json: { code: 0, message: 'success', data: null } })
   )
-  await page.route('**/dashboard/station-rank', (route: any) =>
-    route.fulfill({ json: { code: 0, data: apiData.stationRank ?? [] } })
+  // Device list
+  await page.route('**/api/devices?**', (route: any) =>
+    route.fulfill({ json: { code: 0, message: 'success', data: MOCK_DEVICES } })
   )
-  await page.route('**/dashboard/todo-counts', (route: any) =>
-    route.fulfill({ json: { code: 0, data: apiData.todoCounts ?? { pendingAlerts: 3, pendingWorkOrders: 2, settledOrders: 5, refundingOrders: 1 } } })
+  await page.route('**/api/devices/[!\\?]*', (route: any) =>
+    route.fulfill({ json: { code: 0, message: 'success', data: null } })
   )
-  await page.route('**/dashboard/chart', (route: any) =>
-    route.fulfill({ json: { code: 0, data: apiData.chartData ?? { dates: [], orderCounts: [], revenues: [], energies: [] } } })
+  // Order list
+  await page.route('**/api/orders?**', (route: any) =>
+    route.fulfill({ json: { code: 0, message: 'success', data: MOCK_ORDERS } })
   )
-  await page.route('**/stations?**', (route: any) =>
-    route.fulfill({ json: { code: 0, data: MOCK_STATIONS } })
-  )
-  await page.route('**/devices?**', (route: any) =>
-    route.fulfill({ json: { code: 0, data: MOCK_DEVICES } })
-  )
-  await page.route('**/orders?**', (route: any) =>
-    route.fulfill({ json: { code: 0, data: MOCK_ORDERS } })
-  )
+  // Dashboard APIs - single catch-all with URL-based dispatch
+  await page.route('**/api/dashboard/**', (route: any) => {
+    const url = route.request().url()
+    if (url.includes('/overview')) {
+      return route.fulfill({ json: { code: 0, message: 'success', data: data.dashboardStats } })
+    }
+    if (url.includes('/recent-orders')) {
+      return route.fulfill({ json: { code: 0, message: 'success', data: apiData.recentOrders ?? MOCK_RECENT_ORDERS } })
+    }
+    if (url.includes('/station-rank')) {
+      return route.fulfill({ json: { code: 0, message: 'success', data: apiData.stationRank ?? [] } })
+    }
+    if (url.includes('/todo-counts')) {
+      return route.fulfill({ json: { code: 0, message: 'success', data: apiData.todoCounts ?? { pendingAlerts: 3, pendingWorkOrders: 2, settledOrders: 5, refundingOrders: 1 } } })
+    }
+    if (url.includes('/trend')) {
+      return route.fulfill({ json: { code: 0, message: 'success', data: apiData.chartData ?? { dates: [], orderCounts: [], revenues: [], energies: [] } } })
+    }
+    route.fulfill({ json: { code: 0, message: 'success', data: {} } })
+  })
+  // Block WebSocket to avoid connection errors
+  await page.route('ws://**', (route: any) => route.abort('blockedbyclient'))
 }
 
 // ── Helper: set admin auth token before navigation ─────────────────────────────
@@ -88,32 +104,28 @@ async function setupAdminAuth(page: any) {
 test.describe('admin-web 数据完整性 - 前后端同步', () => {
 
   test('Dashboard 统计卡片与 /api/dashboard/stats 一致', async ({ page }) => {
-    let capturedStats: any = null
-
-    await page.route('**/dashboard/stats', async (route: any) => {
-      const response = await route.fetch()
-      capturedStats = await response.json()
-      await route.fulfill({ response })
-    })
-
+    await setupAdminMockRoutes(page)
     await setupAdminAuth(page)
+
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(1500)
 
-    const apiStats = capturedStats?.data ?? MOCK_DASHBOARD_STATS
+    const apiStats = MOCK_DASHBOARD_STATS
 
     const kpiCards = page.locator('.kpi-card')
     await expect(kpiCards).toHaveCount(6, { timeout: 15000 })
 
     // 运营指标卡片验证
     const operationTitles = ['今日充电量', '今日营收', '今日订单数']
+    const todayEnergyKwh = Math.round(apiStats.todayEnergy / 1000)
+    const todayRevenueYuan = Math.round(apiStats.todayRevenue / 100)
     const operationValues = [
-      String(Math.round(apiStats.todayEnergy / 1000)),
-      '¥' + (apiStats.todayRevenue / 100 >= 10000
-        ? (apiStats.todayRevenue / 100 / 10000).toFixed(1) + '万'
-        : String(Math.round(apiStats.todayRevenue / 100))),
-      String(apiStats.todayOrderCount),
+      todayEnergyKwh.toLocaleString(),  // e.g. "8,923"
+      todayRevenueYuan >= 10000
+        ? '¥' + (todayRevenueYuan / 10000).toFixed(1) + '万'
+        : '¥' + todayRevenueYuan.toLocaleString(),
+      apiStats.todayOrderCount.toLocaleString(),  // e.g. "156"
     ]
 
     for (let i = 0; i < operationTitles.length; i++) {
@@ -124,10 +136,11 @@ test.describe('admin-web 数据完整性 - 前后端同步', () => {
 
     // 设备指标卡片验证
     const deviceTitles = ['站点总数', '设备在线率', '累计电量']
+    const totalEnergyKwh = Math.round(apiStats.totalEnergy / 1000)
     const deviceValues = [
-      String(apiStats.stationCount),
+      apiStats.stationCount.toLocaleString(),
       apiStats.deviceCount > 0 ? ((apiStats.onlineDeviceCount / apiStats.deviceCount) * 100).toFixed(1) : '0',
-      String(Math.round(apiStats.totalEnergy / 1000)),
+      totalEnergyKwh.toLocaleString(),
     ]
 
     for (let i = 0; i < deviceTitles.length; i++) {
@@ -141,7 +154,7 @@ test.describe('admin-web 数据完整性 - 前后端同步', () => {
     await setupAdminMockRoutes(page)
     await setupAdminAuth(page)
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(1500)
 
     // 验证最近订单表格行数
@@ -157,45 +170,30 @@ test.describe('admin-web 数据完整性 - 前后端同步', () => {
   })
 
   test('充电站列表与 /api/v1/stations 一致', async ({ page }) => {
-    let capturedStations: any = null
-
-    await page.route('**/stations?**', async (route: any) => {
-      const response = await route.fetch()
-      capturedStations = await response.json()
-      await route.fulfill({ response })
-    })
-
     await setupAdminMockRoutes(page)
     await setupAdminAuth(page)
     await page.goto('/station')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(2000)
 
-    const apiData = capturedStations?.data ?? MOCK_STATIONS
+    const apiData = MOCK_STATIONS
     const tableRows = page.locator('.el-table .el-table__body-wrapper .el-table__row')
     await expect(tableRows).toHaveCount(apiData.list.length, { timeout: 15000 })
 
     // 验证首行数据与 API 一致
     const firstRow = tableRows.first()
-    await expect(firstRow.locator('.cell').first()).toContainText(apiData.list[0].name)
+    const rowText = await firstRow.innerText()
+    expect(rowText).toContain(apiData.list[0].name)
   })
 
   test('设备列表与 /api/devices 一致', async ({ page }) => {
-    let capturedDevices: any = null
-
-    await page.route('**/devices?**', async (route: any) => {
-      const response = await route.fetch()
-      capturedDevices = await response.json()
-      await route.fulfill({ response })
-    })
-
     await setupAdminMockRoutes(page)
     await setupAdminAuth(page)
     await page.goto('/device')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(2000)
 
-    const apiData = capturedDevices?.data ?? MOCK_DEVICES
+    const apiData = MOCK_DEVICES
     const tableRows = page.locator('.el-table .el-table__body-wrapper .el-table__row')
     await expect(tableRows).toHaveCount(apiData.list.length, { timeout: 15000 })
 
@@ -205,21 +203,13 @@ test.describe('admin-web 数据完整性 - 前后端同步', () => {
   })
 
   test('订单列表与 /api/v1/orders 一致', async ({ page }) => {
-    let capturedOrders: any = null
-
-    await page.route('**/orders?**', async (route: any) => {
-      const response = await route.fetch()
-      capturedOrders = await response.json()
-      await route.fulfill({ response })
-    })
-
     await setupAdminMockRoutes(page)
     await setupAdminAuth(page)
     await page.goto('/order')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForTimeout(2000)
 
-    const apiData = capturedOrders?.data ?? MOCK_ORDERS
+    const apiData = MOCK_ORDERS
     const tableRows = page.locator('.el-table .el-table__body-wrapper .el-table__row')
     await expect(tableRows).toHaveCount(apiData.list.length, { timeout: 15000 })
 

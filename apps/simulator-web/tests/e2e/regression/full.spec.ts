@@ -11,7 +11,7 @@ test.describe('全量回归测试', () => {
 
   for (const p of pages) {
     test(`${p.name}页面加载不报错 (${p.path})`, async ({ page }) => {
-      await page.goto(p.path, { waitUntil: 'networkidle' })
+      await page.goto(p.path, { waitUntil: 'domcontentloaded' })
       const container = page.locator(p.selector).or(page.locator('[class*="page"]'))
       await expect(container).toBeVisible({ timeout: 10000 })
     })
@@ -23,7 +23,7 @@ test.describe('全量回归测试', () => {
       if (msg.type() === 'error') errors.push(msg.text())
     })
     for (const p of pages) {
-      await page.goto(p.path, { waitUntil: 'networkidle' })
+      await page.goto(p.path, { waitUntil: 'domcontentloaded' })
     }
     expect(errors).toHaveLength(0)
   })
@@ -32,7 +32,7 @@ test.describe('全量回归测试', () => {
     const rejections: string[] = []
     page.on('pageerror', err => rejections.push(err.message))
     for (const p of pages) {
-      await page.goto(p.path, { waitUntil: 'networkidle' })
+      await page.goto(p.path, { waitUntil: 'domcontentloaded' })
     }
     expect(rejections).toHaveLength(0)
   })

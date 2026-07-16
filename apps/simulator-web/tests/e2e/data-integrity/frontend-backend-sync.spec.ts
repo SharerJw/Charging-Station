@@ -102,7 +102,7 @@ test.describe('前后端数据校验 - Dashboard', () => {
     const apiStats = await fetchStats(request)
 
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.stat-card', { timeout: 10000 })
     // 等待 Vue 渲染完成
     await page.waitForTimeout(800)
@@ -126,7 +126,7 @@ test.describe('前后端数据校验 - Dashboard', () => {
     const apiDevices = await fetchDevices(request)
 
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.stat-card', { timeout: 10000 })
     await page.waitForTimeout(800)
 
@@ -146,7 +146,7 @@ test.describe('前后端数据校验 - Dashboard', () => {
     const apiDevices = await fetchDevices(request)
 
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.stat-card', { timeout: 10000 })
     await page.waitForTimeout(800)
 
@@ -175,7 +175,7 @@ test.describe('前后端数据校验 - Dashboard', () => {
     const apiDevices = await fetchDevices(request)
 
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.stat-card', { timeout: 10000 })
     await page.waitForTimeout(800)
 
@@ -196,7 +196,7 @@ test.describe('前后端数据校验 - Charging 页面', () => {
     const apiDevices = await fetchDevices(request)
 
     await page.goto('/charging')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.charging-page', { timeout: 10000 })
     await page.waitForTimeout(800)
 
@@ -218,7 +218,7 @@ test.describe('前后端数据校验 - Charging 页面', () => {
     }
 
     await page.goto('/charging')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.charging-page', { timeout: 10000 })
     await page.waitForTimeout(800)
 
@@ -255,7 +255,7 @@ test.describe('前后端数据校验 - Device 页面', () => {
     const apiDevices = await fetchDevices(request)
 
     await page.goto('/device')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.device-card', { timeout: 10000 })
     await page.waitForTimeout(800)
 
@@ -280,7 +280,7 @@ test.describe('前后端数据校验 - Device 页面', () => {
     }
 
     await page.goto('/device')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     await page.waitForSelector('.device-card', { timeout: 10000 })
     await page.waitForTimeout(800)
 

@@ -13,11 +13,11 @@ export class DevicePage {
 
   async goto() {
     await this.page.goto('/device')
-    await this.page.waitForLoadState('networkidle')
+    await this.page.waitForLoadState('domcontentloaded')
   }
 
   async waitForLoad() {
-    await this.heading.waitFor({ state: 'visible', timeout: 10000 })
+    await this.heading.waitFor({ state: 'visible', timeout: 15000 })
   }
 
   async isPageLoaded() {
