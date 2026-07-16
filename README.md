@@ -22,8 +22,8 @@
 <td align="center"><b>OCPP 充电模拟器</b></td>
 </tr>
 <tr>
-<td><img src="后台管理Web.jpg" width="100%"></td>
-<td><img src="模拟器Web.jpg" width="100%"></td>
+<td><img src="后台管理Web.png" width="100%"></td>
+<td><img src="模拟器Web.png" width="100%"></td>
 </tr>
 <tr>
 <td align="center"><b>用户端小程序 / H5</b></td>
