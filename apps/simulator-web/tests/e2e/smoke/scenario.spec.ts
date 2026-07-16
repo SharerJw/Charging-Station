@@ -18,4 +18,9 @@ test.describe('Scenario 冒烟测试', () => {
     await scenarioPage.waitForLoad()
     await expect(scenarioPage.scenarioList).toBeVisible()
   })
+
+  test('创建按钮可见', async ({ page }) => {
+    await scenarioPage.waitForLoad()
+    await expect(scenarioPage.addButton).toBeVisible()
+  })
 })

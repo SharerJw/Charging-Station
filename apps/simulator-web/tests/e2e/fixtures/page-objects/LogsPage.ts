@@ -2,13 +2,17 @@ import { type Page, type Locator } from '@playwright/test'
 
 export class LogsPage {
   readonly page: Page
+  readonly heading: Locator
   readonly pageTitle: Locator
+  readonly terminal: Locator
   readonly logContainer: Locator
 
   constructor(page: Page) {
     this.page = page
+    this.heading = page.locator('h2.page-title:has-text("OCPP 消息终端")')
     this.pageTitle = page.locator('text=日志终端')
-    this.logContainer = page.locator('.log-container, .overflow-auto').first()
+    this.terminal = page.locator('.terminal')
+    this.logContainer = page.locator('.log-container, .terminal').first()
   }
 
   async goto() {

@@ -23,4 +23,13 @@ test.describe('Device 冒烟测试', () => {
     await devicePage.waitForLoad()
     await expect(devicePage.addButton).toBeVisible()
   })
+
+  test('设备列表渲染', async ({ page }) => {
+    await devicePage.waitForLoad()
+    const deviceCards = page.locator('.device-card')
+    const count = await deviceCards.count()
+    expect(count).toBeGreaterThanOrEqual(0)
+    // 页面应有设备网格容器
+    await expect(page.locator('.device-grid')).toBeVisible()
+  })
 })

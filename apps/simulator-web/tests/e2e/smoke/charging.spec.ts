@@ -24,4 +24,17 @@ test.describe('Charging 冒烟测试', () => {
     const count = await chargingPage.getMetricCardCount()
     expect(count).toBeGreaterThanOrEqual(4)
   })
+
+  test('设备选择器可交互', async ({ page }) => {
+    await chargingPage.waitForLoad()
+    const selectTrigger = page.locator('.device-select .select-trigger').first()
+    await expect(selectTrigger).toBeVisible()
+    await selectTrigger.click()
+    await expect(page.locator('.device-select .select-dropdown')).toBeVisible()
+  })
+
+  test('开始按钮初始状态', async ({ page }) => {
+    await chargingPage.waitForLoad()
+    await expect(chargingPage.startButton).toBeVisible()
+  })
 })
