@@ -120,9 +120,3 @@ test-results/
 *.spec.js
 **/test-results/
 **/debug-page.cjs
-
-# ========================
-# 归档目录（非项目文件打包）
-# ========================
-_archive/
-_archive.tar.gz
