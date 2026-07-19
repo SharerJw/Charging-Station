@@ -217,20 +217,6 @@ Charging-Station/
 │   ├── README.md                          #   文档目录说明
 │   └── seed-data-guide.md                 #   种子数据指南
 │
-├── 前端/                                  # AI 提示词规范（前端）
-│   ├── 产品模拟器Web.md
-│   ├── 四端页面.md
-│   ├── 产品运维App.md
-│   ├── 后台管理系统Web.md
-│   └── 用户端小程序.md
-│
-├── 后端/                                  # AI 提示词规范（后端）
-│   ├── 产品模拟器.md
-│   ├── 产品运维.md
-│   ├── 后台管理.md
-│   ├── 后端服务.md
-│   └── 用户端.md
-│
 ├── .github/                               # GitHub 配置
 │   ├── CODEOWNERS                         #   代码审查分配
 │   ├── ISSUE_TEMPLATE/                    #   Issue 模板（Bug/功能/问题）
@@ -241,8 +227,7 @@ Charging-Station/
 ├── pnpm-lock.yaml                         # 依赖锁文件
 ├── start.ps1                              # Windows 启动脚本
 ├── stop.ps1                               # Windows 停止脚本
-├── reset.ps1                              # 数据库重置脚本
-└── CLAUDE.md                              # Claude Code 配置
+└── reset.ps1                              # 数据库重置脚本
 ```
 
 ---
