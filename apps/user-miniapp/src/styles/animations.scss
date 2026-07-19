@@ -1,0 +1,274 @@
+// =============================================================================
+// Animations SCSS — user-miniapp EV Charging WeChat Mini Program
+// =============================================================================
+// Color palette: Charging green #07C160, background #F6F7FB
+// Spacing: 12px grid, minimum touch target 44x44pt
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// Variables
+// -----------------------------------------------------------------------------
+
+$color-charge-green: #07C160;
+$color-charge-glow: rgba(7, 193, 96, 0.45);
+$color-charge-glow-outer: rgba(7, 193, 96, 0.15);
+$color-white: #ffffff;
+$color-text-primary: #333333;
+
+// Timing
+$duration-fast: 200ms;
+$duration-normal: 250ms;
+$duration-slow: 350ms;
+
+$ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+$ease-in-expo: cubic-bezier(0.7, 0, 0.84, 0);
+$ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+// -----------------------------------------------------------------------------
+// 1. Pulse — breathing effect for scan button
+// -----------------------------------------------------------------------------
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 2. Shimmer — skeleton loading background slide
+// -----------------------------------------------------------------------------
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 3. SlideUp — bottom sheet entry
+// -----------------------------------------------------------------------------
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 4. SlideDown — bottom sheet exit
+// -----------------------------------------------------------------------------
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 5. FadeIn
+// -----------------------------------------------------------------------------
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 6. FadeOut
+// -----------------------------------------------------------------------------
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 7. ScaleIn — modal entry
+// -----------------------------------------------------------------------------
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 8. ChargeGlow — green glow pulse for charging indicator
+// -----------------------------------------------------------------------------
+@keyframes chargeGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px 2px $color-charge-glow-outer;
+  }
+  50% {
+    box-shadow: 0 0 20px 6px $color-charge-glow;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 9. ScanLine — QR scan line traversing top to bottom
+// -----------------------------------------------------------------------------
+@keyframes scanLine {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 10. RingPulse — SVG ring stroke-dashoffset animation placeholder
+// -----------------------------------------------------------------------------
+@keyframes ringPulse {
+  0% {
+    stroke-dashoffset: 283; // ~2 * PI * 45 (circle r=45)
+    opacity: 0.4;
+  }
+  50% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: -283;
+    opacity: 0.4;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 11. CountUp — number counting opacity pulse
+// -----------------------------------------------------------------------------
+@keyframes countUp {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 12. Confetti — settlement success celebration
+// -----------------------------------------------------------------------------
+@keyframes confetti {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-120px) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+// =============================================================================
+// Utility Classes
+// =============================================================================
+
+// --- Animation utilities ---
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+}
+
+.animate-fade-in {
+  animation: fadeIn $duration-normal ease-out forwards;
+}
+
+.animate-fade-out {
+  animation: fadeOut $duration-fast ease-in forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 300ms $ease-out-expo forwards;
+}
+
+.animate-slide-down {
+  animation: slideDown 250ms $ease-in-expo forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 300ms $ease-spring forwards;
+}
+
+.animate-charge-glow {
+  animation: chargeGlow 2s ease-in-out infinite;
+}
+
+.animate-scan-line {
+  animation: scanLine 2s linear infinite;
+}
+
+.animate-ring-pulse {
+  animation: ringPulse 2s ease-in-out infinite;
+}
+
+.animate-count-up {
+  animation: countUp 400ms ease-out forwards;
+}
+
+.animate-confetti {
+  animation: confetti 800ms $ease-out-expo forwards;
+}
+
+// --- Transition utilities ---
+
+.transition-fast {
+  transition: all $duration-fast ease-out;
+}
+
+.transition-normal {
+  transition: all $duration-normal ease-out;
+}
+
+.transition-slow {
+  transition: all $duration-slow ease-out;
+}
+
+// --- Reduced motion preference ---
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

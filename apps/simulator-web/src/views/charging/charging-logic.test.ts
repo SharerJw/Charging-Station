@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ref, nextTick } from 'vue'
+import { ref } from 'vue'
 
 vi.mock('@/api', () => ({
   chargingApi: {
@@ -130,7 +130,7 @@ describe('useChargingLogic', () => {
   // 8. startPolling calls deviceApi.list every second
   it('startPolling calls deviceApi.list every second', async () => {
     vi.mocked(deviceApi.list).mockResolvedValue([])
-    const { startPolling, selectedDevice } = createComposable('cp-001')
+    const { startPolling } = createComposable('cp-001')
     startPolling()
     await vi.advanceTimersByTimeAsync(3000)
     expect(deviceApi.list).toHaveBeenCalledTimes(3)
@@ -150,7 +150,7 @@ describe('useChargingLogic', () => {
   // 10. multiple startPolling does not create multiple timers
   it('multiple startPolling calls do not create multiple timers', async () => {
     vi.mocked(deviceApi.list).mockResolvedValue([])
-    const { startPolling, selectedDevice } = createComposable('cp-001')
+    const { startPolling } = createComposable('cp-001')
     startPolling()
     startPolling()
     await vi.advanceTimersByTimeAsync(2000)

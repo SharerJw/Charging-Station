@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useChartOptions, COLORS } from './useChartOptions'
 import type { DeviceLike } from './useChartOptions'
 
@@ -30,7 +30,7 @@ describe('useChartOptions', () => {
         refs.currentHistory,
         refs.socHistory,
         refs.tempHistory,
-        refs.devices,
+        refs.devices.value,
       )
       expect(realtimeChartOption.value.series).toHaveLength(3)
     })
@@ -44,7 +44,7 @@ describe('useChartOptions', () => {
         refs.currentHistory,
         refs.socHistory,
         refs.tempHistory,
-        refs.devices,
+        refs.devices.value,
       )
       expect((realtimeChartOption.value.xAxis as any).data).toEqual(refs.timeLabels.value)
     })
@@ -64,7 +64,7 @@ describe('useChartOptions', () => {
         refs.currentHistory,
         refs.socHistory,
         refs.tempHistory,
-        refs.devices,
+        refs.devices.value,
       )
       // series is still defined with 3 entries but data arrays are empty
       expect(realtimeChartOption.value.series).toHaveLength(3)
@@ -80,7 +80,7 @@ describe('useChartOptions', () => {
         refs.currentHistory,
         refs.socHistory,
         refs.tempHistory,
-        refs.devices,
+        refs.devices.value,
       )
       const yAxis = realtimeChartOption.value.yAxis as any[]
       expect(yAxis).toHaveLength(2)
@@ -97,7 +97,7 @@ describe('useChartOptions', () => {
         refs.currentHistory,
         refs.socHistory,
         refs.tempHistory,
-        refs.devices,
+        refs.devices.value,
       )
       const series = realtimeChartOption.value.series as any[]
       expect(series[0].itemStyle.color).toBe(COLORS.primary)   // blue
@@ -116,7 +116,7 @@ describe('useChartOptions', () => {
         refs.currentHistory,
         refs.socHistory,
         refs.tempHistory,
-        refs.devices,
+        refs.devices.value,
       )
       expect(socChartOption.value.series).toHaveLength(2)
     })
@@ -130,7 +130,7 @@ describe('useChartOptions', () => {
         refs.currentHistory,
         refs.socHistory,
         refs.tempHistory,
-        refs.devices,
+        refs.devices.value,
       )
       const yAxis = socChartOption.value.yAxis as any
       expect(yAxis.min).toBe(0)
@@ -146,7 +146,7 @@ describe('useChartOptions', () => {
         refs.currentHistory,
         refs.socHistory,
         refs.tempHistory,
-        refs.devices,
+        refs.devices.value,
       )
       const socSeries = (socChartOption.value.series as any[])[0]
       expect(socSeries.areaStyle).toBeDefined()
@@ -169,7 +169,7 @@ describe('useChartOptions', () => {
         refs.currentHistory,
         refs.socHistory,
         refs.tempHistory,
-        refs.devices,
+        refs.devices.value,
       )
       const pieData = (statusPieOption.value.series as any[])[0].data
       expect(pieData.length).toBe(3)
@@ -186,7 +186,7 @@ describe('useChartOptions', () => {
         refs.currentHistory,
         refs.socHistory,
         refs.tempHistory,
-        refs.devices,
+        refs.devices.value,
       )
       const pieData = (statusPieOption.value.series as any[])[0].data
       expect(pieData).toHaveLength(1)
@@ -203,7 +203,7 @@ describe('useChartOptions', () => {
         refs.currentHistory,
         refs.socHistory,
         refs.tempHistory,
-        refs.devices,
+        refs.devices.value,
       )
       const pieData = (statusPieOption.value.series as any[])[0].data
       expect(pieData).toHaveLength(0)
@@ -224,7 +224,7 @@ describe('useChartOptions', () => {
         refs.currentHistory,
         refs.socHistory,
         refs.tempHistory,
-        refs.devices,
+        refs.devices.value,
       )
       const pieData = (statusPieOption.value.series as any[])[0].data
       const colorMap = Object.fromEntries(pieData.map((d: any) => [d.name, d.itemStyle.color]))

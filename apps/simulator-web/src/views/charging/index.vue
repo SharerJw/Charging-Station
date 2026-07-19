@@ -37,7 +37,7 @@ onMounted(async () => {
   const devicesResponse = await deviceApi.list()
   const devices = devicesResponse?.list || devicesResponse || []
   simulatorStore.setDevices(devices)
-  const chargingDevice = devices.find(d => d.status === 'charging')
+  const chargingDevice = devices.find((d: any) => d.status === 'charging')
   if (chargingDevice) {
     selectedDevice.value = chargingDevice.id
     updateFromDevice(chargingDevice)

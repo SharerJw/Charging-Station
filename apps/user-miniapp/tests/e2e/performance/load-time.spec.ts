@@ -1,24 +1,9 @@
 import { test, expect } from '@playwright/test'
 
-// Set auth token and mock API routes before each test
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('token', 'mock-e2e-token')
+    localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6InVzZXIiLCJ0ZW5hbnRJZCI6IlQwMDEiLCJ1c2VySWQiOjMsIm9yZ0lkIjoiT1JHMDAxIiwidXNlcm5hbWUiOiIxMzgwMDEzODAwMCIsInN1YiI6IjMiLCJpYXQiOjE3ODQ0MDY2MjgsImV4cCI6MTc4NDQxMzgyOH0.Kpr_2YAFAYM8pEOt4vrz836pFIzxJP4uOJ0zFuZ0l5k')
   })
-
-  // Mock API responses to prevent 401 redirects and enable fast loading
-  await page.route('**/api/v1/stations**', (route) =>
-    route.fulfill({ json: { code: 0, data: [] } })
-  )
-  await page.route('**/api/v1/user/profile', (route) =>
-    route.fulfill({ json: { code: 0, data: { id: 'U001', nickname: '测试用户', phone: '13800138000', avatar: '', balance: 12350, couponCount: 5 } } })
-  )
-  await page.route('**/api/v1/charging/**', (route) =>
-    route.fulfill({ json: { code: 0, data: null } })
-  )
-  await page.route('**/api/v1/orders**', (route) =>
-    route.fulfill({ json: { code: 0, data: [] } })
-  )
 })
 
 test.describe('页面加载性能', () => {

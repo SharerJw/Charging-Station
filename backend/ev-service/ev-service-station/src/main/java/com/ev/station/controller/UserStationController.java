@@ -1,6 +1,8 @@
 package com.ev.station.controller;
 
 import com.ev.common.core.result.R;
+import com.ev.common.core.result.PageResult;
+import com.ev.station.dto.StationQuery;
 import com.ev.station.dto.StationVO;
 import com.ev.station.service.StationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,8 +16,8 @@ public class UserStationController {
     private final StationService stationService;
 
     @Operation(summary = "搜索充电站") @GetMapping
-    public R<List<StationVO>> search(@RequestParam(required = false) String keyword) {
-        return R.ok(stationService.search(keyword));
+    public R<PageResult<StationVO>> search(StationQuery query) {
+        return R.ok(stationService.search(query));
     }
 
     @Operation(summary = "充电站详情") @GetMapping("/{id}")

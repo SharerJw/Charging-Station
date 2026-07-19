@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 
 interface VirtualItem {
   key: string | number
@@ -35,6 +35,7 @@ const props = withDefaults(defineProps<{
 
 const containerRef = ref<HTMLElement | null>(null)
 const scrollTop = ref(0)
+void containerRef // used as template ref
 
 const totalHeight = computed(() => props.items.length * props.itemHeight)
 

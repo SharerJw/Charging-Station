@@ -1,0 +1,256 @@
+// =============================================================================
+// 用户端小程序 — 设计令牌 (Design Tokens)
+// UniApp + Vue 3 + TypeScript
+// 12rpx 网格系统 | 品牌色: 充电绿 #07C160
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// 颜色 — 品牌色 (Brand Colors)
+// -----------------------------------------------------------------------------
+$color-primary:          #07C160;
+$color-primary-dark:     #06AD56;
+$color-primary-light-bg: #E8F8EE;
+$color-secondary:        #1677FF;
+
+// -----------------------------------------------------------------------------
+// 颜色 — 背景色 (Background Colors)
+// -----------------------------------------------------------------------------
+$color-bg-page: #F6F7FB;
+$color-bg-card: #FFFFFF;
+$color-bg-grey: #F5F5F5;
+$color-bg-mask: rgba(0, 0, 0, 0.45);
+
+// -----------------------------------------------------------------------------
+// 颜色 — 文字色 (Text Colors)
+// -----------------------------------------------------------------------------
+$color-text-primary:   #1A1A1A;
+$color-text-secondary: #666666;
+$color-text-tertiary:  #999999;
+$color-text-inverse:   #FFFFFF;
+$color-text-link:      $color-secondary;
+
+// -----------------------------------------------------------------------------
+// 颜色 — 语义色 (Semantic Colors)
+// -----------------------------------------------------------------------------
+$color-success: #52C41A;
+$color-warning: #FAAD14;
+$color-error:   #FF4D4F;
+$color-info:    $color-secondary;
+
+// -----------------------------------------------------------------------------
+// 颜色 — 充电深色主题 (Charging Dark Theme)
+// -----------------------------------------------------------------------------
+$color-dark-bg-start:   #0A1628;
+$color-dark-bg-end:     #1A2744;
+$color-dark-accent:     #00E5A0;
+$color-dark-surface:    #111D33;
+$color-dark-text:       #E0E6ED;
+$color-dark-text-muted: #8899AA;
+
+// -----------------------------------------------------------------------------
+// 间距 — 12rpx 网格 (Spacing)
+// -----------------------------------------------------------------------------
+$spacing-xs:  8rpx;
+$spacing-sm:  12rpx;
+$spacing-md:  16rpx;
+$spacing-lg:  24rpx;
+$spacing-xl:  32rpx;
+$spacing-2xl: 48rpx;
+$spacing-3xl: 64rpx;
+
+// -----------------------------------------------------------------------------
+// 圆角 (Border Radius)
+// -----------------------------------------------------------------------------
+$radius-sm:   8rpx;
+$radius-md:   12rpx;
+$radius-lg:   16rpx;
+$radius-xl:   24rpx;
+$radius-full: 999rpx;
+
+// -----------------------------------------------------------------------------
+// 阴影 (Shadows)
+// -----------------------------------------------------------------------------
+$shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+$shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+$shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+
+// -----------------------------------------------------------------------------
+// 字号 — rpx (Font Sizes)
+// -----------------------------------------------------------------------------
+$font-size-xs:   20rpx;
+$font-size-sm:   22rpx;
+$font-size-base: 24rpx;
+$font-size-md:   26rpx;
+$font-size-lg:   28rpx;
+$font-size-xl:   32rpx;
+$font-size-2xl:  36rpx;
+$font-size-3xl:  40rpx;
+$font-size-4xl:  48rpx;
+$font-size-5xl:  56rpx;
+$font-size-6xl:  64rpx;
+$font-size-7xl:  72rpx;
+
+// -----------------------------------------------------------------------------
+// 字体族 (Font Families)
+// -----------------------------------------------------------------------------
+$font-family-base:   'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+$font-family-number: 'DIN Alternate', monospace;
+
+// -----------------------------------------------------------------------------
+// 行高 (Line Heights)
+// -----------------------------------------------------------------------------
+$line-height-tight:   1.25;
+$line-height-normal:  1.5;
+$line-height-relaxed: 1.75;
+
+// -----------------------------------------------------------------------------
+// 字重 (Font Weights)
+// -----------------------------------------------------------------------------
+$font-weight-regular:  400;
+$font-weight-medium:   500;
+$font-weight-semibold: 600;
+$font-weight-bold:     700;
+
+// -----------------------------------------------------------------------------
+// 过渡 (Transitions)
+// -----------------------------------------------------------------------------
+$transition-fast:   150ms;
+$transition-normal: 250ms;
+$transition-slow:   400ms;
+
+// -----------------------------------------------------------------------------
+// Z-index 层级
+// -----------------------------------------------------------------------------
+$z-index-base:    0;
+$z-index-card:    10;
+$z-index-sticky:  100;
+$z-index-nav:     200;
+$z-index-modal:   300;
+$z-index-toast:   400;
+$z-index-loading: 500;
+
+// -----------------------------------------------------------------------------
+// 组件尺寸 (Component Specific)
+// -----------------------------------------------------------------------------
+$navbar-height:    88rpx;
+$tabbar-height:    100rpx;
+$button-height:    88rpx;
+$input-height:     80rpx;
+$cell-min-height:  96rpx;
+$divider-height:    1rpx;
+$avatar-size-sm:   56rpx;
+$avatar-size-md:   80rpx;
+$avatar-size-lg:  112rpx;
+
+// =============================================================================
+// CSS 自定义属性 — 运行时使用 (CSS Custom Properties)
+// =============================================================================
+:root {
+  // 颜色 — 品牌色
+  --color-primary: #{$color-primary};
+  --color-primary-dark: #{$color-primary-dark};
+  --color-primary-light-bg: #{$color-primary-light-bg};
+  --color-secondary: #{$color-secondary};
+
+  // 颜色 — 背景色
+  --color-bg-page: #{$color-bg-page};
+  --color-bg-card: #{$color-bg-card};
+  --color-bg-grey: #{$color-bg-grey};
+  --color-bg-mask: #{$color-bg-mask};
+
+  // 颜色 — 文字色
+  --color-text-primary: #{$color-text-primary};
+  --color-text-secondary: #{$color-text-secondary};
+  --color-text-tertiary: #{$color-text-tertiary};
+  --color-text-inverse: #{$color-text-inverse};
+  --color-text-link: #{$color-text-link};
+
+  // 颜色 — 语义色
+  --color-success: #{$color-success};
+  --color-warning: #{$color-warning};
+  --color-error: #{$color-error};
+  --color-info: #{$color-info};
+
+  // 颜色 — 充电深色主题
+  --color-dark-bg-start: #{$color-dark-bg-start};
+  --color-dark-bg-end: #{$color-dark-bg-end};
+  --color-dark-accent: #{$color-dark-accent};
+  --color-dark-surface: #{$color-dark-surface};
+  --color-dark-text: #{$color-dark-text};
+  --color-dark-text-muted: #{$color-dark-text-muted};
+
+  // 间距
+  --spacing-xs: #{$spacing-xs};
+  --spacing-sm: #{$spacing-sm};
+  --spacing-md: #{$spacing-md};
+  --spacing-lg: #{$spacing-lg};
+  --spacing-xl: #{$spacing-xl};
+  --spacing-2xl: #{$spacing-2xl};
+  --spacing-3xl: #{$spacing-3xl};
+
+  // 圆角
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --radius-xl: #{$radius-xl};
+  --radius-full: #{$radius-full};
+
+  // 阴影
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+
+  // 字号
+  --font-size-xs: #{$font-size-xs};
+  --font-size-sm: #{$font-size-sm};
+  --font-size-base: #{$font-size-base};
+  --font-size-md: #{$font-size-md};
+  --font-size-lg: #{$font-size-lg};
+  --font-size-xl: #{$font-size-xl};
+  --font-size-2xl: #{$font-size-2xl};
+  --font-size-3xl: #{$font-size-3xl};
+  --font-size-4xl: #{$font-size-4xl};
+  --font-size-5xl: #{$font-size-5xl};
+  --font-size-6xl: #{$font-size-6xl};
+  --font-size-7xl: #{$font-size-7xl};
+
+  // 字体族
+  --font-family-base: #{$font-family-base};
+  --font-family-number: #{$font-family-number};
+
+  // 行高
+  --line-height-tight: #{$line-height-tight};
+  --line-height-normal: #{$line-height-normal};
+  --line-height-relaxed: #{$line-height-relaxed};
+
+  // 字重
+  --font-weight-regular: #{$font-weight-regular};
+  --font-weight-medium: #{$font-weight-medium};
+  --font-weight-semibold: #{$font-weight-semibold};
+  --font-weight-bold: #{$font-weight-bold};
+
+  // 过渡
+  --transition-fast: #{$transition-fast};
+  --transition-normal: #{$transition-normal};
+  --transition-slow: #{$transition-slow};
+
+  // Z-index 层级
+  --z-index-base: #{$z-index-base};
+  --z-index-card: #{$z-index-card};
+  --z-index-sticky: #{$z-index-sticky};
+  --z-index-nav: #{$z-index-nav};
+  --z-index-modal: #{$z-index-modal};
+  --z-index-toast: #{$z-index-toast};
+  --z-index-loading: #{$z-index-loading};
+
+  // 组件尺寸
+  --navbar-height: #{$navbar-height};
+  --tabbar-height: #{$tabbar-height};
+  --button-height: #{$button-height};
+  --input-height: #{$input-height};
+  --cell-min-height: #{$cell-min-height};
+  --divider-height: #{$divider-height};
+  --avatar-size-sm: #{$avatar-size-sm};
+  --avatar-size-md: #{$avatar-size-md};
+  --avatar-size-lg: #{$avatar-size-lg};
+}

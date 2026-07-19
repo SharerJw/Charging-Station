@@ -7,10 +7,10 @@ spring:
   application:
     name: ev-gateway
 
-  # WebFlux 请求体大小限制（1MB，适用于 reactive 栈）
+  # WebFlux 请求体大小限制（5MB，支持头像上传）
   # spring.servlet.multipart 不适用于 WebFlux，使用 codec 替代
   codec:
-    max-in-memory-size: 1MB
+    max-in-memory-size: 5MB
 
   cloud:
     nacos:
@@ -51,7 +51,7 @@ spring:
         - id: identity-service
           uri: lb://ev-service-identity
           predicates:
-            - Path=/api/auth/**,/api/v1/auth/**,/api/v1/ops/auth/**,/api/v1/ops/user/**,/api/v1/user/**,/api/users/**
+            - Path=/api/auth/**,/api/v1/auth/**,/api/v1/ops/auth/**,/api/v1/ops/user/**,/api/v1/user/**,/api/users/**,/uploads/**
         - id: station-service
           uri: lb://ev-service-station
           predicates:

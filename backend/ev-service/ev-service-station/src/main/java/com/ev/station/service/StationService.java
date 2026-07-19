@@ -11,4 +11,5 @@ public interface StationService {
     void delete(Long id);
     void updateStatus(Long id, String status);
     List<StationVO> search(String keyword);
+    PageResult<StationVO> search(StationQuery query);
 }

@@ -12,8 +12,15 @@ import com.ev.identity.service.LoginRateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -115,7 +122,7 @@ public class AuthServiceImpl implements AuthService {
                 .id(String.valueOf(user.getId()))
                 .username(user.getUsername())
                 .nickname(user.getNickname())
-                .phone(user.getPhone() != null ? user.getPhone().replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1****$2") : "")
+                .phone(user.getPhone() != null ? user.getPhone() : "")
                 .avatar(user.getAvatar())
                 .roles(roles)
                 .permissions(permissions)
@@ -132,10 +139,73 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public UserStatsVO getUserStats(Long userId) {
+        // L1 阶段返回模拟数据；后续对接 order-service 获取真实统计
+        return UserStatsVO.builder()
+                .chargeCount(12)
+                .totalEnergy(386.5)
+                .totalSaved(58.3)
+                .carbonReduction(245.8)
+                .build();
+    }
+
+    @Override
     public void sendSmsCode(String phone) {
         String code = "123456"; // L1 固定验证码
         redisLock.set(SMS_CODE_PREFIX + phone, code, 5, TimeUnit.MINUTES);
         log.info("发送验证码: phone={}, code={}", phone, code);
+    }
+
+    @Override
+    public void updateProfile(Long userId, String nickname, String avatar) {
+        SysUser user = userMapper.selectById(userId);
+        if (user == null) {
+            throw BizException.userNotFound();
+        }
+        if (StringUtils.hasText(nickname)) {
+            user.setNickname(nickname);
+        }
+        if (StringUtils.hasText(avatar)) {
+            user.setAvatar(avatar);
+        }
+        userMapper.updateById(user);
+        log.info("用户资料已更新: userId={}, nickname={}, avatar={}", userId, nickname, avatar);
+    }
+
+    @Override
+    public String uploadAvatar(Long userId, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("文件不能为空");
+        }
+        try {
+            // L1 阶段：保存到本地 uploads 目录，返回可访问 URL
+            String originalFilename = file.getOriginalFilename();
+            String ext = originalFilename != null && originalFilename.contains(".")
+                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                    : ".png";
+            String filename = UUID.randomUUID().toString().replace("-", "") + ext;
+
+            Path uploadDir = Paths.get("uploads", "avatars");
+            Files.createDirectories(uploadDir);
+            Path target = uploadDir.resolve(filename);
+            file.transferTo(target.toFile());
+
+            // 返回相对 URL，由网关或静态资源映射提供访问
+            String avatarUrl = "/uploads/avatars/" + filename;
+
+            // 同步更新用户表
+            SysUser user = userMapper.selectById(userId);
+            if (user != null) {
+                user.setAvatar(avatarUrl);
+                userMapper.updateById(user);
+            }
+
+            log.info("头像已上传: userId={}, url={}", userId, avatarUrl);
+            return avatarUrl;
+        } catch (IOException e) {
+            log.error("头像上传失败: userId={}", userId, e);
+            throw new RuntimeException("头像上传失败: " + e.getMessage());
+        }
     }
 
     private LoginResp buildLoginResp(SysUser user) {
@@ -146,7 +216,7 @@ public class AuthServiceImpl implements AuthService {
                 .id(String.valueOf(user.getId()))
                 .username(user.getUsername())
                 .nickname(user.getNickname())
-                .phone(user.getPhone() != null ? user.getPhone().replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1****$2") : "")
+                .phone(user.getPhone() != null ? user.getPhone() : "")
                 .avatar(user.getAvatar())
                 .roles(roles)
                 .balance(15000L)

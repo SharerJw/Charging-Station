@@ -12,7 +12,15 @@
       "es6": true,
       "minified": true
     },
-    "usingComponents": true
+    "usingComponents": true,
+    "permission": {
+      "scope.userLocation": {
+        "desc": "用于获取您附近的充电站并计算距离"
+      }
+    },
+    "requiredPrivateInfos": [
+      "getLocation"
+    ]
   },
   "h5": {
     "title": "EV充电平台",

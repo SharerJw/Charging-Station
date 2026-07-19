@@ -15,4 +15,5 @@ public class StationVO {
     private Integer deviceCount; private Integer onlineDeviceCount;
     private Integer todayOrderCount; private Long todayRevenue;
     private LocalDateTime createTime;
+    private Double distance; // 单位：米，由后端 Haversine 公式计算
 }

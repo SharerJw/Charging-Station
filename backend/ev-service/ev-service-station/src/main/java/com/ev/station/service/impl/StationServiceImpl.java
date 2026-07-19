@@ -15,7 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -123,6 +124,205 @@ public class StationServiceImpl implements StationService {
         }
         wrapper.eq(StationEntity::getStatus, "ACTIVE");
         return stationMapper.selectList(wrapper).stream().map(this::toVO).collect(Collectors.toList());
+    }
+
+    /** 内存排序时最大加载站点数，防止全表加载 */
+    private static final int MAX_SORT_LIMIT = 2000;
+
+    @Override
+    public PageResult<StationVO> search(StationQuery query) {
+        LambdaQueryWrapper<StationEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(StationEntity::getStatus, "ACTIVE");
+
+        if (query.getKeyword() != null && !query.getKeyword().isBlank()) {
+            wrapper.and(w -> w.like(StationEntity::getName, query.getKeyword())
+                    .or().like(StationEntity::getCode, query.getKeyword())
+                    .or().like(StationEntity::getAddress, query.getKeyword()));
+        }
+        if (query.getCity() != null && !query.getCity().isBlank()) {
+            wrapper.eq(StationEntity::getCity, query.getCity());
+        }
+
+        boolean hasLocation = query.getLatitude() != null && query.getLongitude() != null;
+        boolean hasRadius = query.getRadius() != null && query.getRadius() > 0;
+
+        String sortType = (query.getSort() != null && !query.getSort().isBlank())
+                ? query.getSort().toUpperCase()
+                : (hasLocation ? "DISTANCE" : "SMART");
+        if ("DISTANCE".equals(sortType) && !hasLocation) {
+            sortType = "SMART";
+        }
+
+        boolean needMemorySort = hasLocation || "SMART".equals(sortType) || "PRICE".equals(sortType);
+
+        int page = query.getPage();
+        int size = query.getSize();
+        List<StationVO> voList;
+        long total;
+
+        if (needMemorySort) {
+            // ── 性能优化：实体层过滤排序 → 仅最终页转 VO ──
+            wrapper.orderByDesc(StationEntity::getCreatedAt);
+            Page<StationEntity> full = stationMapper.selectPage(new Page<>(1, MAX_SORT_LIMIT), wrapper);
+            total = full.getTotal();
+
+            double userLat = hasLocation ? query.getLatitude() : 0;
+            double userLng = hasLocation ? query.getLongitude() : 0;
+            double radiusMeters = hasRadius ? query.getRadius() * 1000 : Double.MAX_VALUE;
+
+            // 第1步：在实体层计算距离，构建轻量中间对象（避免创建完整 VO）
+            List<StationCandidate> candidates = new ArrayList<>(full.getRecords().size());
+            for (StationEntity e : full.getRecords()) {
+                double dist = Double.MAX_VALUE;
+                if (hasLocation && e.getLatitude() != null && e.getLongitude() != null) {
+                    dist = haversine(userLat, userLng,
+                            e.getLatitude().doubleValue(), e.getLongitude().doubleValue());
+                    if (dist > radiusMeters) continue; // 距离过滤，直接跳过
+                }
+                candidates.add(new StationCandidate(e, Math.round(dist * 10.0) / 10.0));
+            }
+            total = hasLocation ? candidates.size() : total;
+
+            // 第2步：在中间对象层排序（轻量，无 VO 开销）
+            sortCandidates(candidates, sortType);
+
+            // 第3步：手动分页
+            int from = Math.min((page - 1) * size, candidates.size());
+            int to = Math.min(from + size, candidates.size());
+            List<StationCandidate> pageSlice = candidates.subList(from, to);
+
+            // 第4步：仅对当前页执行批量设备数查询 + 转 VO（1~2 次 SQL）
+            voList = batchToVO(pageSlice, hasLocation);
+
+        } else {
+            wrapper.orderByDesc(StationEntity::getCreatedAt);
+            Page<StationEntity> pageResult = stationMapper.selectPage(new Page<>(page, size), wrapper);
+            total = pageResult.getTotal();
+            voList = batchToVO(pageResult.getRecords().stream()
+                    .map(e -> new StationCandidate(e, null))
+                    .collect(Collectors.toList()), false);
+        }
+
+        return PageResult.of(voList, total, page, size);
+    }
+
+    // ── 轻量中间对象（仅含排序所需字段，不触发额外 SQL） ──
+    private record StationCandidate(StationEntity entity, Double distance) {}
+
+    // ── Haversine 公式（内联版，避免 BigDecimal 拆箱开销） ──
+    private static final double EARTH_R = 6_371_000.0;
+    private static double haversine(double lat1, double lng1, double lat2, double lng2) {
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat * 0.5);
+        a *= a;
+        double b = Math.sin(dLng * 0.5);
+        b *= b;
+        a += Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * b;
+        return EARTH_R * 2.0 * Math.atan2(Math.sqrt(a), Math.sqrt(1.0 - a));
+    }
+
+    // ── 中间对象排序（无 VO 开销） ──
+    private void sortCandidates(List<StationCandidate> list, String sortType) {
+        switch (sortType) {
+            case "DISTANCE" -> list.sort(Comparator.comparingDouble(c ->
+                    c.distance() != null ? c.distance() : Double.MAX_VALUE));
+
+            case "PRICE" -> list.sort(Comparator.comparingDouble(c -> {
+                StationEntity e = c.entity();
+                double ep = e.getElectricityPrice() != null ? e.getElectricityPrice().doubleValue() : 0;
+                double sp = e.getServicePrice() != null ? e.getServicePrice().doubleValue() : 0;
+                return ep + sp;
+            }));
+
+            case "SMART" -> {
+                double maxDist = list.stream().filter(c -> c.distance() != null)
+                        .mapToDouble(StationCandidate::distance).max().orElse(50000.0);
+                double maxPrice = list.stream().mapToDouble(c -> {
+                    StationEntity e = c.entity();
+                    double ep = e.getElectricityPrice() != null ? e.getElectricityPrice().doubleValue() : 0;
+                    double sp = e.getServicePrice() != null ? e.getServicePrice().doubleValue() : 0;
+                    return ep + sp;
+                }).max().orElse(2.0);
+                if (maxDist == 0) maxDist = 1;
+                if (maxPrice == 0) maxPrice = 1;
+                final double nd = maxDist, np = maxPrice;
+
+                list.sort(Comparator.comparingDouble((StationCandidate c) -> {
+                    double distScore = c.distance() != null ? 1.0 - c.distance() / nd : 0.5;
+                    StationEntity e = c.entity();
+                    double price = (e.getElectricityPrice() != null ? e.getElectricityPrice().doubleValue() : 0)
+                            + (e.getServicePrice() != null ? e.getServicePrice().doubleValue() : 0);
+                    double priceScore = 1.0 - price / np;
+                    double total = e.getTotalPorts() != null ? e.getTotalPorts() : 0;
+                    double avail = e.getAvailablePorts() != null ? e.getAvailablePorts() : 0;
+                    double availScore = total > 0 ? avail / total : 0.0;
+                    return -(distScore * 0.4 + priceScore * 0.3 + availScore * 0.3);
+                }));
+            }
+        }
+    }
+
+    /**
+     * 批量转换 VO：仅对当前页数据执行 2 次批量 SQL 查设备数
+     * 替代原 toVO() 的 N×2 次单条查询
+     */
+    private List<StationVO> batchToVO(List<StationCandidate> candidates, boolean includeDistance) {
+        if (candidates.isEmpty()) return List.of();
+
+        List<Long> stationIds = candidates.stream()
+                .map(c -> c.entity().getId())
+                .collect(Collectors.toList());
+
+        // 2 次批量 SQL（替代 2N 次）
+        Map<Long, Integer> deviceCountMap = new HashMap<>();
+        Map<Long, Integer> onlineCountMap = new HashMap<>();
+        deviceMapper.countByStationIds(stationIds).forEach(row ->
+                deviceCountMap.put(((Number) row.get("station_id")).longValue(),
+                        ((Number) row.get("cnt")).intValue()));
+        deviceMapper.countOnlineByStationIds(stationIds).forEach(row ->
+                onlineCountMap.put(((Number) row.get("station_id")).longValue(),
+                        ((Number) row.get("cnt")).intValue()));
+
+        return candidates.stream().map(c -> {
+            StationEntity e = c.entity();
+            return StationVO.builder()
+                    .id(String.valueOf(e.getId()))
+                    .code(e.getCode())
+                    .name(e.getName())
+                    .type(e.getType())
+                    .status(e.getStatus())
+                    .province(e.getProvince())
+                    .city(e.getCity())
+                    .district(e.getDistrict())
+                    .address(e.getAddress())
+                    .longitude(e.getLongitude())
+                    .latitude(e.getLatitude())
+                    .contactName(e.getContactName())
+                    .contactPhone(e.getContactPhone())
+                    .electricityPrice(e.getElectricityPrice())
+                    .servicePrice(e.getServicePrice())
+                    .parkingPrice(e.getParkingPrice())
+                    .totalPorts(e.getTotalPorts())
+                    .availablePorts(e.getAvailablePorts())
+                    .deviceCount(deviceCountMap.getOrDefault(e.getId(), 0))
+                    .onlineDeviceCount(onlineCountMap.getOrDefault(e.getId(), 0))
+                    .todayOrderCount(0)
+                    .todayRevenue(0L)
+                    .createTime(e.getCreatedAt())
+                    .distance(includeDistance ? c.distance() : null)
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    private double calcDistance(double lat1, double lng1, double lat2, double lng2) {
+        double R = 6371000; // 地球半径（米）
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
     /**

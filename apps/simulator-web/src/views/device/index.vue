@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useSimulatorStore } from '@/store/simulator'
 import { deviceApi } from '@/api'
 import type { Device } from '@/store/simulator'

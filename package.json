@@ -16,6 +16,15 @@
     "ops:build:app": "cd apps/ops-app && pnpm build:app",
     "install:all": "cd apps/admin-web && pnpm install && cd ../simulator-web && pnpm install && cd ../user-miniapp && pnpm install && cd ../ops-app && pnpm install"
   },
-  "keywords": ["ev", "charging", "platform", "vue3", "uniapp"],
-  "license": "MIT"
+  "keywords": [
+    "ev",
+    "charging",
+    "platform",
+    "vue3",
+    "uniapp"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "sass-embedded": "^1.100.0"
+  }
 }

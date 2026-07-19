@@ -30,7 +30,7 @@
 <td align="center"><b>运维 APP / H5</b></td>
 </tr>
 <tr>
-<td><img src="用户小程序_H5.png" width="50%"></td>
+<td><img src="用户小程序_H5_1.png" width="50%"> <img src="用户小程序_H5_2.png" width="50%"></td>
 <td><img src="运维APP_H5.png" width="50%"></td>
 </tr>
 </table>

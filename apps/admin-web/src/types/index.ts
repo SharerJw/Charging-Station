@@ -241,3 +241,393 @@ export interface ChartData {
   revenues: number[]
   energies: number[]
 }
+
+// ==================== 运维模块类型 ====================
+
+// 工单
+export const WorkOrderStatus = {
+  PENDING: 'pending',
+  ACCEPTED: 'accepted',
+  COMPLETED: 'completed',
+  CLOSED: 'closed',
+} as const
+export type WorkOrderStatus = typeof WorkOrderStatus[keyof typeof WorkOrderStatus]
+
+export const WorkOrderType = {
+  REPAIR: 'repair',
+  MAINTENANCE: 'maintenance',
+  INSPECTION: 'inspection',
+} as const
+export type WorkOrderType = typeof WorkOrderType[keyof typeof WorkOrderType]
+
+export const WorkOrderPriority = {
+  HIGH: 'high',
+  MEDIUM: 'medium',
+  LOW: 'low',
+} as const
+export type WorkOrderPriority = typeof WorkOrderPriority[keyof typeof WorkOrderPriority]
+
+export interface WorkOrder {
+  id: string
+  orderNo: string
+  type: WorkOrderType
+  title: string
+  description: string
+  stationId: string
+  stationName: string
+  deviceId: string
+  deviceCode: string
+  priority: WorkOrderPriority
+  status: WorkOrderStatus
+  assigneeId: string
+  assigneeName: string
+  creatorId: string
+  creatorName: string
+  result: string
+  slaDeadline: string
+  acceptTime?: string
+  completeTime?: string
+  closeTime?: string
+  createTime: string
+  updateTime: string
+}
+
+export interface WorkOrderQuery {
+  keyword?: string
+  type?: WorkOrderType
+  status?: WorkOrderStatus
+  priority?: WorkOrderPriority
+  stationId?: string
+  assigneeId?: string
+  startTime?: string
+  endTime?: string
+  page: number
+  size: number
+}
+
+// 巡检
+export const InspectionStatus = {
+  PENDING: 'pending',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
+} as const
+export type InspectionStatus = typeof InspectionStatus[keyof typeof InspectionStatus]
+
+export interface Inspection {
+  id: string
+  name: string
+  stationId: string
+  stationName: string
+  deviceCount: number
+  itemCount: number
+  status: InspectionStatus
+  inspectorId: string
+  inspectorName: string
+  scheduledDate: string
+  startTime?: string
+  completeTime?: string
+  remark: string
+  createTime: string
+}
+
+export interface InspectionQuery {
+  keyword?: string
+  status?: InspectionStatus
+  stationId?: string
+  inspectorId?: string
+  startTime?: string
+  endTime?: string
+  page: number
+  size: number
+}
+
+// 备件
+export interface SparePart {
+  id: string
+  code: string
+  name: string
+  specification: string
+  category: string
+  unit: string
+  stock: number
+  safetyStock: number
+  unitPrice: number
+  supplier: string
+  remark: string
+  createTime: string
+  updateTime: string
+}
+
+export interface SparePartQuery {
+  keyword?: string
+  category?: string
+  stockWarning?: boolean
+  page: number
+  size: number
+}
+
+// ==================== 定价策略相关类型 ====================
+
+export const PricingStrategyType = {
+  UNIFORM: 'UNIFORM',
+  TIME_OF_USE: 'TIME_OF_USE',
+  TIERED: 'TIERED',
+} as const
+export type PricingStrategyType = typeof PricingStrategyType[keyof typeof PricingStrategyType]
+
+export const PricingStrategyStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+} as const
+export type PricingStrategyStatus = typeof PricingStrategyStatus[keyof typeof PricingStrategyStatus]
+
+export interface TimePeriod {
+  id?: string
+  startTime: string
+  endTime: string
+  electricityFee: number
+  serviceFee: number
+  periodType?: 'PEAK' | 'FLAT' | 'VALLEY' | 'SUPER_PEAK'
+}
+
+export interface MemberDiscount {
+  level: string
+  discountRate: number
+  description?: string
+}
+
+export interface PricingStrategy {
+  id: string
+  name: string
+  type: PricingStrategyType
+  deviceType: DeviceType
+  status: PricingStrategyStatus
+  electricityFee: number
+  serviceFee: number
+  timePeriods: TimePeriod[]
+  memberDiscounts: MemberDiscount[]
+  stationCount: number
+  tenantId: string
+  createTime: string
+  updateTime: string
+}
+
+export interface PricingStrategyForm {
+  name: string
+  type: PricingStrategyType
+  deviceType: DeviceType
+  status: PricingStrategyStatus
+  electricityFee: number
+  serviceFee: number
+  timePeriods: TimePeriod[]
+  memberDiscounts: MemberDiscount[]
+}
+
+export interface PricingStrategyQuery {
+  keyword?: string
+  type?: PricingStrategyType
+  status?: PricingStrategyStatus
+  deviceType?: DeviceType
+  page: number
+  size: number
+}
+
+export interface StationPricingOverride {
+  id: string
+  stationId: string
+  stationName: string
+  strategyId: string
+  strategyName: string
+  electricityFee: number
+  serviceFee: number
+  overrideElectricityFee?: number
+  overrideServiceFee?: number
+  effectiveFee: number
+  status: PricingStrategyStatus
+  updateTime: string
+}
+
+export interface StationPricingQuery {
+  keyword?: string
+  strategyId?: string
+  page: number
+  size: number
+}
+
+// ==================== 系统管理模块类型 ====================
+
+// 组织架构
+export interface OrgNode {
+  id: string
+  label: string
+  parentId: string | null
+  sort: number
+  leaderName: string
+  leaderPhone: string
+  stationCount: number
+  memberCount: number
+  status: string
+  children: OrgNode[]
+  createTime: string
+}
+
+export interface OrgForm {
+  parentId: string | null
+  label: string
+  sort: number
+  leaderName: string
+  leaderPhone: string
+  status: string
+}
+
+// 角色管理
+export interface Role {
+  id: string
+  name: string
+  code: string
+  description: string
+  userCount: number
+  menuIds: string[]
+  buttonIds: string[]
+  status: string
+  createTime: string
+  updateTime: string
+}
+
+export interface RoleForm {
+  name: string
+  code: string
+  description: string
+  status: string
+}
+
+export interface RoleQuery {
+  keyword?: string
+  status?: string
+  page: number
+  size: number
+}
+
+// 权限菜单树节点
+export interface MenuPermissionNode {
+  id: string
+  label: string
+  type: string
+  children: MenuPermissionNode[]
+}
+
+// 管理员账号
+export interface AdminUser {
+  id: string
+  username: string
+  nickname: string
+  phone: string
+  email: string
+  roleId: string
+  roleName: string
+  orgId: string
+  orgName: string
+  status: string
+  lastLoginTime: string
+  lastLoginIp: string
+  createTime: string
+  updateTime: string
+}
+
+export interface AdminUserForm {
+  username: string
+  nickname: string
+  phone: string
+  email: string
+  roleId: string
+  orgId: string
+  password?: string
+  status: string
+}
+
+export interface AdminUserQuery {
+  keyword?: string
+  roleId?: string
+  orgId?: string
+  status?: string
+  page: number
+  size: number
+}
+
+// 审计日志
+export interface AuditLog {
+  id: string
+  operatorId: string
+  operatorName: string
+  module: string
+  action: string
+  content: string
+  ip: string
+  userAgent: string
+  requestMethod: string
+  requestUrl: string
+  duration: number
+  status: string
+  errorMessage: string
+  createTime: string
+}
+
+export interface AuditLogQuery {
+  operatorName?: string
+  module?: string
+  action?: string
+  status?: string
+  startTime?: string
+  endTime?: string
+  page: number
+  size: number
+}
+
+// 系统配置
+export interface SystemConfig {
+  // 基础配置
+  platformName: string
+  platformLogo: string
+  customerServicePhone: string
+  customerServiceEmail: string
+  icpNumber: string
+  // 充电配置
+  defaultElectricityPrice: number
+  defaultServicePrice: number
+  orderTimeout: number
+  heartbeatInterval: number
+  maxChargingDuration: number
+  socFullThreshold: number
+  autoStopEnabled: boolean
+  // 支付配置
+  payTimeout: number
+  minRechargeAmount: number
+  maxRechargeAmount: number
+  refundEnabled: boolean
+  refundDeadlineDays: number
+  wechatPayEnabled: boolean
+  alipayEnabled: boolean
+  balancePayEnabled: boolean
+  // 通知配置
+  smsEnabled: boolean
+  smsProvider: string
+  pushEnabled: boolean
+  emailEnabled: boolean
+  alertNotifyEnabled: boolean
+  orderNotifyEnabled: boolean
+  // 地图配置
+  mapProvider: string
+  mapKey: string
+  defaultLongitude: number
+  defaultLatitude: number
+  defaultZoom: number
+  // 安全配置
+  loginFailLock: number
+  loginFailLockMinutes: number
+  passwordMinLength: number
+  passwordExpireDays: number
+  sessionTimeout: number
+  ipWhitelist: string
+  apiRateLimit: number
+}

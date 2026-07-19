@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
+import { useUserStore } from '@/store/user'
 
 onLaunch(() => {
   console.log('App Launch')
+  // 从本地存储恢复用户登录状态
+  const userStore = useUserStore()
+  userStore.initFromStorage()
 })
 
 onShow(() => {
@@ -64,5 +68,12 @@ page {
 
   background-color: var(--color-bg-page);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* 全局禁用页面级滚动（找桩页/订单页等固定布局页面复用） */
+uni-page-body,
+.uni-page-body {
+  overflow: hidden !important;
+  height: 100% !important;
 }
 </style>

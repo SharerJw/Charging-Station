@@ -55,7 +55,15 @@ export const financeApi = {
   getSummary: (params?: { startTime?: string; endTime?: string }) => get<any>('/finance/summary', params),
   getBills: (params: any) => get<PageResult<any>>('/finance/bills', params),
   getSettlements: (params: any) => get<PageResult<any>>('/finance/settlements', params),
+  getInvoices: (params: any) => get<PageResult<any>>('/finance/invoices', params),
+  getFundFlows: (params: any) => get<PageResult<any>>('/finance/fund-flows', params),
+  getRevenueTrend: (params: any) => get<any>('/finance/revenue-trend', params),
+  getPaymentChannelStats: (params?: any) => get<any>('/finance/payment-channel-stats', params),
   exportBills: (params: any) => get<Blob>('/finance/bills/export', params),
+  exportSettlements: (params: any) => get<Blob>('/finance/settlements/export', params),
+  exportFundFlows: (params: any) => get<Blob>('/finance/fund-flows/export', params),
+  batchInvoice: (data: { settlementIds: string[] }) => post<any>('/finance/invoices/batch', data),
+  confirmSettlement: (id: string) => put<any>(`/finance/settlement/${id}/confirm`),
 }
 
 // 认证
