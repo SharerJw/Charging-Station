@@ -110,3 +110,13 @@ CLAUDE.md
 docs/
 tests/
 test-results/
+
+# ========================
+# 测试文件（非构建必需）
+# ========================
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+**/test-results/
+**/debug-page.cjs
