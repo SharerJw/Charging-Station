@@ -96,3 +96,10 @@ visual-test.mts
 docs/superpowers/
 docs/test/
 docs/verification/
+
+# ========================
+# AI 提示词规范文档（非构建必需）
+# ========================
+前端/
+后端/
+CLAUDE.md
