@@ -62,6 +62,37 @@ desktop.ini
 # ========================
 # Claude Code 运行时
 # ========================
+.claude/
 .playwright-mcp/
 .superpowers/
 .superpowers/sdd/
+
+# ========================
+# 测试产物（可再生）
+# ========================
+test-screenshots/
+tests/screenshots/
+**/test-screenshots/
+playwright-report/
+test-results/
+
+# ========================
+# 任务报告（开发过程产物）
+# ========================
+output/
+
+# ========================
+# 调试/测试脚本（非核心代码）
+# ========================
+debug-test.mts
+visual-test.mts
+*.test.mts
+**/visual-test.cjs
+**/visual-test.ts
+
+# ========================
+# AI 分析文档（开发过程产物）
+# ========================
+docs/superpowers/
+docs/test/
+docs/verification/

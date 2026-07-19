@@ -104,66 +104,145 @@
 ## 📁 项目结构
 
 ```
-demo07/
+Charging-Station/
 ├── apps/                                  # 前端四端应用
 │   ├── admin-web/                         # 后台管理系统 (Vue 3 + Element Plus, :5173)
-│   │   └── src/views/
-│   │       ├── dashboard/                 #   数据看板（KPI卡片、营收趋势、站点排名）
-│   │       ├── station/                   #   充电站管理（CRUD、地图选点）
-│   │       ├── device/                    #   设备管理（状态监控、详情弹窗）
-│   │       ├── order/                     #   订单管理（状态筛选、详情抽屉）
-│   │       ├── alert/                     #   告警管理（P0~P3分级）
-│   │       ├── ops/                       #   工单管理
-│   │       ├── finance/                   #   财务结算
-│   │       ├── pricing/                   #   定价策略
-│   │       └── marketing/                 #   营销活动
-│   ├── ops-app/                           # 运维App (UniApp + Vue 3, :5175)
+│   │   └── src/
+│   │       ├── api/                       #   API 请求封装
+│   │       ├── components/                #   公共组件（EmptyState, Header, Sidebar, Skeleton 等）
+│   │       ├── composables/               #   组合式函数（useDebounce 等）
+│   │       ├── directives/                #   自定义指令（permission 权限指令）
+│   │       ├── layouts/                   #   布局组件（MainLayout）
+│   │       ├── router/                    #   路由配置
+│   │       ├── store/                     #   Pinia 状态管理（15 个模块）
+│   │       ├── types/                     #   TypeScript 类型定义
+│   │       └── views/                     #   页面视图
+│   │           ├── dashboard/             #     数据看板（KPI 卡片、营收趋势、站点排名）
+│   │           ├── station/               #     充电站管理（CRUD、地图选点）
+│   │           ├── device/                #     设备管理（状态监控、详情弹窗）
+│   │           ├── order/                 #     订单管理（状态筛选、详情抽屉）
+│   │           ├── alert/                 #     告警管理（P0~P3 分级）
+│   │           ├── ops/                   #     工单管理
+│   │           ├── finance/               #     财务结算
+│   │           ├── pricing/               #     定价策略
+│   │           ├── marketing/             #     营销活动
+│   │           ├── analytics/             #     数据分析
+│   │           ├── system/                #     系统管理
+│   │           ├── user/                  #     用户管理
+│   │           ├── login/                 #     登录页
+│   │           └── error/                 #     错误页面（403/404）
+│   │
+│   ├── ops-app/                           # 运维 App (UniApp + Vue 3, :5175)
 │   │   └── src/pages/
 │   │       ├── index/                     #   工作台（待办、快捷操作、告警列表）
 │   │       ├── station/                   #   站点巡检
 │   │       ├── device/                    #   设备管理
 │   │       ├── alert/                     #   告警处理
+│   │       ├── alert-detail/              #   告警详情
+│   │       ├── alert-stats/               #   告警统计
 │   │       ├── workorder/                 #   工单管理
+│   │       ├── workorder-detail/          #   工单详情
+│   │       ├── workorder-process/         #   工单处理
+│   │       ├── workorder-stats/           #   工单统计
 │   │       ├── inspection/                #   巡检任务
-│   │       └── profile/                   #   个人中心
+│   │       ├── inspection-exec/           #   巡检执行
+│   │       ├── inspection-report/         #   巡检报告
+│   │       ├── dispatch/                  #   调度
+│   │       ├── knowledge/                 #   知识库
+│   │       ├── messages-ops/              #   消息
+│   │       ├── remote-control/            #   远程控制
+│   │       ├── shift-handover/            #   交接班
+│   │       ├── spare-parts/               #   备件管理
+│   │       ├── profile/                   #   个人中心
+│   │       └── login/                     #   登录
+│   │
 │   ├── user-miniapp/                      # 用户小程序 (UniApp + Vue 3, :5176)
 │   │   └── src/pages/
 │   │       ├── index/                     #   首页（余额、充电状态、附近站点）
-│   │       ├── map/                       #   找桩地图（60:40地图/列表、无限滚动）
-│   │       ├── charging/                  #   充电监控（SOC进度、功率/电压/电流/温度）
+│   │       ├── map/                       #   找桩地图（60:40 地图/列表、无限滚动）
+│   │       ├── charging/                  #   充电监控（SOC 进度、功率/电压/电流/温度）
+│   │       ├── charging-settings/         #   充电设置
+│   │       ├── station-detail/            #   站点详情
 │   │       ├── orders/                    #   我的订单
+│   │       ├── order-detail/              #   订单详情
 │   │       ├── profile/                   #   个人中心（编辑资料、余额充值）
-│   │       └── login/                     #   登录（手机号+验证码）
-│   └── simulator-web/                     # OCPP模拟器 (Vue 3 + Element Plus, :5177)
+│   │       ├── login/                     #   登录（手机号+验证码）
+│   │       ├── login-sms/                 #   短信登录
+│   │       ├── wallet/                    #   钱包
+│   │       ├── recharge/                  #   充值
+│   │       ├── vehicles/                  #   我的车辆
+│   │       ├── favorites/                 #   收藏站点
+│   │       ├── search/                    #   搜索
+│   │       ├── scan/                      #   扫码充电
+│   │       ├── coupon/                    #   优惠券
+│   │       ├── membership/                #   会员中心
+│   │       ├── points/                    #   积分
+│   │       ├── messages/                  #   消息中心
+│   │       ├── invoice/                   #   发票
+│   │       ├── refund/                    #   退款
+│   │       ├── settlement/                #   结算
+│   │       └── settings/                  #   设置
+│   │
+│   └── simulator-web/                     # OCPP 模拟器 (Vue 3 + Element Plus, :5177)
 │       └── src/views/
 │           ├── dashboard/                 #   仪表盘（实时指标、SOC/功率趋势、设备分布）
-│           ├── charging/                  #   充电仿真（4通道实时曲线、OCPP消息）
+│           ├── charging/                  #   充电仿真（4 通道实时曲线、OCPP 消息）
+│           ├── device/                    #   设备管理
 │           ├── scenario/                  #   场景编排
-│           └── ocpp-terminal/             #   OCPP终端（协议报文调试）
+│           └── logs/                      #   日志
 │
-├── backend/                               # 后端微服务
-│   ├── ev-gateway/                        # API网关 (:8080)
-│   │   └── filter/
-│   │       ├── AuthGlobalFilter           #   JWT解析 + 用户上下文注入
-│   │       ├── PathTraversalFilter        #   防路径穿越攻击
-│   │       └── SecurityHeadersFilter      #   安全响应头注入
+├── backend/                               # 后端微服务 (Java 21 + Spring Boot 3.3)
 │   ├── ev-common/                         # 公共模块
-│   │   ├── ev-common-core/                #   核心：统一响应R<T>、分页、异常体系、事件定义
+│   │   ├── ev-common-core/                #   核心：统一响应 R<T>、分页、异常体系、事件定义
 │   │   ├── ev-common-mybatis/             #   数据库：BaseEntity、多租户拦截、自动填充
 │   │   ├── ev-common-redis/               #   缓存：TwoLevelCache、IdempotentAspect、RedisLock
-│   │   └── ev-common-security/            #   安全：JWT工具、AuthInterceptor、审计日志AOP
+│   │   └── ev-common-security/            #   安全：JWT 工具、AuthInterceptor、审计日志 AOP
+│   ├── ev-gateway/                        # API 网关 (:8080)
+│   │   └── filter/
+│   │       ├── AuthGlobalFilter           #   JWT 解析 + 用户上下文注入
+│   │       ├── PathTraversalFilter        #   防路径穿越攻击
+│   │       └── SecurityHeadersFilter      #   安全响应头注入
 │   └── ev-service/                        # 业务服务
 │       ├── ev-service-identity/           #   认证服务 (:8081) — 登录/RBAC/用户管理/短信验证
 │       ├── ev-service-station/            #   站点服务 (:8082) — 充电站/设备/连接器/地理查询
-│       ├── ev-service-charging/           #   充电服务 (:8083) — 会话管理/SOC算法/WebSocket推送
+│       ├── ev-service-charging/           #   充电服务 (:8083) — 会话管理/SOC 算法/WebSocket 推送
 │       ├── ev-service-order/              #   订单服务 (:8084) — 订单/告警/工单/巡检/财务/看板
-│       └── ev-service-simulator/          #   模拟服务 (:8085) — OCPP协议/充电仿真/场景编排
+│       └── ev-service-simulator/          #   模拟服务 (:8085) — OCPP 协议/充电仿真/场景编排
 │
-├── docker/                                # Docker基础设施
+├── docker/                                # Docker 基础设施
 │   ├── docker-compose.yml                 #   PostgreSQL + Redis + Kafka + Nacos + MinIO
-│   └── init/                              #   数据库初始化脚本
+│   └── init/postgres/init.sql             #   数据库初始化脚本（3 个库：ev_identity, ev_station, ev_order）
 │
-└── 后端/ & 前端/                           # Prompt规范文档（中文AI编码提示词）
+├── docs/                                  # 项目文档
+│   ├── README.md                          #   文档目录说明
+│   └── seed-data-guide.md                 #   种子数据指南
+│
+├── 前端/                                  # AI 提示词规范（前端）
+│   ├── 产品模拟器Web.md
+│   ├── 四端页面.md
+│   ├── 产品运维App.md
+│   ├── 后台管理系统Web.md
+│   └── 用户端小程序.md
+│
+├── 后端/                                  # AI 提示词规范（后端）
+│   ├── 产品模拟器.md
+│   ├── 产品运维.md
+│   ├── 后台管理.md
+│   ├── 后端服务.md
+│   └── 用户端.md
+│
+├── .github/                               # GitHub 配置
+│   ├── CODEOWNERS                         #   代码审查分配
+│   ├── ISSUE_TEMPLATE/                    #   Issue 模板（Bug/功能/问题）
+│   ├── pull_request_template.md           #   PR 模板
+│   └── SETUP.md                           #   仓库配置指南
+│
+├── package.json                           # pnpm workspace 配置
+├── pnpm-lock.yaml                         # 依赖锁文件
+├── start.ps1                              # Windows 启动脚本
+├── stop.ps1                               # Windows 停止脚本
+├── reset.ps1                              # 数据库重置脚本
+└── CLAUDE.md                              # Claude Code 配置
 ```
 
 ---
@@ -181,16 +260,19 @@ demo07/
 
 ### 一键启动（推荐）
 
-```bash
+```powershell
 # 克隆仓库
 git clone https://github.com/SharerJw/Charging-Station.git
 cd Charging-Station
 
-# Windows
-start.bat
+# Windows PowerShell
+.\start.ps1
 
-# Linux/Mac
-chmod +x start.sh && ./start.sh
+# 停止所有服务
+.\stop.ps1
+
+# 重置数据库（重新填充种子数据）
+.\reset.ps1
 ```
 
 脚本自动执行：启动 Docker 容器 → 构建后端 → 启动 6 个服务 → 安装前端依赖 → 启动 4 个前端 App
@@ -224,13 +306,13 @@ cd backend
 # 后台管理系统 (:5173)
 cd apps/admin-web && pnpm install && pnpm dev
 
-# 运维App H5 (:5175)
+# 运维 App H5 (:5175)
 cd apps/ops-app && pnpm install && pnpm dev:h5
 
 # 用户小程序 H5 (:5176)
 cd apps/user-miniapp && pnpm install && pnpm dev:h5
 
-# OCPP模拟器 (:5177)
+# OCPP 模拟器 (:5177)
 cd apps/simulator-web && pnpm install && pnpm dev
 ```
 
@@ -317,6 +399,19 @@ CREATED → CHARGING → STOPPING → STOPPED → SETTLING → SETTLED → PAYIN
 
 ---
 
+## 📂 代码规模
+
+| 类型 | 数量 | 说明 |
+|------|------|------|
+| Vue 组件 (.vue) | 128 | 四端前端页面和组件 |
+| TypeScript (.ts) | 158 | 前端逻辑、状态管理、API |
+| Java 源文件 (.java) | 148 | 后端微服务、过滤器、拦截器 |
+| 配置文件 | 37 | package.json, build.gradle.kts, vite.config.ts 等 |
+| SQL 种子脚本 | 6 | Flyway 数据库迁移 |
+| Docker 配置 | 2 | docker-compose.yml, init.sql |
+
+---
+
 ## 🔧 开发指南
 
 ### 切换 Mock / 真实数据
@@ -329,10 +424,32 @@ VITE_USE_MOCK=true    # 使用 Mock 数据（无需后端）
 
 ### 数据库重置
 
-```bash
+```powershell
 # 重置数据库并重新填充种子数据
-powershell -ExecutionPolicy Bypass -File reset.ps1
+.\reset.ps1
 ```
+
+### Git 提交规则
+
+本仓库仅提交**可构建的源代码和配置文件**，确保拉取后执行构建命令即可启动：
+
+**✅ 应该提交：**
+- 源代码（.vue, .ts, .java）
+- 配置文件（package.json, build.gradle.kts, vite.config.ts, application.yml）
+- 构建脚本（start.ps1, stop.ps1, reset.ps1）
+- 文档（README.md, CLAUDE.md, CONTRIBUTING.md）
+- Docker 配置（docker-compose.yml, init.sql）
+- 路由/页面配置（pages.json）
+
+**❌ 不应该提交：**
+- 依赖目录（node_modules/）
+- 构建产物（dist/, build/, .gradle/）
+- 测试产物（test-screenshots/, coverage/）
+- 任务报告（output/）
+- AI 分析文档（docs/superpowers/, docs/test/）
+- 调试脚本（debug-test.mts, visual-test.mts）
+- IDE 配置（.idea/, .vscode/）
+- 环境变量覆盖（.env.local）
 
 ### 核心设计规范
 

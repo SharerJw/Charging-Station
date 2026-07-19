@@ -1,20 +1,46 @@
 ## 项目概述
 
-这是一个**基于提示词驱动的电动汽车充电平台**——一套完整、详尽的 AI 代码生成提示词（中文），涵盖多租户电动汽车充电站管理平台的全栈开发。本仓库**不包含任何源代码**，而是按系统层次组织的深度提示词规范集合。
+这是一个**完整的全栈电动汽车充电平台**——多租户 SaaS 充电站运营管理平台，包含前端四端应用和后端微服务。
 
-平台涵盖“四端”（四种客户端）及其后端服务，基于 OCPP（开放充电点协议）协议实现充电桩通信。
+**仓库包含：**
+- **实际源代码**：128 个 Vue 组件、158 个 TypeScript 文件、148 个 Java 源文件
+- **AI 提示词规范**：`前端/` 和 `后端/` 目录下的 10 个 .md 文件（中文 AI 编码提示词）
+- **基础设施配置**：Docker Compose、Gradle 构建、Flyway 迁移
 
 ## 仓库结构
 
 ```
-前端/                          # 前端提示词规范
+apps/                          # 前端四端应用
+  admin-web/                   # 后台管理系统 Web (Vue 3 + Element Plus)
+  ops-app/                     # 运维移动端 (UniApp + Vue 3)
+  user-miniapp/                # 用户微信小程序 (UniApp + Vue 3)
+  simulator-web/               # 产品模拟器 Web (Vue 3 + Element Plus)
+
+backend/                       # 后端微服务 (Java 21 + Spring Boot 3.3)
+  ev-common/                   # 公共模块（核心、数据库、缓存、安全）
+  ev-gateway/                  # API 网关 (:8080)
+  ev-service/                  # 业务服务
+    ev-service-identity/       #   认证服务 (:8081)
+    ev-service-station/        #   站点服务 (:8082)
+    ev-service-charging/       #   充电服务 (:8083)
+    ev-service-order/          #   订单服务 (:8084)
+    ev-service-simulator/      #   模拟服务 (:8085)
+
+docker/                        # Docker 基础设施
+  docker-compose.yml           # PostgreSQL + Redis + Kafka + Nacos + MinIO
+  init/postgres/init.sql       # 数据库初始化脚本
+
+docs/                          # 项目文档
+  seed-data-guide.md           # 种子数据指南
+
+前端/                          # AI 提示词规范（前端）
   产品模拟器Web.md              # 充电桩模拟器 Web（Vue 3 + Element Plus）
   四端页面.md                   # 四端界面概览
   产品运维App.md                # 运维移动端（UniApp + Vue 3）
   后台管理系统Web.md             # 管理后台 Web（Vue 3 + Element Plus）
   用户端小程序.md               # 用户微信小程序（UniApp + Vue 3）
 
-后端/                          # 后端提示词规范
+后端/                          # AI 提示词规范（后端）
   后端服务.md                   # 核心后端架构（Java 21 + Spring Boot 3.3）
   产品模拟器.md                 # 模拟器后端（Netty WebSocket + BMS 仿真）
   产品运维.md                   # 运维后端（告警、工单、巡检）
@@ -32,7 +58,7 @@
 
 **后端：**
 - Java 21（虚拟线程）+ Spring Boot 3.3 + Spring Cloud Alibaba 2023
-- API 网关：Apache APISIX / Spring Cloud Gateway
+- API 网关：Spring Cloud Gateway
 - 服务注册/配置中心：Nacos 2.3
 - 限流降级：Sentinel 1.8
 - 数据库：PostgreSQL（PostGIS）+ MySQL 8.0（ShardingSphere 分库分表）
@@ -78,6 +104,43 @@
 
 **字体：** PingFang SC / Microsoft YaHei（Web）、系统默认（移动端）、DIN Alternate（数字）
 **间距：** 8px 栅格（Web）、12px（App/小程序），最小触控区域 44×44pt
+
+## 快速启动
+
+```powershell
+# 克隆仓库
+git clone https://github.com/SharerJw/Charging-Station.git
+cd Charging-Station
+
+# Windows PowerShell - 一键启动
+.\start.ps1
+
+# 停止所有服务
+.\stop.ps1
+
+# 重置数据库
+.\reset.ps1
+```
+
+## Git 提交规则
+
+本仓库仅提交**可构建的源代码和配置文件**，确保拉取后执行构建命令即可启动：
+
+**✅ 应该提交：**
+- 源代码（.vue, .ts, .java）
+- 配置文件（package.json, build.gradle.kts, vite.config.ts, application.yml）
+- 构建脚本（start.ps1, stop.ps1, reset.ps1）
+- 文档（README.md, CLAUDE.md, CONTRIBUTING.md）
+- Docker 配置（docker-compose.yml, init.sql）
+
+**❌ 不应该提交：**
+- 依赖目录（node_modules/）
+- 构建产物（dist/, build/, .gradle/）
+- 测试产物（test-screenshots/, coverage/）
+- 任务报告（output/）
+- AI 分析文档（docs/superpowers/, docs/test/）
+- 调试脚本（debug-test.mts, visual-test.mts）
+- IDE 配置（.idea/, .vscode/）
 
 ## 通用开发规范
 
