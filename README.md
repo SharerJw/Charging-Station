@@ -213,10 +213,6 @@ Charging-Station/
 │   ├── docker-compose.yml                 #   PostgreSQL + Redis + Kafka + Nacos + MinIO
 │   └── init/postgres/init.sql             #   数据库初始化脚本（3 个库：ev_identity, ev_station, ev_order）
 │
-├── docs/                                  # 项目文档
-│   ├── README.md                          #   文档目录说明
-│   └── seed-data-guide.md                 #   种子数据指南
-│
 ├── .github/                               # GitHub 配置
 │   ├── CODEOWNERS                         #   代码审查分配
 │   ├── ISSUE_TEMPLATE/                    #   Issue 模板（Bug/功能/问题）
