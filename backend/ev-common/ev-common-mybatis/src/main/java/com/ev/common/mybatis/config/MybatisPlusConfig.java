@@ -5,14 +5,23 @@ import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.TenantLineInnerInterceptor;
+import com.ev.common.mybatis.handler.DataPermissionInterceptor;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import jakarta.annotation.PostConstruct;
+import java.util.List;
 
 /**
  * MyBatis-Plus 配置
  */
 @Configuration
 public class MybatisPlusConfig {
+
+    @Autowired
+    private List<SqlSessionFactory> sqlSessionFactoryList;
 
     @Bean
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
@@ -26,5 +35,16 @@ public class MybatisPlusConfig {
         // 乐观锁插件
         interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
         return interceptor;
+    }
+
+    /**
+     * 注册数据权限拦截器
+     */
+    @PostConstruct
+    public void addDataPermissionInterceptor() {
+        DataPermissionInterceptor interceptor = new DataPermissionInterceptor();
+        for (SqlSessionFactory sqlSessionFactory : sqlSessionFactoryList) {
+            sqlSessionFactory.getConfiguration().addInterceptor(interceptor);
+        }
     }
 }

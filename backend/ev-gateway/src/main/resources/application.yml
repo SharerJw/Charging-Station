@@ -55,11 +55,11 @@ spring:
         - id: station-service
           uri: lb://ev-service-station
           predicates:
-            - Path=/api/stations/**,/api/v1/stations/**,/api/v1/ops/stations/**,/api/devices/**,/internal/**
+            - Path=/api/stations/**,/api/v1/stations/**,/api/v1/ops/stations/**,/api/devices/**,/internal/**,/api/v1/stations/upload/**
         - id: order-service
           uri: lb://ev-service-order
           predicates:
-            - Path=/api/orders/**,/api/v1/orders/**,/api/dashboard/**,/api/finance/**,/api/v1/ops/alerts/**,/api/v1/ops/workorders/**,/api/v1/ops/inspections/**,/ws/dashboard/**
+            - Path=/api/orders/**,/api/v1/orders/**,/api/dashboard/**,/api/finance/**,/api/v1/ops/alerts/**,/api/v1/ops/workorders/**,/api/v1/ops/inspections/**,/ws/dashboard/**,/api/v1/upload/**
         - id: charging-service
           uri: lb://ev-service-charging
           predicates:

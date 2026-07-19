@@ -72,6 +72,7 @@ declare module 'vue' {
     Skeleton: typeof import('./components/Skeleton.vue')['default']
     SkeletonTable: typeof import('./components/SkeletonTable.vue')['default']
     TabBar: typeof import('./components/TabBar.vue')['default']
+    VirtualList: typeof import('./components/VirtualList.vue')['default']
     VirtualTable: typeof import('./components/VirtualTable.vue')['default']
   }
   export interface GlobalDirectives {

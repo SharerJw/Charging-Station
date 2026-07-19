@@ -16,11 +16,6 @@
 - **数据库**：PostgreSQL + Redis + Kafka
 - **容器化**：Docker Compose
 
-**代码规模：**
-- 前端四端应用：~260 个文件
-- 后端微服务：~200 个文件
-- 总计：659 个可构建的源代码和配置文件
-
 ---
 
 ## 🏗 项目结构
@@ -315,29 +310,3 @@ CREATED → CHARGING → STOPPING → STOPPED → SETTLING → SETTLED → PAYIN
 - **CONTRIBUTING.md**：贡献指南和代码规范
 - **SECURITY.md**：安全策略和漏洞报告
 - **.github/SETUP.md**：GitHub 仓库配置指南
-
----
-
-## 🔄 版本信息
-
-**当前版本：** 1.0.0
-
-**最近更新：** 2026-07-20
-
-**Git 仓库状态：**
-- 跟踪文件数：659 个
-- 仓库内容：仅可构建的源代码和配置文件
-- 工作区状态：干净
-
----
-
-## 🎉 开始工作
-
-**现在可以开始使用 AI 工具进行开发了！**
-
-1. 克隆仓库：`git clone https://github.com/SharerJw/Charging-Station.git`
-2. 启动项目：`.\start.ps1`
-3. 开始编码：遵循上述规范和流程
-4. 提交代码：使用清晰的提交信息
-
-**祝开发愉快！** 🚀

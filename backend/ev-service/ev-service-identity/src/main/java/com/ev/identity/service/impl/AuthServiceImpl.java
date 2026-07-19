@@ -2,6 +2,7 @@ package com.ev.identity.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ev.common.core.exception.BizException;
+import com.ev.common.minio.config.MinioService;
 import com.ev.common.redis.util.RedisLock;
 import com.ev.common.security.util.JwtUtil;
 import com.ev.identity.dto.*;
@@ -11,16 +12,12 @@ import com.ev.identity.service.AuthService;
 import com.ev.identity.service.LoginRateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -31,6 +28,8 @@ public class AuthServiceImpl implements AuthService {
     private final SysUserMapper userMapper;
     private final RedisLock redisLock;
     private final LoginRateLimiter loginRateLimiter;
+    private final MinioService minioService;
+    private final PasswordEncoder passwordEncoder;
 
     private static final String SMS_CODE_PREFIX = "sms:code:";
 
@@ -49,8 +48,25 @@ public class AuthServiceImpl implements AuthService {
             loginRateLimiter.recordFailure(req.getUsername(), clientIp);
             throw BizException.accountDisabled();
         }
-        // L1 简化：明文密码比较（生产环境用BCrypt）
-        if (!req.getPassword().equals("admin123") && !req.getPassword().equals("ops123")) {
+
+        // 密码验证：支持 BCrypt 和旧密码兼容
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            if (passwordEncoder.matches(req.getPassword(), user.getPassword())) {
+                // BCrypt 验证通过
+            } else {
+                // 兼容旧密码：检查是否是演示密码
+                if (isLegacyDemoPassword(req.getPassword(), req.getUsername())) {
+                    // 自动升级密码为 BCrypt
+                    user.setPassword(passwordEncoder.encode(req.getPassword()));
+                    userMapper.updateById(user);
+                    log.info("用户 {} 密码已自动升级为 BCrypt", req.getUsername());
+                } else {
+                    loginRateLimiter.recordFailure(req.getUsername(), clientIp);
+                    throw BizException.wrongPassword();
+                }
+            }
+        } else {
+            // 用户没有设置密码（如手机号注册用户）
             loginRateLimiter.recordFailure(req.getUsername(), clientIp);
             throw BizException.wrongPassword();
         }
@@ -100,7 +116,25 @@ public class AuthServiceImpl implements AuthService {
             loginRateLimiter.recordFailure(req.getUsername(), clientIp);
             throw BizException.noPermission();
         }
-        if (!req.getPassword().equals("ops123")) {
+
+        // 密码验证：支持 BCrypt 和旧密码兼容
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            if (passwordEncoder.matches(req.getPassword(), user.getPassword())) {
+                // BCrypt 验证通过
+            } else {
+                // 兼容旧密码：检查是否是演示密码
+                if (isLegacyDemoPassword(req.getPassword(), req.getUsername())) {
+                    // 自动升级密码为 BCrypt
+                    user.setPassword(passwordEncoder.encode(req.getPassword()));
+                    userMapper.updateById(user);
+                    log.info("用户 {} 密码已自动升级为 BCrypt", req.getUsername());
+                } else {
+                    loginRateLimiter.recordFailure(req.getUsername(), clientIp);
+                    throw BizException.wrongPassword();
+                }
+            }
+        } else {
+            // 用户没有设置密码
             loginRateLimiter.recordFailure(req.getUsername(), clientIp);
             throw BizException.wrongPassword();
         }
@@ -177,21 +211,10 @@ public class AuthServiceImpl implements AuthService {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("文件不能为空");
         }
+
         try {
-            // L1 阶段：保存到本地 uploads 目录，返回可访问 URL
-            String originalFilename = file.getOriginalFilename();
-            String ext = originalFilename != null && originalFilename.contains(".")
-                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                    : ".png";
-            String filename = UUID.randomUUID().toString().replace("-", "") + ext;
-
-            Path uploadDir = Paths.get("uploads", "avatars");
-            Files.createDirectories(uploadDir);
-            Path target = uploadDir.resolve(filename);
-            file.transferTo(target.toFile());
-
-            // 返回相对 URL，由网关或静态资源映射提供访问
-            String avatarUrl = "/uploads/avatars/" + filename;
+            // 使用 MinIO 上传文件
+            String avatarUrl = minioService.uploadFile(file, "avatars");
 
             // 同步更新用户表
             SysUser user = userMapper.selectById(userId);
@@ -202,7 +225,7 @@ public class AuthServiceImpl implements AuthService {
 
             log.info("头像已上传: userId={}, url={}", userId, avatarUrl);
             return avatarUrl;
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("头像上传失败: userId={}", userId, e);
             throw new RuntimeException("头像上传失败: " + e.getMessage());
         }
@@ -210,8 +233,10 @@ public class AuthServiceImpl implements AuthService {
 
     private LoginResp buildLoginResp(SysUser user) {
         List<String> roles = userMapper.selectRoleCodesByUserId(user.getId());
+        List<String> permissions = userMapper.selectPermissionCodesByUserId(user.getId());
         String rolesStr = String.join(",", roles);
-        String token = JwtUtil.generateToken(user.getId(), user.getUsername(), rolesStr, "T001", "ORG001");
+        String permissionsStr = String.join(",", permissions);
+        String token = JwtUtil.generateToken(user.getId(), user.getUsername(), rolesStr, permissionsStr, "T001", "ORG001");
         UserVO userVO = UserVO.builder()
                 .id(String.valueOf(user.getId()))
                 .username(user.getUsername())
@@ -219,9 +244,21 @@ public class AuthServiceImpl implements AuthService {
                 .phone(user.getPhone() != null ? user.getPhone() : "")
                 .avatar(user.getAvatar())
                 .roles(roles)
+                .permissions(permissions)
                 .balance(15000L)
                 .couponCount(3)
                 .build();
         return LoginResp.builder().token(token).user(userVO).build();
+    }
+
+    /**
+     * 检查是否是旧的演示密码（兼容过渡期）
+     * 仅用于演示环境，生产环境应移除此方法
+     */
+    private boolean isLegacyDemoPassword(String password, String username) {
+        if (password == null) return false;
+        // 演示环境的硬编码密码
+        return ("admin123".equals(password) && "admin".equals(username))
+                || ("ops123".equals(password) && "ops1".equals(username));
     }
 }

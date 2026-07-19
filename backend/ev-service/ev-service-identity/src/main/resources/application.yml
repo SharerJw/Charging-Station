@@ -39,6 +39,14 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
 
+# MinIO 配置
+minio:
+  endpoint: http://${MINIO_HOST:localhost}:9000
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket-name: ev-charging
+  enabled: true
+
 springdoc:
   swagger-ui:
     path: /doc.html

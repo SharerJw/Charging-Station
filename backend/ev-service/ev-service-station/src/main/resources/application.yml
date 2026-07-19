@@ -49,3 +49,11 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+
+# MinIO 配置
+minio:
+  endpoint: http://${MINIO_HOST:localhost}:9000
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket-name: ev-charging
+  enabled: true

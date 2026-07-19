@@ -4,6 +4,8 @@ import com.ev.common.core.event.ChargingStoppedEvent;
 import com.ev.common.core.event.OrderSettledEvent;
 import com.ev.order.entity.ChargingOrderEntity;
 import com.ev.order.mapper.ChargingOrderMapper;
+import com.ev.order.statemachine.OrderEvent;
+import com.ev.order.statemachine.OrderStateMachine;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class ChargingEventConsumer {
 
     private final ChargingOrderMapper orderMapper;
     private final KafkaTemplate<String, String> kafkaTemplate;
+    private final OrderStateMachine orderStateMachine;
     private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public void handleChargingStopped(String message) {
@@ -43,14 +46,15 @@ public class ChargingEventConsumer {
                 return;
             }
 
-            order.setStatus("SETTLED");
+            // 使用状态机引擎进行状态转换
+            orderStateMachine.fire(order, OrderEvent.SETTLED);
+
+            // 更新订单详细信息
             order.setMeterStop(order.getMeterStart() + (event.getEnergyWh() != null ? event.getEnergyWh() : 0));
             order.setEnergyWh(event.getEnergyWh());
             order.setTotalAmount(event.getTotalAmount());
-            order.setStopTime(LocalDateTime.now());
-            order.setSettleTime(LocalDateTime.now());
             orderMapper.updateById(order);
-            log.info("订单自动结算完成: orderId={}, status=SETTLED", order.getId());
+            log.info("订单自动结算完成: orderId={}, status={}", order.getId(), order.getStatus());
 
             OrderSettledEvent settledEvent = OrderSettledEvent.builder()
                     .orderId(order.getId()).orderNo(order.getOrderNo()).userId(order.getUserId())

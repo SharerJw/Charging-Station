@@ -23,7 +23,8 @@
     { "path": "pages/order-detail/index", "style": { "navigationBarTitleText": "订单详情" } },
     { "path": "pages/messages/index", "style": { "navigationBarTitleText": "消息中心" } },
     { "path": "pages/scan/index", "style": { "navigationBarTitleText": "扫码充电", "navigationStyle": "custom" } },
-    { "path": "pages/search/index/index", "style": { "navigationBarTitleText": "搜索充电站", "navigationStyle": "custom" } }
+    { "path": "pages/search/index/index", "style": { "navigationBarTitleText": "搜索充电站", "navigationStyle": "custom" } },
+    { "path": "pages/profile-edit/index", "style": { "navigationBarTitleText": "编辑资料" } }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "white",

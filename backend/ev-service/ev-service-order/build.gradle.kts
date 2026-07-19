@@ -8,6 +8,7 @@ dependencies {
     implementation(project(":ev-common:ev-common-mybatis"))
     implementation(project(":ev-common:ev-common-redis"))
     implementation(project(":ev-common:ev-common-security"))
+    implementation(project(":ev-common:ev-common-minio"))
 
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.data.redis)

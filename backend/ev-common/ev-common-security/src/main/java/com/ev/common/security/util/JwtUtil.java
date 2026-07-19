@@ -46,6 +46,27 @@ public class JwtUtil {
     }
 
     /**
+     * 生成 JWT Token（包含权限信息）
+     */
+    public static String generateToken(Long userId, String username, String roles, String permissions, String tenantId, String orgId) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("username", username);
+        claims.put("roles", roles);
+        claims.put("permissions", permissions);
+        claims.put("tenantId", tenantId);
+        claims.put("orgId", orgId);
+
+        return Jwts.builder()
+                .claims(claims)
+                .subject(String.valueOf(userId))
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + EXPIRE_MS))
+                .signWith(getKey())
+                .compact();
+    }
+
+    /**
      * 解析 JWT Token
      */
     public static Claims parseToken(String token) {
@@ -110,5 +131,13 @@ public class JwtUtil {
     public static String getOrgId(String token) {
         Claims claims = parseToken(token);
         return claims != null ? (String) claims.get("orgId") : null;
+    }
+
+    /**
+     * 从 Token 获取权限
+     */
+    public static String getPermissions(String token) {
+        Claims claims = parseToken(token);
+        return claims != null ? (String) claims.get("permissions") : null;
     }
 }

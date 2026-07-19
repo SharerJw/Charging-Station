@@ -1,5 +1,6 @@
 package com.ev.common.core.util;
 
+import com.ev.common.core.enums.DataScope;
 import org.slf4j.MDC;
 
 /**
@@ -19,6 +20,26 @@ public final class SecurityUtils {
 
     public static String getTenantId() {
         return TenantContext.getTenantId();
+    }
+
+    public static Long getOrgId() {
+        return TenantContext.getOrgId();
+    }
+
+    public static String getOrgName() {
+        return TenantContext.getOrgName();
+    }
+
+    public static DataScope getDataScope() {
+        return TenantContext.getDataScope();
+    }
+
+    public static String getRoles() {
+        return TenantContext.getRoles();
+    }
+
+    public static String getPermissions() {
+        return TenantContext.getPermissions();
     }
 
     public static String getTraceId() {

@@ -5,6 +5,7 @@ include("ev-common:ev-common-core")
 include("ev-common:ev-common-mybatis")
 include("ev-common:ev-common-redis")
 include("ev-common:ev-common-security")
+include("ev-common:ev-common-minio")
 
 // 网关
 include("ev-gateway")

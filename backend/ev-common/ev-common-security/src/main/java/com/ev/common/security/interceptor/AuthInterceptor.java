@@ -1,6 +1,7 @@
 package com.ev.common.security.interceptor;
 
 import com.ev.common.core.constant.CommonConstants;
+import com.ev.common.core.enums.DataScope;
 import com.ev.common.core.util.TenantContext;
 import com.ev.common.security.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -61,10 +62,28 @@ public class AuthInterceptor implements HandlerInterceptor {
         Long userId = JwtUtil.getUserId(token);
         String username = JwtUtil.getUsername(token);
         String tenantId = JwtUtil.getTenantId(token);
+        String orgIdStr = JwtUtil.getOrgId(token);
+        String roles = JwtUtil.getRoles(token);
+        String permissions = JwtUtil.getPermissions(token);
 
         TenantContext.setUserId(userId);
         TenantContext.setUsername(username);
         TenantContext.setTenantId(tenantId != null ? tenantId : CommonConstants.DEFAULT_TENANT_ID);
+        TenantContext.setRoles(roles);
+        TenantContext.setPermissions(permissions);
+
+        // 设置 orgId
+        if (orgIdStr != null && !orgIdStr.isEmpty()) {
+            try {
+                Long orgId = Long.parseLong(orgIdStr);
+                TenantContext.setOrgId(orgId);
+            } catch (NumberFormatException e) {
+                log.warn("无法解析 orgId: {}", orgIdStr);
+            }
+        }
+
+        // 设置数据权限（默认为 ALL，后续可从数据库查询用户实际权限）
+        TenantContext.setDataScope(DataScope.ALL);
 
         // 注入请求头供下游使用
         request.setAttribute(CommonConstants.HEADER_USER_ID, userId);

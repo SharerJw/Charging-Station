@@ -9,6 +9,8 @@ import com.ev.order.dto.*;
 import com.ev.order.entity.ChargingOrderEntity;
 import com.ev.order.mapper.ChargingOrderMapper;
 import com.ev.order.service.OrderService;
+import com.ev.order.statemachine.OrderEvent;
+import com.ev.order.statemachine.OrderStateMachine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
     private final ChargingOrderMapper orderMapper;
+    private final OrderStateMachine orderStateMachine;
 
     @Override
     public PageResult<OrderVO> page(PageQuery query, Long userId) {
@@ -97,7 +100,10 @@ public class OrderServiceImpl implements OrderService {
         ChargingOrderEntity entity = orderMapper.selectById(id);
         if (entity == null) throw BizException.orderNotFound();
         if (!"PAID".equals(entity.getStatus())) throw BizException.orderStatusAbnormal();
-        entity.setStatus("REFUNDING");
+
+        // 使用状态机引擎进行状态转换
+        orderStateMachine.fire(entity, OrderEvent.REFUND);
+
         orderMapper.updateById(entity);
         log.info("退款申请: orderId={}, amount={}, reason={}", id, amount, reason);
     }

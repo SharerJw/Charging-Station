@@ -111,4 +111,9 @@ public class BizException extends RuntimeException {
     public static BizException loginTooManyAttempts() {
         return new BizException(ErrorCode.LOGIN_TOO_MANY_ATTEMPTS);
     }
+
+    // 限流
+    public static BizException rateLimitExceeded() {
+        return new BizException(ErrorCode.RATE_LIMIT_EXCEEDED);
+    }
 }
