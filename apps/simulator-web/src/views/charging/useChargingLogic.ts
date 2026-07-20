@@ -2,17 +2,7 @@ import { ref, onUnmounted, type Ref } from 'vue'
 import { chargingApi, deviceApi } from '@/api'
 import { useSimulatorStore } from '@/store/simulator'
 import { ElMessage } from 'element-plus'
-
-export interface ChargingData {
-  currentSoc: number
-  power: number
-  energy: number
-  voltage: number
-  current: number
-  temperature: number
-  durationSeconds: number
-  cost: number
-}
+import type { ChargingData } from '@/types'
 
 function createDefaults(): ChargingData {
   return {

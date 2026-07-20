@@ -394,55 +394,10 @@ import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { api } from '@/api/index'
 import { useLocationStore } from '@/store/location'
+import type { ChargingPoint, Review, Facility, TimelineSlot } from '@/types'
 
 const location = useLocationStore()
 const { latitude: locLat, longitude: locLng, gpsGranted: locReady } = storeToRefs(location)
-
-// ---------------------------------------------------------------------------
-// 类型定义
-// ---------------------------------------------------------------------------
-
-interface ChargingPoint {
-  id: string
-  code: string
-  type: 'DC' | 'AC'
-  model?: string
-  connector?: string
-  voltageRange?: string
-  power: number
-  status: 'free' | 'charging' | 'fault'
-  electricityPrice?: number
-  servicePrice?: number
-  usageRate?: number
-}
-
-interface Review {
-  id: string
-  nickname: string
-  avatar?: string
-  rating: number
-  content: string
-  time: string
-  likeCount?: number
-  tags?: string[]
-}
-
-interface Facility {
-  icon: string
-  label: string
-  available: boolean
-}
-
-interface TimelineSlot {
-  price: string
-  level: string
-  color: string
-  hour: number
-}
-
-// ---------------------------------------------------------------------------
-// 页面状态
-// ---------------------------------------------------------------------------
 
 const stationId = ref('')
 const station = ref<any>({

@@ -68,6 +68,14 @@ spring:
           uri: lb://ev-service-simulator
           predicates:
             - Path=/api/simulator/**
+        - id: simulator-service-ws-ui
+          uri: lb:ws://ev-service-simulator
+          predicates:
+            - Path=/ws/ocpp
+        - id: simulator-service-ws-cp
+          uri: lb:ws://ev-service-simulator
+          predicates:
+            - Path=/ws/cp/**
         # Knife4j / SpringDoc API 文档路由
         - id: identity-docs
           uri: lb://ev-service-identity

@@ -10,16 +10,7 @@ import { systemApi, deviceApi } from '@/api'
 import { useChartOptions, COLORS } from './useChartOptions'
 import DeviceSelect from '@/components/DeviceSelect.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
-
-interface OcppMessage {
-  messageId: string
-  action: string
-  type: 'Call' | 'CallResult' | 'CallError'
-  payload: Record<string, any>
-  timestamp: string
-  direction: 'inbound' | 'outbound'
-  chargePointId: string
-}
+import type { OcppWsMessage as OcppMessage } from '@/types'
 
 // 注册 ECharts 组件
 use([

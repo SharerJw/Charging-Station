@@ -1,8 +1,10 @@
 package com.ev.simulator.service.impl;
 
 import com.ev.simulator.dto.ScenarioVO;
+import com.ev.simulator.engine.ScenarioStepExecutor;
 import com.ev.simulator.service.ScenarioService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -12,6 +14,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Service
 public class ScenarioServiceImpl implements ScenarioService {
+
+    @Autowired
+    private ScenarioStepExecutor stepExecutor;
 
     private final Map<String, ScenarioVO> scenarios = new ConcurrentHashMap<>();
 
@@ -46,6 +51,29 @@ public class ScenarioServiceImpl implements ScenarioService {
             sc.setStatus("running");
             sc.setStartedAt(Instant.now().toString());
             log.info("执行场景: id={}, name={}", id, sc.getName());
+
+            String chargePointId = sc.getDeviceIds() != null && !sc.getDeviceIds().isEmpty()
+                    ? sc.getDeviceIds().get(0) : "CP-001";
+            List<Map<String, Object>> steps = sc.getSteps() != null ? sc.getSteps() : List.of();
+
+            if (!steps.isEmpty()) {
+                stepExecutor.executeScenario(chargePointId, steps)
+                        .thenAccept(ok -> {
+                            sc.setStatus(ok ? "completed" : "failed");
+                            sc.setCompletedAt(Instant.now().toString());
+                            log.info("场景执行完成: id={}, success={}", id, ok);
+                        })
+                        .exceptionally(ex -> {
+                            sc.setStatus("failed");
+                            sc.setCompletedAt(Instant.now().toString());
+                            log.error("场景执行异常: id={}, error={}", id, ex.getMessage());
+                            return null;
+                        });
+            } else {
+                log.warn("场景无步骤，跳过执行: id={}", id);
+                sc.setStatus("completed");
+                sc.setCompletedAt(Instant.now().toString());
+            }
         }
     }
 

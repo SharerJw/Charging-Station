@@ -153,22 +153,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { api } from '@/api/index'
-
-interface Coupon {
-  id: string
-  name: string
-  description: string
-  type: 'fixed' | 'discount' | 'energy'
-  amount: number
-  discount: number
-  energyKwh: number
-  minAmount: number
-  scope: string
-  startTime: string
-  endTime: string
-  status: 'available' | 'used' | 'expired'
-  usedTime: string
-}
+import type { Coupon } from '@/types'
 
 const currentTab = ref('available')
 const coupons = ref<Coupon[]>([])

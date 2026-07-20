@@ -326,33 +326,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { api } from '@/api/index'
 import ChargeButton from '@/components/ChargeButton.vue'
-
-/* ──────────────────── 类型定义 ──────────────────── */
-
-interface Coupon {
-  id: string
-  name: string
-  amount: number
-  minAmount: number
-  expireDate: string
-}
-
-interface DeviceInfo {
-  deviceCode: string
-  stationName: string
-  stationAddress: string
-  electricityPrice: number
-  servicePrice: number
-  pricePeriod: 'peak' | 'flat' | 'valley'
-  pricePeriodLabel: string
-  nextPeriodTime: string
-  nextPeriodPrice: number
-  nextPeriodLabel: string
-  status: string
-}
-
-type ChargingMode = 'auto' | 'amount' | 'kwh'
-type BtnState = 'normal' | 'loading' | 'error'
+import type { ChargingSettingsCoupon as Coupon, DeviceInfo, ChargingMode, BtnState } from '@/types'
 
 /* ──────────────────── 页面可见性 & 拖拽关闭 ──────────────────── */
 

@@ -1,8 +1,5 @@
 import { computed, type Ref } from 'vue'
-
-export interface DeviceLike {
-  status: string
-}
+import type { DeviceLike } from '@/types'
 
 export const COLORS = {
   primary: '#3B82F6',

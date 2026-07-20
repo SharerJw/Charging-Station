@@ -268,21 +268,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { api } from '@/api/index'
-
-// ==================== 类型定义 ====================
-
-interface Vehicle {
-  id: string
-  brand: string
-  model: string
-  plateNumber: string
-  batteryCapacity: number
-  range: number
-  type: string
-  isDefault: boolean
-  vin?: string
-  plugAndCharge?: boolean
-}
+import type { Vehicle } from '@/types'
 
 // ==================== 品牌 & 车型数据 ====================
 

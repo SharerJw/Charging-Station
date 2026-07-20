@@ -2,11 +2,16 @@ package com.ev.common.redis.cache;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 两级缓存：L1 Caffeine + L2 Redis
@@ -19,12 +24,13 @@ public class TwoLevelCache {
 
     private final Cache<String, Object> caffeineCache;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final ScheduledExecutorService scheduler;
 
     /** L1 缓存统计 */
-    private long l1Hits = 0;
-    private long l1Misses = 0;
-    private long l2Hits = 0;
-    private long l2Misses = 0;
+    private final AtomicLong l1Hits = new AtomicLong(0);
+    private final AtomicLong l1Misses = new AtomicLong(0);
+    private final AtomicLong l2Hits = new AtomicLong(0);
+    private final AtomicLong l2Misses = new AtomicLong(0);
 
     public TwoLevelCache(RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
@@ -33,6 +39,20 @@ public class TwoLevelCache {
                 .expireAfterWrite(5, TimeUnit.MINUTES)
                 .recordStats()
                 .build();
+        ThreadFactory daemonFactory = r -> {
+            Thread t = new Thread(r, "cache-double-delete");
+            t.setDaemon(true);
+            return t;
+        };
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(daemonFactory);
+    }
+
+    /**
+     * 应用关闭时停止调度器，防止线程泄漏
+     */
+    @PreDestroy
+    public void shutdown() {
+        scheduler.shutdown();
     }
 
     /**
@@ -43,19 +63,19 @@ public class TwoLevelCache {
         // L1 查找
         Object value = caffeineCache.getIfPresent(key);
         if (value != null) {
-            l1Hits++;
+            l1Hits.incrementAndGet();
             return (T) value;
         }
-        l1Misses++;
+        l1Misses.incrementAndGet();
 
         // L2 查找
         value = redisTemplate.opsForValue().get(key);
         if (value != null) {
-            l2Hits++;
+            l2Hits.incrementAndGet();
             caffeineCache.put(key, value); // 回填L1
             return (T) value;
         }
-        l2Misses++;
+        l2Misses.incrementAndGet();
         return null;
     }
 
@@ -81,14 +101,7 @@ public class TwoLevelCache {
         caffeineCache.invalidate(key);
         redisTemplate.delete(key);
         // 延迟双删：500ms后再次删除Redis（防止并发读写导致脏数据）
-        new Thread(() -> {
-            try {
-                Thread.sleep(500);
-                redisTemplate.delete(key);
-            } catch (InterruptedException ignored) {
-                Thread.currentThread().interrupt();
-            }
-        }).start();
+        scheduler.schedule(() -> redisTemplate.delete(key), 500, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -103,11 +116,15 @@ public class TwoLevelCache {
      * 获取缓存命中率统计
      */
     public CacheStats getStats() {
-        long l1Total = l1Hits + l1Misses;
-        long l2Total = l2Hits + l2Misses;
+        long l1HitsVal = l1Hits.get();
+        long l1MissesVal = l1Misses.get();
+        long l2HitsVal = l2Hits.get();
+        long l2MissesVal = l2Misses.get();
+        long l1Total = l1HitsVal + l1MissesVal;
+        long l2Total = l2HitsVal + l2MissesVal;
         return new CacheStats(
-                l1Hits, l1Misses, l1Total > 0 ? (double) l1Hits / l1Total : 0,
-                l2Hits, l2Misses, l2Total > 0 ? (double) l2Hits / l2Total : 0,
+                l1HitsVal, l1MissesVal, l1Total > 0 ? (double) l1HitsVal / l1Total : 0,
+                l2HitsVal, l2MissesVal, l2Total > 0 ? (double) l2HitsVal / l2Total : 0,
                 caffeineCache.estimatedSize()
         );
     }

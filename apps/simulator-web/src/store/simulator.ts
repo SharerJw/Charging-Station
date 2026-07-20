@@ -1,19 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import type { Device } from '@/types'
 
-export interface Device {
-  id: string
-  name: string
-  ocppId: string
-  model: string
-  status: 'online' | 'offline' | 'charging' | 'fault'
-  power: number
-  voltage: number
-  current: number
-  soc: number
-  temperature: number
-  lastHeartbeat: string
-}
+export type { Device } from '@/types'
 
 export const useSimulatorStore = defineStore('simulator', () => {
   const devices = ref<Device[]>([])

@@ -264,28 +264,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { api } from '@/api/index'
-
-/* ========== 类型定义 ========== */
-interface Settings {
-  // 充电设置
-  chargeMode: string
-  payMethod: string
-  chargeCompleteNotify: boolean
-  lowBatteryNotify: boolean
-  lowBatteryThreshold: number
-  plugAndCharge: boolean
-  // 通知设置
-  chargeNotify: boolean
-  marketingNotify: boolean
-  dndStart: string
-  dndEnd: string
-  // 显示外观
-  darkMode: 'system' | 'light' | 'dark'
-  fontSize: 'small' | 'standard' | 'large'
-  // 地图偏好
-  defaultMap: 'tencent' | 'amap' | 'baidu'
-  mapZoom: number
-}
+import type { Settings } from '@/types'
 
 /* ========== 常量 ========== */
 const chargeModeOptions = ['充满即停', '按金额充电', '按电量充电']

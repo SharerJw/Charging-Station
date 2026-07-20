@@ -1,28 +1,32 @@
 # ============================================
 # EV Order Service - 多阶段构建
 # ============================================
+
+# ── 构建阶段 ──
 FROM eclipse-temurin:21-jdk-alpine AS builder
+WORKDIR /workspace
 
-WORKDIR /app
+# 依赖缓存层：仅当构建配置变更时才重新下载依赖
 COPY gradle/ gradle/
-COPY gradlew .
-COPY build.gradle.kts settings.gradle.kts libs.versions.toml ./
+COPY gradlew build.gradle.kts settings.gradle.kts ./
 COPY ev-common/ ev-common/
+COPY ev-service/ev-service-order/build.gradle.kts ev-service/ev-service-order/build.gradle.kts
+RUN chmod +x gradlew && ./gradlew :ev-service:ev-service-order:dependencies --no-daemon
+
+# 构建 JAR
 COPY ev-service/ev-service-order/ ev-service/ev-service-order/
+RUN ./gradlew :ev-service:ev-service-order:bootJar -x test --no-daemon
 
-RUN chmod +x gradlew && ./gradlew :ev-service:ev-service-order:bootJar -x test --no-daemon
-
+# ── 运行阶段 ──
 FROM eclipse-temurin:21-jre-alpine
-
-RUN addgroup -S app && adduser -S app -G app
 WORKDIR /app
 
-COPY --from=builder /app/ev-service/ev-service-order/build/libs/*.jar app.jar
+RUN addgroup -S ev && adduser -S ev -G ev
+COPY --from=builder /workspace/ev-service/ev-service-order/build/libs/*.jar app.jar
+RUN chown -R ev:ev /app
+USER ev
 
-RUN chown -R app:app /app
-USER app
-
-ENV JAVA_OPTS="-Xms256m -Xmx512m" \
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom" \
     SPRING_PROFILES_ACTIVE=prod
 
 EXPOSE 8083

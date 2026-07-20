@@ -429,7 +429,7 @@ async function reverseGeocode(lat: number, lng: number) {
   try {
     const res: any = await new Promise((resolve, reject) => {
       uni.request({
-        url: `https://restapi.amap.com/v3/geocode/regeo?key=c86443d9a8cd72e5a26af987f46345ca&location=${lng},${lat}`,
+        url: `https://restapi.amap.com/v3/geocode/regeo?key=${import.meta.env.VITE_AMAP_KEY}&location=${lng},${lat}`,
         success: resolve,
         fail: reject,
       })

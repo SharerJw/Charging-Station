@@ -208,35 +208,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { api } from '@/api/index'
-
-// ==================== 类型定义 ====================
-
-type Tier = 'normal' | 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond'
-
-interface TierInfo {
-  icon: string
-  label: string
-  shortLabel: string
-  requiredPoints: number
-  benefits: BenefitItem[]
-}
-
-interface BenefitItem {
-  icon: string
-  name: string
-  desc: string
-}
-
-interface MembershipData {
-  tier: Tier
-  memberNo: string
-  nickname: string
-  avatar: string
-  points: number
-  totalChargeCount: number
-  savedAmount: number
-  pointsToNext: number
-}
+import type { Tier, TierInfo, BenefitItem, MembershipData } from '@/types'
 
 // ==================== 等级配置 ====================
 

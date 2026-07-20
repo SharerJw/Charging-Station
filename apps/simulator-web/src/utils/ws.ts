@@ -8,26 +8,9 @@
  * - Graceful lifecycle (connect / disconnect / destroy)
  */
 import { ref } from 'vue'
+import type { OcppWsMessage, OcppWsCallbacks } from '@/types'
 
-/** Incoming OCPP message envelope from the server */
-export interface OcppWsMessage {
-  messageId: string
-  action: string
-  type: 'Call' | 'CallResult' | 'CallError'
-  payload: Record<string, unknown>
-  timestamp: string
-  direction: 'inbound' | 'outbound'
-  chargePointId: string
-}
-
-/** Callback map for message dispatch */
-export interface OcppWsCallbacks {
-  onOpen?: () => void
-  onClose?: () => void
-  onError?: (event: Event) => void
-  onMessage?: (message: OcppWsMessage) => void
-  onStatusChange?: (status: 'connecting' | 'connected' | 'disconnected' | 'reconnecting') => void
-}
+export type { OcppWsMessage, OcppWsCallbacks } from '@/types'
 
 // ---------------------------------------------------------------------------
 // Singleton state

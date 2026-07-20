@@ -1,14 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { deviceApi } from '@/api'
-
-interface Device {
-  id: string
-  name: string
-  ocppId: string
-  model: string
-  status: string
-}
+import type { Device } from '@/types'
 
 const props = defineProps<{
   modelValue: string

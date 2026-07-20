@@ -312,41 +312,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { api } from '@/api/index'
-
-/* ========== 类型定义 ========== */
-
-interface EarnMethod {
-  id: string
-  icon: string
-  name: string
-  points: number
-  desc: string
-  actionText: string
-  bgGradient: string
-}
-
-interface PointsProduct {
-  id: string
-  name: string
-  description: string
-  icon: string
-  image: string
-  points: number
-  category: 'charging' | 'physical' | 'lifestyle' | 'charity'
-  exchangedCount: number
-  stock: number
-  tag: string
-}
-
-interface RedeemRecord {
-  id: string
-  name: string
-  icon: string
-  image: string
-  points: number
-  time: string
-  status: 'pending' | 'used' | 'shipping'
-}
+import type { EarnMethod, PointsProduct, RedeemRecord } from '@/types'
 
 /* ========== 状态 ========== */
 

@@ -145,14 +145,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { api, type Station } from '@/api/index'
-
-// ========== 扩展类型 ==========
-
-interface FavoriteStation extends Station {
-  _offsetX: number       // 左滑偏移量 (rpx)
-  _rating: number        // 评分 (1~5)
-  _sortOrder: number     // 用户排序权重
-}
+import type { FavoriteStation } from '@/types'
 
 // ========== 响应式状态 ==========
 

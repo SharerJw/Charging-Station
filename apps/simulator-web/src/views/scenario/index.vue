@@ -16,69 +16,15 @@ import {
   InfoFilled,
 } from '@element-plus/icons-vue'
 import { scenarioApi, deviceApi } from '@/api'
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface ScenarioStep {
-  id: string
-  type: ScenarioStepType
-  label: string
-  params: Record<string, any>
-  order: number
-}
-
-type ScenarioStepType =
-  | 'CONNECT'
-  | 'REMOTE_START'
-  | 'WAIT'
-  | 'METER_VALUES'
-  | 'REMOTE_STOP'
-  | 'INJECT_FAULT'
-
-type ScenarioStatus = 'draft' | 'running' | 'completed' | 'failed'
-
-interface Scenario {
-  id: string
-  name: string
-  description: string
-  status: ScenarioStatus
-  deviceIds: string[]
-  steps: ScenarioStep[]
-  lastRunTime?: string
-  createdAt?: string
-  updatedAt?: string
-}
-
-interface ExecutionLog {
-  id: string
-  scenarioId: string
-  scenarioName: string
-  status: ScenarioStatus
-  startedAt: string
-  finishedAt?: string
-  currentStepIndex: number
-  totalSteps: number
-  completedSteps: number
-  failedSteps: number
-  logs: ExecutionLogEntry[]
-}
-
-interface ExecutionLogEntry {
-  timestamp: string
-  stepIndex: number
-  stepType: string
-  status: 'success' | 'failed' | 'running' | 'pending'
-  message: string
-}
-
-interface DeviceOption {
-  id: string
-  name: string
-  ocppId: string
-  status: string
-}
+import type {
+  ScenarioStep,
+  ScenarioStepType,
+  ScenarioStatus,
+  Scenario,
+  ExecutionLog,
+  ExecutionLogEntry,
+  DeviceOption,
+} from '@/types'
 
 // Step type definitions
 const STEP_TYPES: Record<ScenarioStepType, { label: string; color: string; icon: string; params: { key: string; label: string; type: string; default: unknown; options?: { label: string; value: string }[] }[] }> = {

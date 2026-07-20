@@ -129,27 +129,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { api, type Transaction } from '@/api/index'
-
-interface WalletInfo {
-  balance: number
-  couponCount: number
-  points: number
-  monthlySpend: number
-}
-
-interface RechargeTier {
-  amount: number
-  gift: number
-  isCustom?: boolean
-}
-
-interface PromoBanner {
-  tag: string
-  title: string
-  desc: string
-  bg: string
-  actionAmount: number
-}
+import type { WalletInfo, RechargeTier, PromoBanner } from '@/types'
 
 const loading = ref(false)
 const balanceVisible = ref(false)

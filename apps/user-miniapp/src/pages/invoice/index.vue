@@ -380,37 +380,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted } from 'vue'
 import { api, type Order } from '@/api/index'
-
-/* ========== 类型定义 ========== */
-
-type TabValue = 'pending' | 'issued' | 'reversed'
-type InvoiceType = 'personal_einvoice' | 'vat_general' | 'vat_special'
-type HeaderType = 'personal' | 'company'
-type InvoiceStatus = 'pending' | 'processing' | 'issued' | 'failed' | 'reversed'
-
-interface InvoiceRecord {
-  id: string
-  title: string
-  headerName?: string
-  amount: number
-  status: InvoiceStatus
-  createTime: string
-  invoiceNo?: string
-  pdfUrl?: string
-  reverseTime?: string
-  reverseReason?: string
-  originalInvoiceNo?: string
-}
-
-interface HeaderItem {
-  id: string
-  companyName: string
-  taxNumber: string
-  address?: string
-  phone?: string
-  bankName?: string
-  bankAccount?: string
-}
+import type { TabValue, InvoiceType, HeaderType, InvoiceStatus, InvoiceRecord, HeaderItem } from '@/types'
 
 /* ========== 常量 ========== */
 

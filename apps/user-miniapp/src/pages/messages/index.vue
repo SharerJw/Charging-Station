@@ -127,30 +127,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive } from 'vue'
 import { api } from '@/api/index'
-
-// ============ 类型定义 ============
-
-type MessageType = 'charging' | 'system' | 'promotion' | 'interactive'
-type MessageCategory = 'all' | 'charging' | 'system' | 'promotion' | 'interactive'
-
-interface Message {
-  id: string
-  type: MessageType
-  title: string
-  summary: string
-  content: string
-  time: string
-  read: boolean
-  categoryLabel?: string
-  /** 点击跳转地址 */
-  link?: string
-}
-
-interface TabItem {
-  label: string
-  value: MessageCategory
-  unread: number
-}
+import type { MessageType, MessageCategory, AppMessage as Message, TabItem } from '@/types'
 
 // ============ 常量 ============
 

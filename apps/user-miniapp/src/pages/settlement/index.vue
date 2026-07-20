@@ -213,29 +213,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { api } from '@/api/index'
-
-interface TimeSegment {
-  label: string
-  energy: number
-  electricityFee: number
-  serviceFee: number
-}
-
-interface SettlementData {
-  orderId: string
-  orderNo: string
-  stationName: string
-  totalEnergy: number
-  totalElectricity: number
-  totalService: number
-  originalAmount: number
-  actualAmount: number
-  couponDiscount: number
-  memberDiscount: number
-  status: string
-  timeSegments: TimeSegment[]
-  duration: number
-}
+import type { TimeSegment, SettlementData } from '@/types'
 
 const settlement = ref<SettlementData>({
   orderId: '',

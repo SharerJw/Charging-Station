@@ -1,7 +1,11 @@
 package com.ev.simulator.engine;
 
+import com.ev.simulator.cp.ChargePoint;
+import com.ev.simulator.cp.ChargePointRegistry;
+import com.ev.simulator.cp.Connector;
 import com.ev.simulator.dto.SimTransactionVO;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -12,6 +16,9 @@ import java.util.concurrent.ThreadLocalRandom;
 @Slf4j
 @Component
 public class ChargingSimulator {
+
+    @Autowired
+    private ChargePointRegistry chargePointRegistry;
 
     private final Map<String, SimTransactionVO> transactions = new ConcurrentHashMap<>();
     private int txCounter = 1000;
@@ -59,7 +66,29 @@ public class ChargingSimulator {
         if (tx == null) {
             return SimTransactionVO.builder().id(txId).status("unknown").build();
         }
-        // 模拟充电进度
+
+        // 优先从 ChargePointRegistry 读取真实仪表值
+        ChargePoint cp = chargePointRegistry.get(tx.getChargePointId());
+        if (cp != null && cp.hasActiveTransaction()) {
+            var activeTx = cp.getActiveTransaction();
+            Connector connector = cp.getConnector(tx.getConnectorId());
+            if (connector != null && activeTx.getTransactionId() == tx.getTransactionId()) {
+                long energy = connector.getCurrentMeterValue() - tx.getMeterStart();
+                return SimTransactionVO.builder()
+                        .id(tx.getId()).transactionId(tx.getTransactionId())
+                        .chargePointId(tx.getChargePointId()).connectorId(tx.getConnectorId())
+                        .idTag(tx.getIdTag()).status("active")
+                        .startTimestamp(tx.getStartTimestamp())
+                        .meterStart(tx.getMeterStart()).meterStop(connector.getCurrentMeterValue())
+                        .energy(Math.max(0, energy)).soc((int) connector.getSoc())
+                        .power((long) connector.getCurrentPower())
+                        .voltage((long) connector.getVoltage())
+                        .current((long) connector.getCurrent())
+                        .build();
+            }
+        }
+
+        // 回退到随机模拟值
         int newSoc = Math.min(tx.getSoc() + ThreadLocalRandom.current().nextInt(1, 5), 95);
         long newEnergy = tx.getEnergy() + ThreadLocalRandom.current().nextLong(200, 800);
         return SimTransactionVO.builder()

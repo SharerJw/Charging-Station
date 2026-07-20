@@ -1,0 +1,28 @@
+# Gradle 构建缓存
+.gradle/
+build/
+*/build/
+**/build/
+
+# IDE 文件
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# 日志
+*.log
+logs/
+
+# Git
+.git/
+.gitignore
+
+# 文档
+*.md
+docs/
+
+# 临时文件
+tmp/
+temp/
+*.tmp

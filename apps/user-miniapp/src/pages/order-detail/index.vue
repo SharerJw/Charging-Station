@@ -284,44 +284,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { api } from '@/api/index'
-
-// ============================================================
-// 类型定义
-// ============================================================
-
-interface TimeSegmentData {
-  label: string
-  energy: number
-  unitPrice: number
-  amount: number
-  color: string
-}
-
-interface OrderDetailData {
-  id: string
-  orderNo: string
-  stationName: string
-  stationAddress: string
-  deviceCode: string
-  connectorId: string
-  status: string
-  startTime: string
-  endTime: string
-  duration: number
-  totalEnergy: number
-  socStart: number
-  socEnd: number
-  electricityFee: number
-  serviceFee: number
-  couponDiscount: number
-  memberDiscount: number
-  actualAmount: number
-  originalAmount: number
-  powerCurve: number[]
-  timeSegments: TimeSegmentData[]
-  ecoData: { co2Offset: number; treeEquivalent: number }
-  pointsEarned: number
-}
+import type { TimeSegmentData, OrderDetailData } from '@/types'
 
 // ============================================================
 // 响应式状态

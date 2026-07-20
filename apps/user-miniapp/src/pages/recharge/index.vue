@@ -165,31 +165,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { api } from '@/api/index'
-
-interface RechargeTier {
-  amount: number
-  gift: number
-  couponCount: number
-  points: number
-  desc: string
-  badge?: string
-  badgeType?: 'recommend' | 'best'
-}
-
-interface GiftDetail {
-  giftAmount: number
-  couponCount: number
-  points: number
-}
-
-interface ConfettiParticle {
-  left: number
-  delay: number
-  duration: number
-  color: string
-  size: number
-  shape: 'circle' | 'rect'
-}
+import type { RechargeTierDetail as RechargeTier, GiftDetail, ConfettiParticle } from '@/types'
 
 const currentBalance = ref(0)
 const selectedAmount = ref(100)

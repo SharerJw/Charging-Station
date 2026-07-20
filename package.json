@@ -1,30 +1,37 @@
 {
-  "name": "ev-charging-platform-frontend",
+  "name": "ev-charging-platform",
   "version": "0.1.0",
   "private": true,
-  "description": "EV充电平台 - 前端项目集合",
+  "description": "EV充电平台 - 多端应用 monorepo",
   "scripts": {
-    "admin:dev": "cd apps/admin-web && pnpm dev",
-    "admin:build": "cd apps/admin-web && pnpm build",
-    "simulator:dev": "cd apps/simulator-web && pnpm dev",
-    "simulator:build": "cd apps/simulator-web && pnpm build",
-    "user:dev": "cd apps/user-miniapp && pnpm dev:h5",
-    "user:dev:mp": "cd apps/user-miniapp && pnpm dev:mp-weixin",
-    "user:build:mp": "cd apps/user-miniapp && pnpm build:mp-weixin",
-    "ops:dev": "cd apps/ops-app && pnpm dev:h5",
-    "ops:dev:app": "cd apps/ops-app && pnpm dev:app",
-    "ops:build:app": "cd apps/ops-app && pnpm build:app",
-    "install:all": "cd apps/admin-web && pnpm install && cd ../simulator-web && pnpm install && cd ../user-miniapp && pnpm install && cd ../ops-app && pnpm install"
+    "dev:admin": "pnpm --filter admin-web dev",
+    "dev:simulator": "pnpm --filter simulator-web dev",
+    "dev:user": "pnpm --filter user-miniapp dev:h5",
+    "dev:user:mp": "pnpm --filter user-miniapp dev:mp-weixin",
+    "dev:ops": "pnpm --filter ops-app dev:h5",
+    "dev:ops:app": "pnpm --filter ops-app dev:app",
+    "build:admin": "pnpm --filter admin-web build",
+    "build:simulator": "pnpm --filter simulator-web build",
+    "build:user:mp": "pnpm --filter user-miniapp build:mp-weixin",
+    "build:ops:app": "pnpm --filter ops-app build:app",
+    "build:all": "pnpm -r run build",
+    "lint:all": "pnpm -r run lint",
+    "install:all": "pnpm install"
   },
   "keywords": [
     "ev",
     "charging",
     "platform",
     "vue3",
-    "uniapp"
+    "uniapp",
+    "monorepo"
   ],
   "license": "MIT",
   "devDependencies": {
     "sass-embedded": "^1.100.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
   }
 }

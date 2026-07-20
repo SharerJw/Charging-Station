@@ -147,7 +147,7 @@ import { api, type Station } from '@/api/index'
 import CustomNavBar from '@/components/CustomNavBar.vue'
 
 // ==================== 常量 ====================
-const AMAP_KEY = 'c86443d9a8cd72e5a26af987f46345ca'
+const AMAP_KEY = import.meta.env.VITE_AMAP_KEY
 
 // ==================== 筛选配置 ====================
 const filterOptions = [

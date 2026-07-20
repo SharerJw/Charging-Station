@@ -1,3 +1,6 @@
+export type { Station, UserInfo, Order, ChargingSession, Transaction, UserStats } from '@/types'
+import type { Station } from '@/types'
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8080'
 const REQUEST_TIMEOUT = 15000 // 15秒请求超时
 
@@ -68,51 +71,6 @@ function request<T = any>(options: RequestOptions): Promise<T> {
   })
 }
 
-export interface Station {
-  id: string
-  name: string
-  address: string
-  latitude: number
-  longitude: number
-  distance: number
-  availableCount: number
-  totalCount: number
-  electricityPrice: number
-  servicePrice: number
-}
-
-export interface UserInfo {
-  id: string
-  nickname: string
-  phone: string
-  avatar: string
-  balance: number
-  couponCount: number
-}
-
-export interface Order {
-  id: string
-  orderNo: string
-  stationName: string
-  status: string
-  startTime: string
-  consumedEnergy: number
-  totalAmount: number
-}
-
-export interface ChargingSession {
-  orderId: string
-  stationName: string
-  deviceCode: string
-  status: 'charging' | 'completed' | 'stopped'
-  currentSoc: number
-  power: number
-  energy: number
-  duration: number
-  cost: number
-  startTime: string
-}
-
 /** 从后端原始数据映射为 Station */
 function mapStation(s: any): Station {
   return {
@@ -127,23 +85,6 @@ function mapStation(s: any): Station {
     electricityPrice: s.electricityPrice || 0,
     servicePrice: s.servicePrice || 0,
   }
-}
-
-export interface Transaction {
-  id: string
-  type: 'income' | 'expense'
-  category: string
-  icon: string
-  description: string
-  amount: number
-  time: string
-}
-
-export interface UserStats {
-  chargeCount: number
-  totalEnergy: number
-  totalSaved: number
-  carbonReduction: number
 }
 
 export const api = {
