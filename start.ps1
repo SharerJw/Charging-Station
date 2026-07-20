@@ -161,7 +161,7 @@ function Start-Frontend {
         if (-not (Test-Path (Join-Path $dir "node_modules"))) {
             Log "Installing $($app.Name) dependencies..."
             Set-Location $dir
-            & cmd /c "npm install --silent" 2>&1 | Out-Null
+            & cmd /c "pnpm install --frozen-lockfile" 2>&1 | Out-Null
             Set-Location $ProjectRoot
         }
 
