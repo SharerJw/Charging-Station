@@ -29,6 +29,7 @@ public class ChargingServiceImpl implements ChargingService {
     private final Map<String, ChargingSessionVO> sessions = new ConcurrentHashMap<>();
 
     private static final String CURRENT_SESSION_KEY = "charging:current:";
+    private static final String ORDER_USER_KEY = "charging:order:";
 
     @Override
     public ChargingSessionVO start(StartChargingReq req, Long userId) {
@@ -49,6 +50,8 @@ public class ChargingServiceImpl implements ChargingService {
 
         // 记录用户的当前活跃会话
         redisTemplate.opsForValue().set(CURRENT_SESSION_KEY + userId, orderId);
+        // 存储反向映射：orderId → userId，用于停止时快速查找
+        redisTemplate.opsForValue().set(ORDER_USER_KEY + orderId, String.valueOf(userId));
 
         eventPublisher.publishStarted(ChargingStartedEvent.of(orderId, Long.parseLong(req.getStationId()),
                 session.getStationName(), 0L, req.getDeviceCode(), Integer.parseInt(req.getConnectorId()), userId));
@@ -77,12 +80,13 @@ public class ChargingServiceImpl implements ChargingService {
                 .energy(finalEnergy).duration(session.getDuration()).cost(finalCost)
                 .startTime(session.getStartTime()).build();
         sessions.remove(orderId);
-        // 清除用户的当前活跃会话（通过遍历找到对应的userId key）
-        redisTemplate.keys(CURRENT_SESSION_KEY + "*").forEach(key -> {
-            if (redisTemplate.opsForValue().get(key).equals(orderId)) {
-                redisTemplate.delete(key);
-            }
-        });
+        // 通过反向映射快速找到并清除用户的当前活跃会话
+        String orderUserKey = ORDER_USER_KEY + orderId;
+        String userIdStr = redisTemplate.opsForValue().get(orderUserKey);
+        if (userIdStr != null) {
+            redisTemplate.delete(CURRENT_SESSION_KEY + userIdStr);
+            redisTemplate.delete(orderUserKey);
+        }
         log.info("停止充电: orderId={}, energy={}Wh, cost={}cents", orderId, finalEnergy, finalCost);
 
         eventPublisher.publishStopped(ChargingStoppedEvent.of(orderId, 1L, finalEnergy, finalCost, session.getDuration()));

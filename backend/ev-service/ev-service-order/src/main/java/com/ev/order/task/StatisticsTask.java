@@ -2,12 +2,19 @@ package com.ev.order.task;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ev.order.entity.ChargingOrderEntity;
+import com.ev.order.entity.DailyStatisticsEntity;
+import com.ev.order.entity.MonthlyStatisticsEntity;
+import com.ev.order.entity.WeeklyStatisticsEntity;
 import com.ev.order.mapper.ChargingOrderMapper;
+import com.ev.order.mapper.DailyStatisticsMapper;
+import com.ev.order.mapper.MonthlyStatisticsMapper;
+import com.ev.order.mapper.WeeklyStatisticsMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
@@ -22,6 +29,9 @@ import java.util.List;
 public class StatisticsTask {
 
     private final ChargingOrderMapper orderMapper;
+    private final DailyStatisticsMapper dailyStatisticsMapper;
+    private final WeeklyStatisticsMapper weeklyStatisticsMapper;
+    private final MonthlyStatisticsMapper monthlyStatisticsMapper;
 
     /**
      * 每日统计 - 每天凌晨3点执行
@@ -74,8 +84,18 @@ public class StatisticsTask {
                 totalAmount, String.format("%.2f", totalAmount / 100.0),
                 totalEnergyWh, String.format("%.2f", totalEnergyWh / 1000.0));
 
-        // TODO: 将统计数据持久化到统计报表表（如 daily_statistics）
-        // 目前仅输出日志，后续可扩展为写入数据库
+        // 持久化到统计报表表
+        DailyStatisticsEntity entity = new DailyStatisticsEntity();
+        entity.setStatDate(startTime.toLocalDate());
+        entity.setTotalOrders(totalOrders);
+        entity.setCompletedOrders(completedOrders);
+        entity.setCancelledOrders(cancelledOrders);
+        entity.setAbnormalOrders(abnormalOrders);
+        entity.setRefundedOrders(refundedOrders);
+        entity.setTotalAmount(totalAmount);
+        entity.setTotalEnergyWh(totalEnergyWh);
+        dailyStatisticsMapper.insert(entity);
+        log.info("每日统计报表已持久化，statDate={}", startTime.toLocalDate());
     }
 
     /**
@@ -121,7 +141,19 @@ public class StatisticsTask {
                 String.format("%.2f", totalAmount / 100.0), String.format("%.2f", avgDailyAmount),
                 String.format("%.2f", totalEnergyWh / 1000.0));
 
-        // TODO: 将统计数据持久化到 weekly_statistics 表
+        // 持久化到统计报表表
+        WeeklyStatisticsEntity entity = new WeeklyStatisticsEntity();
+        entity.setWeekStart(startTime.toLocalDate());
+        entity.setWeekEnd(endTime.toLocalDate());
+        entity.setTotalOrders(totalOrders);
+        entity.setCompletedOrders(completedOrders);
+        entity.setCancelledOrders(orders.stream().filter(o -> "CANCELLED".equals(o.getStatus())).count());
+        entity.setAbnormalOrders(orders.stream().filter(o -> "ABNORMAL".equals(o.getStatus())).count());
+        entity.setRefundedOrders(orders.stream().filter(o -> "REFUNDED".equals(o.getStatus())).count());
+        entity.setTotalAmount(totalAmount);
+        entity.setTotalEnergyWh(totalEnergyWh);
+        weeklyStatisticsMapper.insert(entity);
+        log.info("每周统计报表已持久化，weekStart={}, weekEnd={}", startTime.toLocalDate(), endTime.toLocalDate());
     }
 
     /**
@@ -161,6 +193,18 @@ public class StatisticsTask {
                 totalAmount / 100.0,
                 totalEnergyWh / 1000.0);
 
-        // TODO: 将统计数据持久化到 monthly_statistics 表
+        // 持久化到统计报表表
+        MonthlyStatisticsEntity entity = new MonthlyStatisticsEntity();
+        entity.setYear(startTime.getYear());
+        entity.setMonth(startTime.getMonthValue());
+        entity.setTotalOrders(totalOrders);
+        entity.setCompletedOrders(completedOrders);
+        entity.setCancelledOrders(orders.stream().filter(o -> "CANCELLED".equals(o.getStatus())).count());
+        entity.setAbnormalOrders(orders.stream().filter(o -> "ABNORMAL".equals(o.getStatus())).count());
+        entity.setRefundedOrders(orders.stream().filter(o -> "REFUNDED".equals(o.getStatus())).count());
+        entity.setTotalAmount(totalAmount);
+        entity.setTotalEnergyWh(totalEnergyWh);
+        monthlyStatisticsMapper.insert(entity);
+        log.info("每月统计报表已持久化，year={}, month={}", startTime.getYear(), startTime.getMonthValue());
     }
 }

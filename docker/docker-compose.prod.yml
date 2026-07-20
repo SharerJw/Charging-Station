@@ -288,7 +288,7 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     ports:
-      - "${CHARGING_PORT:-8083}:8083"
+      - "${CHARGING_PORT:-8084}:8084"
     depends_on:
       postgres:
         condition: service_healthy
@@ -331,7 +331,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
     ports:
-      - "${ORDER_PORT:-8084}:8084"
+      - "${ORDER_PORT:-8083}:8083"
     depends_on:
       postgres:
         condition: service_healthy

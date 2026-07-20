@@ -34,8 +34,8 @@ Charging-Station/
 │   └── ev-service/                # 业务服务
 │       ├── ev-service-identity/   #   认证服务 (:8081)
 │       ├── ev-service-station/    #   站点服务 (:8082)
-│       ├── ev-service-charging/   #   充电服务 (:8083)
-│       ├── ev-service-order/      #   订单服务 (:8084)
+│       ├── ev-service-charging/   #   充电服务 (:8084)
+│       ├── ev-service-order/      #   订单服务 (:8083)
 │       └── ev-service-simulator/  #   模拟服务 (:8085)
 │
 ├── docker/                        # Docker 基础设施
