@@ -52,6 +52,11 @@ springdoc:
     path: /doc.html
   api-docs:
     path: /v3/api-docs
+  group-configs:
+    - group: 认证登录
+      paths-to-match: /api/auth/**, /api/v1/auth/**
+    - group: 用户管理
+      paths-to-match: /api/users/**, /api/v1/users/**
 
 logging:
   level:

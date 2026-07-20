@@ -64,6 +64,26 @@ management:
     tags:
       application: ${spring.application.name}
 
+# Knife4j / SpringDoc
+springdoc:
+  swagger-ui:
+    path: /doc.html
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 订单管理
+      paths-to-match: /api/orders/**, /api/v1/orders/**
+    - group: 财务管理
+      paths-to-match: /api/finance/**, /api/v1/finance/**
+    - group: 仪表盘
+      paths-to-match: /api/dashboard/**
+    - group: 告警管理
+      paths-to-match: /api/alerts/**, /api/v1/alerts/**
+    - group: 工单管理
+      paths-to-match: /api/workorders/**, /api/v1/workorders/**
+    - group: 巡检管理
+      paths-to-match: /api/inspections/**, /api/v1/inspections/**
+
 # MinIO 配置
 minio:
   endpoint: http://${MINIO_HOST:localhost}:9000

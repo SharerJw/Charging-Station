@@ -4,3 +4,30 @@ server:
 spring:
   application:
     name: ev-service-simulator
+
+# Knife4j / SpringDoc
+springdoc:
+  swagger-ui:
+    path: /doc.html
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 设备仿真
+      paths-to-match: /api/simulator/devices/**
+    - group: 充电仿真
+      paths-to-match: /api/simulator/charging/**
+    - group: OCPP 协议
+      paths-to-match: /api/simulator/ocpp/**
+    - group: 场景编排
+      paths-to-match: /api/simulator/scenarios/**
+    - group: 统计
+      paths-to-match: /api/simulator/stats/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  metrics:
+    tags:
+      application: ${spring.application.name}

@@ -68,6 +68,37 @@ spring:
           uri: lb://ev-service-simulator
           predicates:
             - Path=/api/simulator/**
+        # Knife4j / SpringDoc API 文档路由
+        - id: identity-docs
+          uri: lb://ev-service-identity
+          predicates:
+            - Path=/doc/identity/**
+          filters:
+            - StripPrefix=1
+        - id: station-docs
+          uri: lb://ev-service-station
+          predicates:
+            - Path=/doc/station/**
+          filters:
+            - StripPrefix=1
+        - id: order-docs
+          uri: lb://ev-service-order
+          predicates:
+            - Path=/doc/order/**
+          filters:
+            - StripPrefix=1
+        - id: charging-docs
+          uri: lb://ev-service-charging
+          predicates:
+            - Path=/doc/charging/**
+          filters:
+            - StripPrefix=1
+        - id: simulator-docs
+          uri: lb://ev-service-simulator
+          predicates:
+            - Path=/doc/simulator/**
+          filters:
+            - StripPrefix=1
 
 # 管理端点 — 仅暴露 health/info，限制敏感端点（I-003）
 management:

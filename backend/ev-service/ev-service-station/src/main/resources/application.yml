@@ -50,6 +50,18 @@ management:
     tags:
       application: ${spring.application.name}
 
+# Knife4j / SpringDoc
+springdoc:
+  swagger-ui:
+    path: /doc.html
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 站点管理
+      paths-to-match: /api/stations/**, /api/v1/stations/**
+    - group: 设备管理
+      paths-to-match: /api/devices/**, /api/v1/devices/**
+
 # MinIO 配置
 minio:
   endpoint: http://${MINIO_HOST:localhost}:9000
