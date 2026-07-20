@@ -172,6 +172,7 @@ Write-Host "  - Alerts:       500" -ForegroundColor Gray
 Write-Host "  - Work Orders:  200" -ForegroundColor Gray
 Write-Host ""
 Write-Host "Test accounts:" -ForegroundColor White
-Write-Host "  - user_0001 / 123456 (Admin)" -ForegroundColor Gray
-Write-Host "  - user_0002 / 123456 (Admin)" -ForegroundColor Gray
+Write-Host "  - admin / admin123 (Admin Web)" -ForegroundColor Gray
+Write-Host "  - ops1 / ops123 (Ops App)" -ForegroundColor Gray
+Write-Host "  - 13800000001 / 123456 (User Miniapp)" -ForegroundColor Gray
 Write-Host ""
