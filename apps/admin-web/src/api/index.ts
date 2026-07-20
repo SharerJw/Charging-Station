@@ -259,6 +259,28 @@ export const marketingApi = {
     put(`/marketing/recharge-packages/${id}/status`, { status }),
 }
 
+// ==================== 告警管理 ====================
+export const alertApi = {
+  list: (params?: any) =>
+    get<any>('/ops/alerts', params),
+  detail: (id: string) =>
+    get<any>(`/ops/alerts/${id}`),
+  handle: (id: string, data: { result: string }) =>
+    put<any>(`/ops/alerts/${id}/handle`, data),
+  ignore: (id: string) =>
+    put<any>(`/ops/alerts/${id}/ignore`),
+  getRules: (params?: any) =>
+    get<any>('/ops/alert-rules', params),
+  createRule: (data: any) =>
+    post<any>('/ops/alert-rules', data),
+  updateRule: (id: string, data: any) =>
+    put<any>(`/ops/alert-rules/${id}`, data),
+  deleteRule: (id: string) =>
+    del(`/ops/alert-rules/${id}`),
+  toggleRuleStatus: (id: string, status: string) =>
+    put(`/ops/alert-rules/${id}/status`, { status }),
+}
+
 // ==================== 系统管理 ====================
 export const systemApi = {
   // 组织架构
