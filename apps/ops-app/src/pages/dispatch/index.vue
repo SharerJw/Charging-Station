@@ -205,51 +205,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { api } from '@/api'
-
-interface AutoRule {
-  id: string
-  name: string
-  enabled: boolean
-  conditions: string[]
-  triggerCount: number
-  successRate: string
-  lastTrigger: string
-  assigneeName: string
-}
-
-interface Personnel {
-  id: string
-  name: string
-  title: string
-  availability: string
-  skills: string[]
-  distance: string
-  distanceScore: number
-  skillScore: number
-  workloadScore: number
-  totalScore: number
-  activeOrders: number
-}
-
-interface BatchAlert {
-  id: string
-  title: string
-  level: string
-  stationName: string
-  selected: boolean
-}
-
-interface DispatchRecord {
-  id: string
-  alertTitle: string
-  alertLevel: string
-  assigneeName: string
-  type: string
-  dispatchTime: string
-  status: string
-  acceptTime?: string
-  acceptDuration?: string
-}
+import type { AutoRule, Personnel, BatchAlert, DispatchRecord } from '@/types'
 
 const activeTab = ref('manual')
 const alertId = ref('')

@@ -16,8 +16,11 @@
       <text class="progress-text">{{ completedCount }}/{{ tasks.length }}</text>
     </view>
 
+    <!-- 加载状态 -->
+    <Skeleton v-if="loading" variant="card" :rows="3" />
+
     <!-- 任务列表 -->
-    <view class="task-list" v-if="tasks.length > 0">
+    <view class="task-list" v-else-if="tasks.length > 0">
       <view class="task-card" v-for="task in tasks" :key="task.id">
         <view class="task-top">
           <text class="task-name">{{ task.name }}</text>
@@ -50,30 +53,24 @@
     </view>
 
     <!-- 空状态 -->
-    <view class="empty-state" v-else>
-      <text class="empty-icon">🔍</text>
-      <text class="empty-text">今日无巡检任务</text>
-    </view>
+    <EmptyState
+      v-else
+      icon="🔍"
+      title="今日无巡检任务"
+      description="当前没有待执行的巡检任务"
+    />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { api } from '@/api'
+import { useInspectionStore } from '@/store/inspection'
+import EmptyState from '@/components/EmptyState.vue'
+import Skeleton from '@/components/Skeleton.vue'
+import type { InspectionTask } from '@/types'
 
-interface InspectionTask {
-  id: string
-  name: string
-  stationName: string
-  deviceCount: number
-  itemCount: number
-  status: string
-  planTime: string
-  startTime?: string
-  completeTime?: string
-  inspector?: string
-}
-
+const inspectionStore = useInspectionStore()
 const tasks = ref<InspectionTask[]>([])
 const loading = ref(false)
 
@@ -104,6 +101,8 @@ async function loadTasks() {
   try {
     const result = await api.getInspections()
     tasks.value = result?.list || result || []
+    // 同步到 store
+    inspectionStore.inspections = tasks.value
   } catch (error) {
     uni.showToast({ title: '加载巡检任务失败', icon: 'none' })
   } finally {
@@ -313,14 +312,4 @@ onMounted(() => {
   background: #52C41A;
   color: #fff;
 }
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 120rpx 0;
-}
-
-.empty-icon { font-size: 80rpx; }
-.empty-text { font-size: 28rpx; color: #999; margin-top: 16rpx; }
 </style>

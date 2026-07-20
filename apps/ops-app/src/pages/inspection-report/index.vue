@@ -127,44 +127,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { api } from '@/api'
-
-interface Anomaly {
-  deviceName: string
-  itemName: string
-  severity: string
-  remark: string
-  photos: string[]
-}
-
-interface ReportDevice {
-  id: string
-  name: string
-  code: string
-}
-
-interface CheckResult {
-  deviceId: string
-  category: string
-  name: string
-  result: 'pass' | 'fail'
-}
-
-interface InspectionReport {
-  taskId: string
-  stationName: string
-  inspector: string
-  startTime: string
-  endTime: string
-  duration: string
-  deviceCount: number
-  totalItems: number
-  passItems: number
-  failItems: number
-  passRate: string
-  anomalies: Anomaly[]
-  devices: ReportDevice[]
-  checkResults: CheckResult[]
-}
+import type { Anomaly, ReportDevice, InspectionCheckResult as CheckResult, InspectionReport } from '@/types'
 
 const reportId = ref('')
 const report = ref<InspectionReport>({

@@ -160,40 +160,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { api } from '@/api'
-
-interface TrendItem {
-  label: string
-  total: number
-  P0: number
-  P1: number
-  P2: number
-  P3: number
-}
-
-interface TypeItem {
-  name: string
-  count: number
-  percent: string
-  color: string
-}
-
-interface TopCode {
-  code: string
-  name: string
-  count: number
-  trend: number
-}
-
-interface MetricsData {
-  totalAlerts: number
-  resolvedCount: number
-  pendingCount: number
-  resolveRate: string
-  avgResponseTime: string
-  avgResolveTime: string
-  p0AvgResponse: string
-  timeoutCount: number
-}
+import type { TrendItem, TypeItem, TopCode, MetricsData } from '@/types'
 
 const timeRange = ref('7d')
 const customStart = ref('')

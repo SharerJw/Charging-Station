@@ -10,8 +10,11 @@
       <view id="ops-amap" class="amap-instance"></view>
     </view>
 
+    <!-- 加载状态 -->
+    <Skeleton v-if="loading" variant="list" :rows="3" />
+
     <!-- 充电站列表 -->
-    <view class="station-list" v-if="stations.length > 0">
+    <view class="station-list" v-else-if="stations.length > 0">
       <view class="station-card" v-for="station in stations" :key="station.id">
         <view class="station-header">
           <text class="station-name">{{ station.name }}</text>
@@ -42,29 +45,25 @@
     </view>
 
     <!-- 空状态 -->
-    <view class="empty-state" v-else>
-      <text class="empty-icon">🏭</text>
-      <text class="empty-text">暂无充电站</text>
-    </view>
+    <EmptyState
+      v-else
+      icon="🏭"
+      title="暂无充电站"
+      description="当前没有符合条件的充电站"
+    />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
-import { api } from '@/api/index'
+import { api } from '@/api'
+import { useStationStore } from '@/store/station'
+import EmptyState from '@/components/EmptyState.vue'
+import Skeleton from '@/components/Skeleton.vue'
+import type { Station } from '@/types'
 
-const AMAP_KEY = 'c86443d9a8cd72e5a26af987f46345ca'
-
-interface Station {
-  id: string
-  name: string
-  address: string
-  deviceCount: number
-  onlineCount: number
-  price: number
-  longitude: number
-  latitude: number
-}
+const stationStore = useStationStore()
+const AMAP_KEY = import.meta.env.VITE_AMAP_KEY
 
 const keyword = ref('')
 const stations = ref<Station[]>([])
@@ -118,7 +117,7 @@ function addMarkers() {
 async function loadStations() {
   loading.value = true
   try {
-    const params: any = {}
+    const params: Record<string, any> = {}
     if (keyword.value) {
       params.keyword = keyword.value
     }
@@ -134,6 +133,8 @@ async function loadStations() {
       longitude: s.longitude,
       latitude: s.latitude,
     }))
+    // 同步到 store
+    stationStore.stations = stations.value
     addMarkers()
   } catch (e) {
     console.error('获取充电站列表失败:', e)
@@ -182,7 +183,4 @@ onMounted(async () => {
 .station-actions { display: flex; gap: 12rpx; }
 .action-btn { flex: 1; font-size: 24rpx; border-radius: 8rpx; background: #f5f5f5; color: #666; }
 .action-btn.primary { background: #1677FF; color: #fff; }
-.empty-state { display: flex; flex-direction: column; align-items: center; padding: 120rpx 0; }
-.empty-icon { font-size: 80rpx; }
-.empty-text { font-size: 28rpx; color: #999; margin-top: 16rpx; }
 </style>

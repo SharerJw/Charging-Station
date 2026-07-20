@@ -117,26 +117,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { api } from '@/api'
-
-interface TypeDistItem {
-  name: string
-  value: number
-  percent: number
-  color: string
-}
-
-interface TrendItem {
-  label: string
-  created: number
-  completed: number
-}
-
-interface RankItem {
-  name: string
-  completed: number
-  avgTime: number
-  efficiency: number
-}
+import type { TypeDistItem, WorkorderTrendItem as TrendItem, RankItem } from '@/types'
 
 const currentRange = ref('week')
 

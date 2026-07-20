@@ -19,68 +19,61 @@
       >{{ tab.label }}</text>
     </view>
 
+    <!-- 加载状态 -->
+    <Skeleton v-if="loading" variant="card" :rows="4" />
+
     <!-- 工单列表 -->
-    <view class="workorder-list" v-if="workorders.length > 0">
-      <view class="workorder-card" v-for="order in workorders" :key="order.id">
-        <view class="workorder-header">
-          <text class="workorder-id">{{ order.orderNo }}</text>
-          <view class="workorder-priority" :class="order.priority">{{ priorityLabels[order.priority] }}</view>
-        </view>
-        <view class="workorder-type">
-          <text class="type-tag" :class="order.type">{{ typeLabels[order.type] }}</text>
-          <text class="workorder-status" :class="order.status">{{ statusLabels[order.status] }}</text>
-        </view>
-        <text class="workorder-title">{{ order.title }}</text>
-        <text class="workorder-desc">{{ order.description }}</text>
-        <view class="workorder-meta">
-          <text class="meta-item">📍 {{ order.stationName }}</text>
-          <text class="meta-item">🔧 {{ order.deviceCode }}</text>
-        </view>
-        <view class="workorder-footer">
-          <text class="workorder-time">创建: {{ order.createTime }}</text>
-          <view class="workorder-actions">
-            <button v-if="order.status === 'pending'" class="action-btn primary" size="mini" @tap="acceptOrder(order)">接单</button>
-            <button v-else-if="order.status === 'accepted'" class="action-btn success" size="mini" @tap="completeOrder(order)">完成</button>
-            <button v-else-if="order.status === 'completed'" class="action-btn" size="mini" disabled>已完成</button>
-            <button v-else class="action-btn" size="mini" disabled>{{ statusLabels[order.status] }}</button>
+    <view class="workorder-list" v-else-if="workorders.length > 0">
+      <WorkorderCard
+        v-for="order in workorders"
+        :key="order.id"
+        :order-id="order.orderNo"
+        :title="order.title"
+        :priority="order.priority || 'medium'"
+        :status="order.status"
+        :station-name="order.stationName"
+        :assignee="order.assignee"
+        :deadline="order.deadline"
+        @click="goToDetail(order.id)"
+      >
+        <template #footer>
+          <view class="workorder-footer">
+            <text class="workorder-time">创建: {{ order.createTime }}</text>
+            <view class="workorder-actions">
+              <button v-if="order.status === 'pending'" class="action-btn primary" size="mini" @tap.stop="acceptOrder(order)">接单</button>
+              <button v-else-if="order.status === 'accepted'" class="action-btn success" size="mini" @tap.stop="completeOrder(order)">完成</button>
+              <button v-else-if="order.status === 'completed'" class="action-btn" size="mini" disabled>已完成</button>
+              <button v-else class="action-btn" size="mini" disabled>{{ statusLabels[order.status] }}</button>
+            </view>
           </view>
-        </view>
-        <view class="workorder-result" v-if="order.result">
-          <text class="result-label">处理结果:</text>
-          <text class="result-text">{{ order.result }}</text>
-        </view>
-        <view class="workorder-result-placeholder" v-else></view>
-      </view>
+          <view class="workorder-result" v-if="order.result">
+            <text class="result-label">处理结果:</text>
+            <text class="result-text">{{ order.result }}</text>
+          </view>
+        </template>
+      </WorkorderCard>
     </view>
 
     <!-- 空状态 -->
-    <view class="empty-state" v-else>
-      <text class="empty-icon">📋</text>
-      <text class="empty-text">暂无工单</text>
-    </view>
+    <EmptyState
+      v-else
+      icon="📋"
+      title="暂无工单"
+      description="当前没有符合条件的工单"
+    />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { api } from '@/api'
+import { useWorkorderStore } from '@/store/workorder'
+import WorkorderCard from '@/components/WorkorderCard.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import Skeleton from '@/components/Skeleton.vue'
+import type { WorkOrder } from '@/types'
 
-interface WorkOrder {
-  id: string
-  orderNo: string
-  type: string
-  title: string
-  description: string
-  stationName: string
-  deviceCode: string
-  priority: string
-  status: string
-  creator: string
-  assignee?: string
-  result?: string
-  createTime: string
-}
-
+const workorderStore = useWorkorderStore()
 const currentTab = ref('all')
 const workorders = ref<WorkOrder[]>([])
 const loading = ref(false)
@@ -101,22 +94,10 @@ const statusLabels: Record<string, string> = {
   closed: '已关闭',
 }
 
-const priorityLabels: Record<string, string> = {
-  high: '高',
-  medium: '中',
-  low: '低',
-}
-
-const typeLabels: Record<string, string> = {
-  repair: '维修',
-  maintenance: '保养',
-  inspection: '巡检',
-}
-
 async function loadWorkorders() {
   loading.value = true
   try {
-    const params: any = {}
+    const params: Record<string, any> = {}
     if (currentTab.value !== 'all') {
       params.status = currentTab.value
     }
@@ -125,6 +106,8 @@ async function loadWorkorders() {
     }
     const result = await api.getWorkorders(params)
     workorders.value = result?.list || result || []
+    // 同步到 store
+    workorderStore.workorders = workorders.value
   } catch (error) {
     uni.showToast({ title: '加载工单失败', icon: 'none' })
   } finally {
@@ -135,6 +118,10 @@ async function loadWorkorders() {
 function switchTab(tab: string) {
   currentTab.value = tab
   loadWorkorders()
+}
+
+function goToDetail(id: string) {
+  uni.navigateTo({ url: `/pages/workorder-detail/index?id=${id}` })
 }
 
 function acceptOrder(order: WorkOrder) {
@@ -241,100 +228,10 @@ onMounted(() => {
   gap: 16rpx;
 }
 
-.workorder-card {
-  background: #fff;
-  border-radius: 12rpx;
-  padding: 24rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
-}
-
-.workorder-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8rpx;
-}
-
-.workorder-id {
-  font-size: 22rpx;
-  color: #999;
-  font-family: monospace;
-}
-
-.workorder-priority {
-  font-size: 20rpx;
-  padding: 2rpx 12rpx;
-  border-radius: 4rpx;
-  font-weight: bold;
-}
-
-.workorder-priority.high { background: #FFCCC7; color: #CF1322; }
-.workorder-priority.medium { background: #FFF7E6; color: #D48806; }
-.workorder-priority.low { background: #E6F7FF; color: #1677FF; }
-
-.workorder-type {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8rpx;
-}
-
-.type-tag {
-  font-size: 20rpx;
-  padding: 2rpx 8rpx;
-  border-radius: 4rpx;
-  background: #F5F5F5;
-  color: #666;
-}
-
-.type-tag.repair { background: #FFF2F0; color: #FF4D4F; }
-.type-tag.maintenance { background: #E6F7FF; color: #1677FF; }
-.type-tag.inspection { background: #F6FFED; color: #52C41A; }
-
-.workorder-status {
-  font-size: 22rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 4rpx;
-}
-
-.workorder-status.pending { background: #FFF7E6; color: #D48806; }
-.workorder-status.accepted { background: #E6F7FF; color: #1677FF; }
-.workorder-status.completed { background: #F6FFED; color: #52C41A; }
-
-.workorder-title {
-  font-size: 28rpx;
-  font-weight: bold;
-  color: #333;
-  display: block;
-}
-
-.workorder-desc {
-  font-size: 24rpx;
-  color: #666;
-  margin-top: 8rpx;
-  display: block;
-  line-height: 1.5;
-}
-
-.workorder-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-  margin-top: 12rpx;
-}
-
-.meta-item {
-  font-size: 22rpx;
-  color: #999;
-}
-
 .workorder-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 16rpx;
-  padding-top: 16rpx;
-  border-top: 1rpx solid #f5f5f5;
 }
 
 .workorder-time {
@@ -382,18 +279,4 @@ onMounted(() => {
   margin-top: 4rpx;
   display: block;
 }
-
-.workorder-result-placeholder {
-  min-height: 24rpx;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 120rpx 0;
-}
-
-.empty-icon { font-size: 80rpx; }
-.empty-text { font-size: 28rpx; color: #999; margin-top: 16rpx; }
 </style>

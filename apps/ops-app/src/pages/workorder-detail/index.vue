@@ -159,57 +159,20 @@
     </template>
 
     <!-- 加载失败 -->
-    <view class="empty-state" v-else>
-      <text class="empty-icon">📋</text>
-      <text class="empty-text">工单不存在或加载失败</text>
-    </view>
+    <EmptyState
+      v-else
+      icon="📋"
+      title="工单不存在或加载失败"
+      description="请检查工单编号是否正确"
+    />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { api } from '@/api'
-
-interface SlaNode {
-  label: string
-  time: string
-  active: boolean
-  current: boolean
-}
-
-interface Comment {
-  user: string
-  time: string
-  action: string
-  content?: string
-}
-
-interface WorkorderDetail {
-  id: string
-  orderNo: string
-  type: string
-  title: string
-  description: string
-  stationName: string
-  stationAddress?: string
-  stationCode?: string
-  deviceCode: string
-  deviceModel?: string
-  deviceStatus: string
-  devicePosition?: string
-  faultCode?: string
-  faultImages?: string[]
-  priority: string
-  status: string
-  creator: string
-  creatorPhone?: string
-  assignee?: string
-  result?: string
-  createTime: string
-  acceptTime?: string
-  completeTime?: string
-  slaDeadline?: string
-}
+import EmptyState from '@/components/EmptyState.vue'
+import type { SlaNode, WorkorderComment as Comment, WorkorderDetail } from '@/types'
 
 const detail = ref<WorkorderDetail | null>(null)
 const loading = ref(true)

@@ -133,32 +133,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { api } from '@/api'
-
-interface StationInfo {
-  name: string
-  code: string
-  address: string
-  deviceCount: number
-  planDate: string
-}
-
-interface CheckItem {
-  id: string
-  deviceId: string
-  category: string
-  name: string
-  result: '' | 'pass' | 'fail'
-  remark: string
-  photos: string[]
-}
-
-interface Device {
-  id: string
-  name: string
-  code: string
-  model: string
-  status: string
-}
+import type { StationInfo, CheckItem, InspectionDevice as Device } from '@/types'
 
 const taskId = ref('')
 const stationInfo = ref<StationInfo>({

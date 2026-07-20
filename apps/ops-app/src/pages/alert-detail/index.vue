@@ -117,20 +117,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { api } from '@/api'
-
-interface SnapshotItem {
-  label: string
-  value: string
-  abnormal: boolean
-}
-
-interface HistoryItem {
-  id: string
-  level: string
-  title: string
-  status: string
-  createTime: string
-}
+import type { SnapshotItem, HistoryItem } from '@/types'
 
 const alertId = ref('')
 const alert = ref<any>({

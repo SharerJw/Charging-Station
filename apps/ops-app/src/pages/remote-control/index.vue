@@ -145,32 +145,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { api } from '@/api'
-
-interface Device {
-  id: string
-  name: string
-  code: string
-  stationName: string
-  online: boolean
-}
-
-interface RealtimeParams {
-  voltage: number
-  current: number
-  power: number
-  temperature: number
-  soc: number
-  connectorStatus: string
-}
-
-interface OperationRecord {
-  id: string
-  action: string
-  detail: string
-  operator: string
-  success: boolean
-  time: string
-}
+import type { RemoteDevice as Device, RealtimeParams, OperationRecord } from '@/types'
 
 const keyword = ref('')
 const loading = ref(false)

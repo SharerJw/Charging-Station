@@ -74,23 +74,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { api } from '@/api'
-
-interface Category {
-  id: string
-  name: string
-  icon: string
-  count: number
-}
-
-interface Article {
-  id: string
-  title: string
-  categoryName: string
-  summary: string
-  content?: string
-  views: number
-  date: string
-}
+import type { KnowledgeCategory as Category, Article } from '@/types'
 
 const keyword = ref('')
 const loading = ref(false)

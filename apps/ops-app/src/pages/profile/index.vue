@@ -64,24 +64,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { api } from '@/api/index'
-
-interface UserProfile {
-  nickname: string
-  role: string
-  stats: {
-    workorders: number
-    completionRate: string
-    rating: number
-    inspections: number
-  }
-}
-
-interface InspectionRecord {
-  name: string
-  status: string
-  time: string
-  result: string
-}
+import type { UserProfile, InspectionRecord } from '@/types'
 
 const userProfile = ref<UserProfile>({
   nickname: '',

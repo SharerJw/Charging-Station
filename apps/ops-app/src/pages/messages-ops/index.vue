@@ -60,18 +60,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { api } from '@/api'
-
-interface Message {
-  id: string
-  type: string
-  title: string
-  content: string
-  extra?: string
-  read: boolean
-  time: string
-  relatedId?: string
-  relatedType?: string
-}
+import type { OpsMessage as Message } from '@/types'
 
 const currentTab = ref('all')
 const loading = ref(false)

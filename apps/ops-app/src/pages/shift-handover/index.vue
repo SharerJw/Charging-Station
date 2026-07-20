@@ -161,31 +161,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import { api } from '@/api'
-
-interface UnfinishedOrder {
-  id: string
-  no: string
-  description: string
-  progress: string
-  priority: string
-}
-
-interface AbnormalDevice {
-  deviceName: string
-  description: string
-  severity: string
-}
-
-interface SparePartCount {
-  name: string
-  quantity: string
-}
-
-interface ToolCheckItem {
-  name: string
-  checked: boolean
-  missing: boolean
-}
+import type { UnfinishedOrder, AbnormalDevice, SparePartCount, ToolCheckItem } from '@/types'
 
 const unfinishedOrders = ref<UnfinishedOrder[]>([])
 

@@ -19,57 +19,55 @@
       >{{ tab.label }}</text>
     </view>
 
+    <!-- 加载状态 -->
+    <Skeleton v-if="loading" variant="card" :rows="3" />
+
     <!-- 告警列表 -->
-    <view class="alert-list" v-if="alerts.length > 0">
-      <view class="alert-card" v-for="alert in alerts" :key="alert.id">
-        <view class="alert-header">
-          <view class="alert-level" :class="alert.level.toLowerCase()">{{ alert.level }}</view>
-          <text class="alert-status" :class="alert.status">
-            {{ statusLabels[alert.status] }}
-          </text>
-        </view>
-        <text class="alert-title">{{ alert.title }}</text>
-        <text class="alert-desc">{{ alert.description }}</text>
-        <view class="alert-meta">
-          <text class="meta-item">📍 {{ alert.stationName }}</text>
-          <text class="meta-item">🔧 {{ alert.deviceCode }}</text>
-          <text class="meta-item">🕐 {{ alert.createTime }}</text>
-        </view>
-        <view class="alert-actions" v-if="alert.status === 'pending'">
-          <button class="action-btn primary" size="mini" @tap="handleAlert(alert)">处理</button>
-          <button class="action-btn outline" size="mini" @tap="ignoreAlert(alert)">忽略</button>
-        </view>
-        <view class="alert-result" v-if="alert.status === 'resolved'">
-          <text class="result-text">✅ {{ alert.handler }} - {{ alert.handleResult }}</text>
-        </view>
-      </view>
+    <view class="alert-list" v-else-if="alerts.length > 0">
+      <AlertCard
+        v-for="alert in alerts"
+        :key="alert.id"
+        :level="alert.level"
+        :status="alert.status"
+        :title="alert.title"
+        :description="alert.description"
+        :station-name="alert.stationName"
+        :device-code="alert.deviceCode"
+        :time="alert.createTime"
+        @click="goToDetail(alert.id)"
+      >
+        <template #footer>
+          <view class="alert-actions" v-if="alert.status === 'pending'">
+            <button class="action-btn primary" size="mini" @tap.stop="handleAlert(alert)">处理</button>
+            <button class="action-btn outline" size="mini" @tap.stop="ignoreAlert(alert)">忽略</button>
+          </view>
+          <view class="alert-result" v-else-if="alert.status === 'resolved'">
+            <text class="result-text">✅ {{ alert.handler }} - {{ alert.handleResult }}</text>
+          </view>
+        </template>
+      </AlertCard>
     </view>
 
     <!-- 空状态 -->
-    <view class="empty-state" v-else>
-      <text class="empty-icon">✅</text>
-      <text class="empty-text">暂无告警</text>
-    </view>
+    <EmptyState
+      v-else
+      icon="✅"
+      title="暂无告警"
+      description="当前没有符合条件的告警信息"
+    />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { api } from '@/api'
+import { useAlertStore } from '@/store/alert'
+import AlertCard from '@/components/AlertCard.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import Skeleton from '@/components/Skeleton.vue'
+import type { Alert } from '@/types'
 
-interface Alert {
-  id: string
-  level: string
-  title: string
-  description: string
-  stationName: string
-  deviceCode: string
-  status: string
-  handler?: string
-  handleResult?: string
-  createTime: string
-}
-
+const alertStore = useAlertStore()
 const currentTab = ref('all')
 const alerts = ref<Alert[]>([])
 const loading = ref(false)
@@ -83,17 +81,10 @@ const tabs = [
   { label: '待处理', value: 'pending' },
 ]
 
-const statusLabels: Record<string, string> = {
-  pending: '待处理',
-  processing: '处理中',
-  resolved: '已解决',
-  ignored: '已忽略',
-}
-
 async function loadAlerts() {
   loading.value = true
   try {
-    const params: any = {}
+    const params: Record<string, any> = {}
     if (currentTab.value === 'pending') {
       params.status = 'pending'
     } else if (currentTab.value !== 'all') {
@@ -104,6 +95,8 @@ async function loadAlerts() {
     }
     const result = await api.getAlerts(params)
     alerts.value = result?.list || result || []
+    // 同步到 store
+    alertStore.alerts = alerts.value
   } catch (error) {
     uni.showToast({ title: '加载告警失败', icon: 'none' })
   } finally {
@@ -114,6 +107,10 @@ async function loadAlerts() {
 function switchTab(tab: string) {
   currentTab.value = tab
   loadAlerts()
+}
+
+function goToDetail(id: string) {
+  uni.navigateTo({ url: `/pages/alert-detail/index?id=${id}` })
 }
 
 function handleAlert(alert: Alert) {
@@ -223,76 +220,9 @@ onMounted(() => {
   gap: 16rpx;
 }
 
-.alert-card {
-  background: #fff;
-  border-radius: 12rpx;
-  padding: 24rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
-}
-
-.alert-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12rpx;
-}
-
-.alert-level {
-  font-size: 22rpx;
-  padding: 4rpx 16rpx;
-  border-radius: 4rpx;
-  font-weight: bold;
-}
-
-.alert-level.p0 { background: #FFCCC7; color: #CF1322; }
-.alert-level.p1 { background: #FFE7BA; color: #D46B08; }
-.alert-level.p2 { background: #FFF7E6; color: #D48806; }
-.alert-level.p3 { background: #E6F7FF; color: #1677FF; }
-
-.alert-status {
-  font-size: 22rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 4rpx;
-}
-
-.alert-status.pending { background: #FFF7E6; color: #D48806; }
-.alert-status.processing { background: #E6F7FF; color: #1677FF; }
-.alert-status.resolved { background: #F6FFED; color: #52C41A; }
-.alert-status.ignored { background: #F5F5F5; color: #999; }
-
-.alert-title {
-  font-size: 28rpx;
-  font-weight: bold;
-  color: #333;
-  display: block;
-}
-
-.alert-desc {
-  font-size: 24rpx;
-  color: #666;
-  margin-top: 8rpx;
-  display: block;
-  line-height: 1.5;
-}
-
-.alert-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-  margin-top: 12rpx;
-}
-
-.meta-item {
-  font-size: 22rpx;
-  color: #999;
-}
-
 .alert-actions {
   display: flex;
   gap: 16rpx;
-  margin-top: 16rpx;
-  padding-top: 16rpx;
-  border-top: 1rpx solid #f5f5f5;
 }
 
 .action-btn {
@@ -313,23 +243,11 @@ onMounted(() => {
 }
 
 .alert-result {
-  margin-top: 12rpx;
-  padding-top: 12rpx;
-  border-top: 1rpx solid #f5f5f5;
+  padding-top: 4rpx;
 }
 
 .result-text {
   font-size: 24rpx;
   color: #52C41A;
 }
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 120rpx 0;
-}
-
-.empty-icon { font-size: 80rpx; }
-.empty-text { font-size: 28rpx; color: #999; margin-top: 16rpx; }
 </style>

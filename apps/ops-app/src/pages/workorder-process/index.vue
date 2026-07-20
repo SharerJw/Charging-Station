@@ -189,22 +189,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { api } from '@/api'
-
-interface CauseItem {
-  id: string
-  name: string
-  children?: CauseItem[]
-}
-
-interface SparePart {
-  name: string
-  quantity: string
-}
-
-interface TestItem {
-  name: string
-  pass: boolean | null
-}
+import type { CauseItem, WorkorderSparePart as SparePart, TestItem } from '@/types'
 
 const workorderId = ref('')
 const loading = ref(false)

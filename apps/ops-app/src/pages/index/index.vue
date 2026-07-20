@@ -39,6 +39,14 @@
           <text class="action-icon">🔍</text>
           <text class="action-label">巡检</text>
         </view>
+        <view class="action-item" @tap="navigateTo('/pages/workorder/index')">
+          <text class="action-icon">📋</text>
+          <text class="action-label">工单</text>
+        </view>
+        <view class="action-item" @tap="navigateTo('/pages/alert/index')">
+          <text class="action-icon">🔔</text>
+          <text class="action-label">告警</text>
+        </view>
       </view>
     </view>
 
@@ -55,18 +63,35 @@
           @tap="changeAlertFilter(f.value)"
         >{{ f.label }}</text>
       </view>
-      <view class="alert-list">
-        <view class="alert-item" v-for="alert in recentAlerts" :key="alert.id" @tap="navigateTo('/pages/alert/index')">
-          <view class="alert-level" :class="alert.level?.toLowerCase()">{{ alert.level }}</view>
-          <view class="alert-content">
-            <text class="alert-title">{{ alert.title }}</text>
-            <text class="alert-desc">{{ alert.stationName }} - {{ alert.deviceCode }}</text>
-          </view>
-          <text class="alert-time">{{ formatTime(alert.createTime) }}</text>
-        </view>
+
+      <!-- 加载状态 -->
+      <Skeleton v-if="loadingAlerts && recentAlerts.length === 0" variant="list" :rows="3" />
+
+      <!-- 告警列表 -->
+      <view class="alert-list" v-else-if="recentAlerts.length > 0">
+        <AlertCard
+          v-for="alert in recentAlerts"
+          :key="alert.id"
+          :level="alert.level"
+          :status="alert.status"
+          :title="alert.title"
+          :station-name="alert.stationName"
+          :device-code="alert.deviceCode"
+          :time="formatTime(alert.createTime)"
+          @click="navigateTo('/pages/alert/index')"
+        />
       </view>
+
+      <!-- 空状态 -->
+      <EmptyState
+        v-else
+        icon="✅"
+        title="暂无告警"
+        description="当前没有告警信息"
+      />
+
       <!-- 加载更多 -->
-      <view class="load-more" v-if="hasMoreAlerts" @tap="loadMoreAlerts">
+      <view class="load-more" v-if="hasMoreAlerts && recentAlerts.length > 0" @tap="loadMoreAlerts">
         <text class="load-more-text">{{ loadingAlerts ? '加载中...' : '加载更多' }}</text>
       </view>
       <view class="no-more" v-else-if="recentAlerts.length > 0">
@@ -79,24 +104,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { api } from '@/api'
+import { useAlertStore } from '@/store/alert'
+import AlertCard from '@/components/AlertCard.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import Skeleton from '@/components/Skeleton.vue'
+import type { OpsStats, Alert } from '@/types'
 
-interface OpsStats {
-  onlineDevices: number
-  pendingAlerts: number
-  pendingWorkorders: number
-  todayInspections: number
-  completedInspections: number
-}
-
-interface Alert {
-  id: string
-  level: string
-  title: string
-  stationName: string
-  deviceCode: string
-  status: string
-  createTime: string
-}
+const alertStore = useAlertStore()
 
 const stats = ref<OpsStats>({
   onlineDevices: 0,
@@ -145,7 +159,7 @@ async function loadAlerts(reset = false) {
   }
   loadingAlerts.value = true
   try {
-    const params: any = { page: alertPage.value, size: alertPageSize }
+    const params: Record<string, any> = { page: alertPage.value, size: alertPageSize }
     if (alertFilterLevel.value !== 'all') {
       params.level = alertFilterLevel.value
     }
@@ -159,6 +173,8 @@ async function loadAlerts(reset = false) {
     if (list.length < alertPageSize) {
       hasMoreAlerts.value = false
     }
+    // 同步到 store
+    alertStore.alerts = recentAlerts.value
   } catch (error) {
     console.error('加载告警失败:', error)
   } finally {
@@ -179,14 +195,7 @@ function changeAlertFilter(level: string) {
 
 onMounted(async () => {
   try {
-    // 并行获取设备统计
-    const token = uni.getStorageSync('ops_token')
-    const deviceStats = await uni.request({
-      url: 'http://localhost:8080/internal/stats',
-      header: { Authorization: `Bearer ${token}` }
-    }).then(res => res.data?.data || { onlineDeviceCount: 0 }).catch(() => ({ onlineDeviceCount: 0 }))
-
-    // 获取工单和巡检统计
+    // 并行获取工单和巡检统计
     const [workorders, inspections] = await Promise.all([
       api.getWorkorders({ page: 1, size: 100 }).catch(() => ({ list: [] })),
       api.getInspections().catch(() => ({ list: [] })),
@@ -196,15 +205,16 @@ onMounted(async () => {
     const inspectionList = inspections?.list || inspections || []
 
     stats.value = {
-      onlineDevices: deviceStats?.onlineDeviceCount || 0,
-      pendingAlerts: 0, // 将从告警接口获取
+      onlineDevices: 0, // 需要后端提供设备统计接口
+      pendingAlerts: 0,
       pendingWorkorders: workorderList.filter((w: any) => w.status === 'pending').length,
       todayInspections: inspectionList.length,
       completedInspections: inspectionList.filter((i: any) => i.status === 'completed').length,
     }
 
-    // 加载告警（先获取待处理数）
+    // 加载告警
     await loadAlerts(true)
+
     // 获取待处理告警数量
     const pendingAlerts = await api.getAlerts({ status: 'pending', page: 1, size: 200 }).catch(() => [])
     const pendingList = (pendingAlerts as any)?.list || pendingAlerts || []
@@ -298,7 +308,7 @@ onMounted(async () => {
 
 .action-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
 
@@ -327,80 +337,10 @@ onMounted(async () => {
   color: #333;
 }
 
-.action-badge {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  background: #ff4d4f;
-  color: #fff;
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 10px;
-  min-width: 16px;
-  text-align: center;
-}
-
 .alert-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.alert-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.alert-item:hover {
-  background: #fff7e6;
-}
-
-.alert-level {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: bold;
-  min-width: 32px;
-  text-align: center;
-}
-
-.alert-level.p0 { background: #ff4d4f; color: #fff; }
-.alert-level.p1 { background: #faad14; color: #fff; }
-.alert-level.p2 { background: #1677ff; color: #fff; }
-.alert-level.p3 { background: #999; color: #fff; }
-
-.alert-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.alert-title {
-  font-size: 14px;
-  color: #333;
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.alert-desc {
-  font-size: 12px;
-  color: #999;
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.alert-time {
-  font-size: 12px;
-  color: #999;
-  white-space: nowrap;
 }
 
 .alert-filter {

@@ -128,35 +128,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { api } from '@/api'
-
-interface SparePart {
-  id: string
-  code: string
-  name: string
-  spec: string
-  quantity: number
-  minQuantity: number
-  location: string
-}
-
-interface ConsumptionRecord {
-  id: string
-  partName: string
-  spec: string
-  quantity: number
-  type: 'consume' | 'return'
-  workorderNo: string
-  time: string
-}
-
-interface RequestRecord {
-  id: string
-  partName: string
-  quantity: number
-  reason: string
-  status: string
-  time: string
-}
+import type { SparePartItem as SparePart, ConsumptionRecord, SparePartRequestRecord as RequestRecord } from '@/types'
 
 const keyword = ref('')
 const loading = ref(false)
