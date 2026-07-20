@@ -1,6 +1,9 @@
 package com.ev.charging.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ev.charging.dto.ChargingSessionVO;
+import com.ev.charging.dto.ChargingStatsVO;
 import com.ev.charging.dto.StartChargingReq;
 import com.ev.charging.entity.ChargingSession;
 import com.ev.charging.event.ChargingEventPublisher;
@@ -8,10 +11,12 @@ import com.ev.charging.mapper.ChargingSessionMapper;
 import com.ev.charging.service.ChargingService;
 import com.ev.common.core.event.ChargingStartedEvent;
 import com.ev.common.core.event.ChargingStoppedEvent;
+import com.ev.common.core.result.PageResult;
 import com.ev.common.core.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -172,7 +177,7 @@ public class ChargingServiceImpl implements ChargingService {
             }
         }
 
-        // 优先从 L1 内存缓存读取
+        // 优先从 L1 内存缓存读取（纯只读，不做任何修改）
         ChargingSessionVO session = sessions.get(orderId);
         if (session == null) {
             // 尝试从数据库恢复
@@ -184,7 +189,7 @@ public class ChargingServiceImpl implements ChargingService {
             if ("COMPLETED".equals(dbSession.getStatus()) || "FAILED".equals(dbSession.getStatus())) {
                 return buildCompletedFromEntity(dbSession);
             }
-            // 恢复活跃会话到内存缓存
+            // 恢复活跃会话到内存缓存（由定时任务更新进度）
             session = ChargingSessionVO.builder()
                     .orderId(dbSession.getOrderId())
                     .stationName(dbSession.getStationName())
@@ -200,43 +205,71 @@ public class ChargingServiceImpl implements ChargingService {
             sessions.put(orderId, session);
         }
 
-        if (!"charging".equals(session.getStatus())) {
-            return session;
+        return session;
+    }
+
+    /**
+     * 定时模拟充电进度 —— 每 5 秒遍历所有活跃会话执行 SOC 递增计算。
+     * 将原本嵌入在 status() GET 请求中的有状态逻辑抽取到后台定时任务，
+     * 保证 status() 是纯只读方法，符合 REST 语义。
+     */
+    @Scheduled(fixedRate = 5000)
+    public void simulateSocProgress() {
+        if (sessions.isEmpty()) {
+            return;
         }
 
-        // 模拟充电进度 - 平滑递增
-        int soc = session.getCurrentSoc();
-        int increment = soc < 80 ? ThreadLocalRandom.current().nextInt(1, 4) : ThreadLocalRandom.current().nextInt(0, 2);
-        int newSoc = Math.min(soc + increment, 100);
-        long power = soc < 80 ? 90000L + ThreadLocalRandom.current().nextLong(5000L) : 45000L + ThreadLocalRandom.current().nextLong(5000L);
-        long newEnergy = session.getEnergy() + power / 3600;
-        long newDuration = session.getDuration() + 1;
-        long newCost = newEnergy * 175 / 1000;
+        for (Map.Entry<String, ChargingSessionVO> entry : sessions.entrySet()) {
+            String orderId = entry.getKey();
+            ChargingSessionVO session = entry.getValue();
 
-        ChargingSessionVO updated = ChargingSessionVO.builder()
-                .orderId(session.getOrderId()).stationName(session.getStationName())
-                .deviceCode(session.getDeviceCode()).status("charging")
-                .currentSoc(newSoc).power(power).energy(newEnergy).duration(newDuration)
-                .cost(newCost)
-                .startTime(session.getStartTime()).build();
-
-        // 更新 L1 缓存
-        sessions.put(orderId, updated);
-
-        // 异步更新数据库（每 10 秒持久化一次，减少写入频率）
-        if (newDuration % 10 == 0) {
-            ChargingSession dbSession = sessionMapper.selectByOrderId(orderId);
-            if (dbSession != null) {
-                dbSession.setCurrentSoc(newSoc);
-                dbSession.setPowerW(power);
-                dbSession.setEnergyWh(newEnergy);
-                dbSession.setDurationSec(newDuration);
-                dbSession.setCostCents(newCost);
-                sessionMapper.updateById(dbSession);
+            if (!"charging".equals(session.getStatus())) {
+                continue;
             }
-        }
 
-        return updated;
+            // SOC 平滑递增算法：<80% 阶段 +1~3%/s（快充），≥80% 阶段 +0~1%/s（涓流）
+            int soc = session.getCurrentSoc();
+            int increment = soc < 80
+                    ? ThreadLocalRandom.current().nextInt(1, 4)
+                    : ThreadLocalRandom.current().nextInt(0, 2);
+            int newSoc = Math.min(soc + increment, 100);
+            long power = soc < 80
+                    ? 90000L + ThreadLocalRandom.current().nextLong(5000L)
+                    : 45000L + ThreadLocalRandom.current().nextLong(5000L);
+            long newEnergy = session.getEnergy() + power / 3600;
+            long newDuration = session.getDuration() + 1;
+            long newCost = newEnergy * 175 / 1000;
+
+            ChargingSessionVO updated = ChargingSessionVO.builder()
+                    .orderId(session.getOrderId()).stationName(session.getStationName())
+                    .deviceCode(session.getDeviceCode()).status("charging")
+                    .currentSoc(newSoc).power(power).energy(newEnergy).duration(newDuration)
+                    .cost(newCost)
+                    .startTime(session.getStartTime()).build();
+
+            // 更新 L1 缓存
+            sessions.put(orderId, updated);
+
+            // 每 10 秒持久化一次到数据库，减少写入频率
+            if (newDuration % 10 == 0) {
+                try {
+                    ChargingSession dbSession = sessionMapper.selectByOrderId(orderId);
+                    if (dbSession != null) {
+                        dbSession.setCurrentSoc(newSoc);
+                        dbSession.setPowerW(power);
+                        dbSession.setEnergyWh(newEnergy);
+                        dbSession.setDurationSec(newDuration);
+                        dbSession.setCostCents(newCost);
+                        sessionMapper.updateById(dbSession);
+                    }
+                } catch (Exception e) {
+                    log.warn("定时持久化充电会话失败: orderId={}, error={}", orderId, e.getMessage());
+                }
+            }
+
+            log.debug("SOC 进度更新: orderId={}, soc={}%->{}%, power={}W, energy={}Wh, duration={}s",
+                    orderId, soc, newSoc, power, newEnergy, newDuration);
+        }
     }
 
     /**
@@ -266,5 +299,106 @@ public class ChargingServiceImpl implements ChargingService {
                 .currentSoc(0).power(0L).energy(0L).duration(0L).cost(0L)
                 .stationName("").deviceCode("")
                 .startTime("").build();
+    }
+
+    /**
+     * 将数据库实体转换为 VO
+     */
+    private ChargingSessionVO entityToVO(ChargingSession entity) {
+        String status;
+        if ("COMPLETED".equals(entity.getStatus())) {
+            status = "completed";
+        } else if ("FAILED".equals(entity.getStatus())) {
+            status = "failed";
+        } else if ("CHARGING".equals(entity.getStatus())) {
+            status = "charging";
+        } else {
+            status = entity.getStatus().toLowerCase();
+        }
+        return ChargingSessionVO.builder()
+                .orderId(entity.getOrderId())
+                .stationName(entity.getStationName())
+                .deviceCode(entity.getDeviceCode())
+                .status(status)
+                .currentSoc(entity.getCurrentSoc())
+                .power(entity.getPowerW())
+                .energy(entity.getEnergyWh())
+                .duration(entity.getDurationSec())
+                .cost(entity.getCostCents())
+                .startTime(entity.getStartedAt() != null ? entity.getStartedAt().toString() : "")
+                .build();
+    }
+
+    @Override
+    public PageResult<ChargingSessionVO> listSessions(int page, int size, String status, Long stationId, Long userId) {
+        IPage<ChargingSession> result = sessionMapper.selectSessionPage(new Page<>(page, size), status, stationId, userId);
+        var voList = result.getRecords().stream()
+                .map(this::entityToVO)
+                .toList();
+        return PageResult.of(voList, result.getTotal(), page, size);
+    }
+
+    @Override
+    public ChargingSessionVO getSessionDetail(String sessionId) {
+        // 支持通过 orderId 查询（兼容原有路径参数风格）
+        ChargingSession entity = sessionMapper.selectBySessionId(sessionId);
+        if (entity == null) {
+            entity = sessionMapper.selectByOrderId(sessionId);
+        }
+        if (entity == null) {
+            return ChargingSessionVO.builder()
+                    .orderId(sessionId).status("not_found")
+                    .currentSoc(0).power(0L).energy(0L).duration(0L).cost(0L)
+                    .stationName("").deviceCode("").startTime("").build();
+        }
+        return entityToVO(entity);
+    }
+
+    @Override
+    public ChargingStatsVO getStats(LocalDateTime startDate, LocalDateTime endDate, Long stationId) {
+        long totalSessions;
+        long completedSessions;
+        long totalEnergy;
+        long totalCost;
+        long totalDuration;
+
+        if (stationId != null) {
+            totalSessions = sessionMapper.countByStationAndDateRange(stationId, startDate, endDate);
+            completedSessions = sessionMapper.countCompletedByStationAndDateRange(stationId, startDate, endDate);
+            totalEnergy = sessionMapper.sumEnergyByStationAndDateRange(stationId, startDate, endDate);
+            totalCost = sessionMapper.sumCostByStationAndDateRange(stationId, startDate, endDate);
+            totalDuration = sessionMapper.sumDurationByStationAndDateRange(stationId, startDate, endDate);
+        } else {
+            totalSessions = sessionMapper.countByDateRange(startDate, endDate);
+            completedSessions = sessionMapper.countCompletedByDateRange(startDate, endDate);
+            totalEnergy = sessionMapper.sumEnergyByDateRange(startDate, endDate);
+            totalCost = sessionMapper.sumCostByDateRange(startDate, endDate);
+            totalDuration = sessionMapper.sumDurationByDateRange(startDate, endDate);
+        }
+
+        long avgEnergy = totalSessions > 0 ? totalEnergy / totalSessions : 0;
+        long avgCost = totalSessions > 0 ? totalCost / totalSessions : 0;
+        long avgDuration = totalSessions > 0 ? totalDuration / totalSessions : 0;
+        int completionRate = totalSessions > 0 ? (int) (completedSessions * 100 / totalSessions) : 0;
+
+        return ChargingStatsVO.builder()
+                .totalSessions(totalSessions)
+                .totalEnergyWh(totalEnergy)
+                .totalCostCents(totalCost)
+                .totalDurationSec(totalDuration)
+                .avgEnergyWh(avgEnergy)
+                .avgCostCents(avgCost)
+                .avgDurationSec(avgDuration)
+                .completionRate(completionRate)
+                .build();
+    }
+
+    @Override
+    public PageResult<ChargingSessionVO> getUserHistory(Long userId, int page, int size) {
+        IPage<ChargingSession> result = sessionMapper.selectSessionPage(new Page<>(page, size), null, null, userId);
+        var voList = result.getRecords().stream()
+                .map(this::entityToVO)
+                .toList();
+        return PageResult.of(voList, result.getTotal(), page, size);
     }
 }

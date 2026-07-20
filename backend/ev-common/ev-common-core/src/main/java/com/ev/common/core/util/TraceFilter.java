@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.MDC;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.util.UUID;
 /**
  * TraceId 全链路追踪过滤器
  */
+@Component
 public class TraceFilter extends OncePerRequestFilter {
 
     private static final String TRACE_ID_KEY = "traceId";

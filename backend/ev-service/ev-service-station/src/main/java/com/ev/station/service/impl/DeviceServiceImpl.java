@@ -57,6 +57,8 @@ public class DeviceServiceImpl implements DeviceService {
     public void reset(Long id) {
         DeviceEntity entity = deviceMapper.selectById(id);
         if (entity == null) throw BizException.deviceNotFound();
+        entity.setStatus("RESETTING");
+        deviceMapper.updateById(entity);
         log.info("远程重启设备: id={}, code={}", id, entity.getCode());
     }
 
@@ -64,6 +66,11 @@ public class DeviceServiceImpl implements DeviceService {
     public void unlock(Long id, Integer connectorId) {
         DeviceEntity entity = deviceMapper.selectById(id);
         if (entity == null) throw BizException.deviceNotFound();
+        ConnectorEntity connector = connectorMapper.selectOne(new LambdaQueryWrapper<ConnectorEntity>()
+                .eq(ConnectorEntity::getDeviceId, id).eq(ConnectorEntity::getConnectorId, connectorId));
+        if (connector == null) throw BizException.deviceNotFound();
+        connector.setStatus("AVAILABLE");
+        connectorMapper.updateById(connector);
         log.info("解锁枪头: deviceId={}, connectorId={}", id, connectorId);
     }
 

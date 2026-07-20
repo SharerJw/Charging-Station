@@ -1,10 +1,12 @@
 package com.ev.simulator.controller;
 
 import com.ev.common.core.result.R;
+import com.ev.simulator.dto.DeviceStatusUpdateRequest;
 import com.ev.simulator.dto.SimDeviceVO;
 import com.ev.simulator.service.SimulatorDeviceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -49,8 +51,7 @@ public class SimulatorDeviceController {
     }
 
     @Operation(summary = "更新设备状态") @PostMapping("/{id}/status")
-    public R<SimDeviceVO> updateStatus(@PathVariable String id, @RequestBody(required = false) Map<String, Object> body) {
-        String status = body != null && body.containsKey("status") ? (String) body.get("status") : "online";
-        return R.ok(deviceService.updateStatus(id, status));
+    public R<SimDeviceVO> updateStatus(@PathVariable String id, @Valid @RequestBody DeviceStatusUpdateRequest req) {
+        return R.ok(deviceService.updateStatus(id, req.getStatus()));
     }
 }

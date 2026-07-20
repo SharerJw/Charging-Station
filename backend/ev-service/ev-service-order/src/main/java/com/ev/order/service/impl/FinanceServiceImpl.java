@@ -46,7 +46,8 @@ public class FinanceServiceImpl implements FinanceService {
         wrapper.le("created_at", end);
         wrapper.in("status", "PAID", "SETTLED");
 
-        Map<String, Object> stats = orderMapper.selectMaps(wrapper).get(0);
+        List<Map<String, Object>> statsList = orderMapper.selectMaps(wrapper);
+        Map<String, Object> stats = statsList.isEmpty() ? java.util.Map.of() : statsList.get(0);
 
         long totalRevenue = getLong(stats, "total_revenue");
         long totalElec = getLong(stats, "total_electricity_fee");
@@ -61,7 +62,8 @@ public class FinanceServiceImpl implements FinanceService {
                 "COALESCE(SUM(total_amount), 0) AS refund_amount");
         refundWrapper.eq("status", "REFUNDING");
 
-        Map<String, Object> refundStats = orderMapper.selectMaps(refundWrapper).get(0);
+        List<Map<String, Object>> refundList = orderMapper.selectMaps(refundWrapper);
+        Map<String, Object> refundStats = refundList.isEmpty() ? java.util.Map.of() : refundList.get(0);
         long refundAmount = getLong(refundStats, "refund_amount");
         int refundCount = getInt(refundStats, "refund_count");
 

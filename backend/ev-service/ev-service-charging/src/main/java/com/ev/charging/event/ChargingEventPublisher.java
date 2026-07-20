@@ -10,6 +10,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -22,18 +23,21 @@ import java.util.Map;
 @Component
 public class ChargingEventPublisher {
 
+    @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
+    private String bootstrapServers;
+
     private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
     private KafkaProducer<String, String> producer;
 
     @PostConstruct
     public void init() {
         Map<String, Object> props = new HashMap<>();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.ACKS_CONFIG, "1");
         producer = new KafkaProducer<>(props);
-        log.info("Kafka Producer 初始化完成: bootstrap=localhost:9092");
+        log.info("Kafka Producer 初始化完成: bootstrap={}", bootstrapServers);
     }
 
     public void publishStarted(ChargingStartedEvent event) {
