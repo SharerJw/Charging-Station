@@ -23,7 +23,7 @@ spring:
         max.block.ms: 3000
         request.timeout.ms: 3000
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:5432/ev_order?currentSchema=public&characterEncoding=UTF-8
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/ev_charging?currentSchema=public&characterEncoding=UTF-8
     username: ${DB_USER:ev}
     password: ${DB_PASS:ev123}
     driver-class-name: org.postgresql.Driver
@@ -36,6 +36,10 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: 6379
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
 
 # Knife4j / SpringDoc
 springdoc:
