@@ -31,40 +31,40 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDateTime todayStart = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
         LocalDateTime monthStart = LocalDateTime.of(LocalDate.now().withDayOfMonth(1), LocalTime.MIN);
 
-        // 今日订单列表
-        List<ChargingOrderEntity> todayOrders = orderMapper.selectList(
-                new LambdaQueryWrapper<ChargingOrderEntity>()
-                        .ge(ChargingOrderEntity::getCreatedAt, todayStart));
+        // 使用 SQL 聚合查询，避免加载全部订单到内存
+        // 今日统计
+        Map<String, Object> todayStats = orderMapper.selectMaps(
+            new QueryWrapper<ChargingOrderEntity>()
+                .select("COUNT(*) AS order_count",
+                        "COALESCE(SUM(total_amount), 0) AS total_revenue",
+                        "COALESCE(SUM(energy_wh), 0) AS total_energy")
+                .ge("created_at", todayStart)
+        ).get(0);
 
-        // 本月订单列表
-        List<ChargingOrderEntity> monthOrders = orderMapper.selectList(
-                new LambdaQueryWrapper<ChargingOrderEntity>()
-                        .ge(ChargingOrderEntity::getCreatedAt, monthStart));
+        int todayOrderCount = getInt(todayStats, "order_count");
+        long todayRevenue = getLong(todayStats, "total_revenue");
+        long todayEnergy = getLong(todayStats, "total_energy");
 
-        // 今日营收（分）
-        long todayRevenue = todayOrders.stream()
-                .mapToLong(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0).sum();
+        // 本月统计
+        Map<String, Object> monthStats = orderMapper.selectMaps(
+            new QueryWrapper<ChargingOrderEntity>()
+                .select("COALESCE(SUM(total_amount), 0) AS total_revenue")
+                .ge("created_at", monthStart)
+        ).get(0);
+        long monthRevenue = getLong(monthStats, "total_revenue");
 
-        // 本月营收（分）
-        long monthRevenue = monthOrders.stream()
-                .mapToLong(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0).sum();
-
-        // 今日电量（Wh）
-        long todayEnergy = todayOrders.stream()
-                .mapToLong(o -> o.getEnergyWh() != null ? o.getEnergyWh() : 0).sum();
-
-        // 总电量（Wh）
-        Long totalEnergy = orderMapper.selectList(new LambdaQueryWrapper<>())
-                .stream().mapToLong(o -> o.getEnergyWh() != null ? o.getEnergyWh() : 0).sum();
-
-        // 今日订单数
-        int todayOrderCount = todayOrders.size();
+        // 总电量
+        Map<String, Object> totalStats = orderMapper.selectMaps(
+            new QueryWrapper<ChargingOrderEntity>()
+                .select("COALESCE(SUM(energy_wh), 0) AS total_energy")
+        ).get(0);
+        long totalEnergy = getLong(totalStats, "total_energy");
 
         // 从station-service获取站点和设备统计
         int[] stationDeviceCounts = fetchStationDeviceCounts();
 
         // 计算趋势数据
-        Map<String, TrendDTO> trends = calculateTrends(
+        Map<String, TrendDTO> trends = calculateTrendsOptimized(
             todayEnergy, todayRevenue, todayOrderCount, stationDeviceCounts);
 
         return DashboardStatsVO.builder()
@@ -174,9 +174,97 @@ public class DashboardServiceImpl implements DashboardService {
         return 0;
     }
 
+    private long getLong(Map<String, Object> map, String key) {
+        Object val = map.get(key);
+        if (val instanceof Number) return ((Number) val).longValue();
+        return 0L;
+    }
+
+    /**
+     * 优化版趋势计算 - 使用 SQL 聚合
+     */
+    private Map<String, TrendDTO> calculateTrendsOptimized(long todayEnergy, long todayRevenue,
+                                                            int todayOrderCount, int[] stationDeviceCounts) {
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
+        LocalDate lastWeek = today.minusWeeks(1);
+
+        // 昨日统计
+        LocalDateTime yesterdayStart = LocalDateTime.of(yesterday, LocalTime.MIN);
+        LocalDateTime yesterdayEnd = LocalDateTime.of(yesterday, LocalTime.MAX);
+        Map<String, Object> yesterdayStats = orderMapper.selectMaps(
+            new QueryWrapper<ChargingOrderEntity>()
+                .select("COUNT(*) AS order_count",
+                        "COALESCE(SUM(total_amount), 0) AS total_revenue",
+                        "COALESCE(SUM(energy_wh), 0) AS total_energy")
+                .ge("created_at", yesterdayStart)
+                .le("created_at", yesterdayEnd)
+        ).get(0);
+        long yesterdayEnergy = getLong(yesterdayStats, "total_energy");
+        long yesterdayRevenue = getLong(yesterdayStats, "total_revenue");
+        int yesterdayOrderCount = getInt(yesterdayStats, "order_count");
+
+        // 上周同日统计
+        LocalDateTime lastWeekStart = LocalDateTime.of(lastWeek, LocalTime.MIN);
+        LocalDateTime lastWeekEnd = LocalDateTime.of(lastWeek, LocalTime.MAX);
+        Map<String, Object> lastWeekStats = orderMapper.selectMaps(
+            new QueryWrapper<ChargingOrderEntity>()
+                .select("COUNT(*) AS order_count",
+                        "COALESCE(SUM(total_amount), 0) AS total_revenue",
+                        "COALESCE(SUM(energy_wh), 0) AS total_energy")
+                .ge("created_at", lastWeekStart)
+                .le("created_at", lastWeekEnd)
+        ).get(0);
+        long lastWeekEnergy = getLong(lastWeekStats, "total_energy");
+        long lastWeekRevenue = getLong(lastWeekStats, "total_revenue");
+        int lastWeekOrderCount = getInt(lastWeekStats, "order_count");
+
+        Map<String, TrendDTO> trends = new HashMap<>();
+        trends.put("todayEnergy", new TrendDTO(
+            calcPercent(todayEnergy, yesterdayEnergy),
+            calcPercent(todayEnergy, lastWeekEnergy)));
+        trends.put("todayRevenue", new TrendDTO(
+            calcPercent(todayRevenue, yesterdayRevenue),
+            calcPercent(todayRevenue, lastWeekRevenue)));
+        trends.put("todayOrderCount", new TrendDTO(
+            calcPercent(todayOrderCount, yesterdayOrderCount),
+            calcPercent(todayOrderCount, lastWeekOrderCount)));
+        trends.put("stationCount", new TrendDTO(0.0, 0.0));
+        trends.put("onlineDeviceRate", new TrendDTO(0.0, 0.0));
+        trends.put("totalEnergy", new TrendDTO(0.0, 0.0));
+
+        return trends;
+    }
+
     @Override
     public ChartDataVO chart(Integer days) {
         if (days == null) days = 7;
+
+        // 使用 SQL GROUP BY 聚合，避免 N+1 查询
+        LocalDate startDate = LocalDate.now().minusDays(days - 1);
+        LocalDateTime startDateTime = LocalDateTime.of(startDate, LocalTime.MIN);
+
+        // 按日期分组统计
+        QueryWrapper<ChargingOrderEntity> wrapper = new QueryWrapper<>();
+        wrapper.select(
+                "DATE(created_at) AS stat_date",
+                "COUNT(*) AS order_count",
+                "COALESCE(SUM(total_amount), 0) AS total_revenue",
+                "COALESCE(SUM(energy_wh), 0) AS total_energy");
+        wrapper.ge("created_at", startDateTime);
+        wrapper.groupBy("DATE(created_at)");
+        wrapper.orderByAsc("stat_date");
+
+        List<Map<String, Object>> rows = orderMapper.selectMaps(wrapper);
+
+        // 构建日期到统计数据的映射
+        Map<String, Map<String, Object>> statsMap = new HashMap<>();
+        for (Map<String, Object> row : rows) {
+            String dateStr = String.valueOf(row.get("stat_date"));
+            statsMap.put(dateStr, row);
+        }
+
+        // 填充结果（包含没有订单的日期）
         List<String> dates = new ArrayList<>();
         List<Integer> orderCounts = new ArrayList<>();
         List<Long> revenues = new ArrayList<>();
@@ -184,22 +272,21 @@ public class DashboardServiceImpl implements DashboardService {
 
         for (int i = days - 1; i >= 0; i--) {
             LocalDate date = LocalDate.now().minusDays(i);
-            LocalDateTime dayStart = LocalDateTime.of(date, LocalTime.MIN);
-            LocalDateTime dayEnd = LocalDateTime.of(date, LocalTime.MAX);
+            String dateStr = date.toString();
             dates.add(date.getMonthValue() + "-" + String.format("%02d", date.getDayOfMonth()));
 
-            // 查询当日订单
-            List<ChargingOrderEntity> dayOrders = orderMapper.selectList(
-                    new LambdaQueryWrapper<ChargingOrderEntity>()
-                            .ge(ChargingOrderEntity::getCreatedAt, dayStart)
-                            .le(ChargingOrderEntity::getCreatedAt, dayEnd));
-
-            orderCounts.add(dayOrders.size());
-            revenues.add(dayOrders.stream()
-                    .mapToLong(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0).sum());
-            energies.add(dayOrders.stream()
-                    .mapToLong(o -> o.getEnergyWh() != null ? o.getEnergyWh() : 0).sum());
+            Map<String, Object> stats = statsMap.get(dateStr);
+            if (stats != null) {
+                orderCounts.add(getInt(stats, "order_count"));
+                revenues.add(getLong(stats, "total_revenue"));
+                energies.add(getLong(stats, "total_energy"));
+            } else {
+                orderCounts.add(0);
+                revenues.add(0L);
+                energies.add(0L);
+            }
         }
+
         return ChartDataVO.builder()
                 .dates(dates).orderCounts(orderCounts)
                 .revenues(revenues).energies(energies).build();

@@ -1,6 +1,7 @@
 package com.ev.order.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ev.common.core.dto.PageQuery;
 import com.ev.common.core.result.PageResult;
@@ -33,37 +34,59 @@ public class FinanceServiceImpl implements FinanceService {
             ? LocalDate.parse(endTime, DateTimeFormatter.ISO_LOCAL_DATE).atTime(LocalTime.MAX)
             : LocalDateTime.now();
 
-        // 查询汇总数据
-        List<ChargingOrderEntity> orders = orderMapper.selectList(
-            new LambdaQueryWrapper<ChargingOrderEntity>()
-                .ge(ChargingOrderEntity::getCreatedAt, start)
-                .le(ChargingOrderEntity::getCreatedAt, end)
-                .in(ChargingOrderEntity::getStatus, "PAID", "SETTLED")
-        );
+        // 使用 SQL 聚合查询汇总数据
+        QueryWrapper<ChargingOrderEntity> wrapper = new QueryWrapper<>();
+        wrapper.select(
+                "COUNT(*) AS order_count",
+                "COALESCE(SUM(total_amount), 0) AS total_revenue",
+                "COALESCE(SUM(electricity_fee), 0) AS total_electricity_fee",
+                "COALESCE(SUM(service_fee), 0) AS total_service_fee",
+                "COALESCE(SUM(energy_wh), 0) AS total_energy");
+        wrapper.ge("created_at", start);
+        wrapper.le("created_at", end);
+        wrapper.in("status", "PAID", "SETTLED");
 
-        long totalRevenue = orders.stream().mapToLong(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0).sum();
-        long totalElec = orders.stream().mapToLong(o -> o.getElectricityFee() != null ? o.getElectricityFee() : 0).sum();
-        long totalSvc = orders.stream().mapToLong(o -> o.getServiceFee() != null ? o.getServiceFee() : 0).sum();
-        long totalEnergy = orders.stream().mapToLong(o -> o.getEnergyWh() != null ? o.getEnergyWh() : 0).sum();
+        Map<String, Object> stats = orderMapper.selectMaps(wrapper).get(0);
 
-        // 退款统计
-        List<ChargingOrderEntity> refundedOrders = orderMapper.selectList(
-            new LambdaQueryWrapper<ChargingOrderEntity>()
-                .eq(ChargingOrderEntity::getStatus, "REFUNDING")
-        );
-        long refundAmount = refundedOrders.stream()
-            .mapToLong(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0).sum();
+        long totalRevenue = getLong(stats, "total_revenue");
+        long totalElec = getLong(stats, "total_electricity_fee");
+        long totalSvc = getLong(stats, "total_service_fee");
+        long totalEnergy = getLong(stats, "total_energy");
+        int orderCount = getInt(stats, "order_count");
+
+        // 退款统计（使用 SQL 聚合）
+        QueryWrapper<ChargingOrderEntity> refundWrapper = new QueryWrapper<>();
+        refundWrapper.select(
+                "COUNT(*) AS refund_count",
+                "COALESCE(SUM(total_amount), 0) AS refund_amount");
+        refundWrapper.eq("status", "REFUNDING");
+
+        Map<String, Object> refundStats = orderMapper.selectMaps(refundWrapper).get(0);
+        long refundAmount = getLong(refundStats, "refund_amount");
+        int refundCount = getInt(refundStats, "refund_count");
 
         return FinanceSummaryVO.builder()
             .totalRevenue(totalRevenue)
             .totalElectricityFee(totalElec)
             .totalServiceFee(totalSvc)
-            .totalOrderCount(orders.size())
+            .totalOrderCount(orderCount)
             .totalEnergyWh(totalEnergy)
-            .avgOrderAmount(orders.isEmpty() ? 0 : totalRevenue / orders.size())
+            .avgOrderAmount(orderCount > 0 ? totalRevenue / orderCount : 0)
             .refundAmount(refundAmount)
-            .refundCount(refundedOrders.size())
+            .refundCount(refundCount)
             .build();
+    }
+
+    private long getLong(Map<String, Object> map, String key) {
+        Object val = map.get(key);
+        if (val instanceof Number) return ((Number) val).longValue();
+        return 0L;
+    }
+
+    private int getInt(Map<String, Object> map, String key) {
+        Object val = map.get(key);
+        if (val instanceof Number) return ((Number) val).intValue();
+        return 0;
     }
 
     @Override
