@@ -5,7 +5,7 @@ plugins {
 
 dependencies {
     // MinIO Java SDK
-    implementation("io.minio:minio:8.5.7")
+    implementation(libs.minio)
 
     // Spring Boot
     implementation(libs.spring.boot.starter.web)
