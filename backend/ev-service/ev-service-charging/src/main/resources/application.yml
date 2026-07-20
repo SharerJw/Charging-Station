@@ -23,7 +23,7 @@ spring:
         max.block.ms: 3000
         request.timeout.ms: 3000
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:5432/ev_order?currentSchema=public&characterEncoding=UTF-8
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/ev_charging?currentSchema=public&characterEncoding=UTF-8
     username: ${DB_USER:ev}
     password: ${DB_PASS:ev123}
     driver-class-name: org.postgresql.Driver
@@ -36,6 +36,10 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: 6379
+      password: ${REDIS_PASSWORD:}
+
+jwt:
+  secret: ${JWT_SECRET:ev-charging-platform-jwt-dev-secret-key-2026}
 
 # Knife4j / SpringDoc
 springdoc:
@@ -57,3 +61,8 @@ mybatis-plus:
   mapper-locations: classpath:mapper/**/*.xml
   configuration:
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+# 充电业务配置
+charging:
+  # 默认电价，单位：分/kWh（175 = 1.75 元/kWh），生产环境应从费率配置服务动态获取
+  price-per-kwh: 175

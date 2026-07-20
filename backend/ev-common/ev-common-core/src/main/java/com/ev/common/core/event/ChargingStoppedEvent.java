@@ -1,5 +1,7 @@
 package com.ev.common.core.event;
 
+import com.ev.common.core.constant.CommonConstants;
+import com.ev.common.core.util.TenantContext;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,7 +35,8 @@ public class ChargingStoppedEvent implements Serializable {
         return ChargingStoppedEvent.builder()
                 .orderId(orderId).stationId(stationId).energyWh(energyWh)
                 .totalAmount(totalAmount).durationSeconds(duration)
-                .tenantId("T001").timestamp(Instant.now())
+                .tenantId(TenantContext.getTenantId() != null
+                        ? TenantContext.getTenantId() : CommonConstants.DEFAULT_TENANT_ID).timestamp(Instant.now())
                 .build();
     }
 }

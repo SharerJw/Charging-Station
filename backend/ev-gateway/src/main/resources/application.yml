@@ -108,6 +108,9 @@ spring:
           filters:
             - StripPrefix=1
 
+jwt:
+  secret: ${JWT_SECRET:ev-charging-platform-jwt-dev-secret-key-2026}
+
 # 管理端点 — 仅暴露 health/info，限制敏感端点（I-003）
 management:
   endpoints:

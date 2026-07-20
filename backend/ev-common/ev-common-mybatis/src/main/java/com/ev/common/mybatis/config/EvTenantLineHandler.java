@@ -29,7 +29,11 @@ public class EvTenantLineHandler implements TenantLineHandler {
     @Override
     public Expression getTenantId() {
         String tenantId = TenantContext.getTenantId();
-        return new StringValue(tenantId != null ? tenantId : "T001");
+        if (tenantId == null || tenantId.isEmpty()) {
+            // 无租户上下文时不注入租户条件，避免过滤全部数据
+            return null;
+        }
+        return new StringValue(tenantId);
     }
 
     @Override

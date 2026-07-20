@@ -31,6 +31,9 @@ public final class CommonConstants {
     /** 成功状态码 */
     public static final int SUCCESS_CODE = 0;
 
-    /** 默认租户ID */
-    public static final String DEFAULT_TENANT_ID = "T001";
+    /**
+     * 默认租户ID —— 仅用于无租户上下文时的降级（如系统级任务、测试环境）。
+     * 正常业务流程应始终从 TenantContext 获取租户ID，禁止依赖此常量。
+     */
+    public static final String DEFAULT_TENANT_ID = "";
 }

@@ -51,6 +51,9 @@ management:
       application: ${spring.application.name}
 
 # Knife4j / SpringDoc
+jwt:
+  secret: ${JWT_SECRET:ev-charging-platform-jwt-dev-secret-key-2026}
+
 springdoc:
   swagger-ui:
     path: /doc.html

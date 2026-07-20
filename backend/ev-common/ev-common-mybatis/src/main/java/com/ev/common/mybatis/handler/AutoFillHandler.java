@@ -19,8 +19,7 @@ public class AutoFillHandler implements MetaObjectHandler {
     public void insertFill(MetaObject metaObject) {
         this.strictInsertFill(metaObject, "createdAt", LocalDateTime.class, LocalDateTime.now());
         this.strictInsertFill(metaObject, "updatedAt", LocalDateTime.class, LocalDateTime.now());
-        this.strictInsertFill(metaObject, "tenantId", String.class,
-                TenantContext.getTenantId() != null ? TenantContext.getTenantId() : "T001");
+        this.strictInsertFill(metaObject, "tenantId", String.class, TenantContext.getTenantId());
     }
 
     @Override

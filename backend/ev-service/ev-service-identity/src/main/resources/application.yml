@@ -47,6 +47,9 @@ minio:
   bucket-name: ev-charging
   enabled: true
 
+jwt:
+  secret: ${JWT_SECRET:ev-charging-platform-jwt-dev-secret-key-2026}
+
 springdoc:
   swagger-ui:
     path: /doc.html
