@@ -367,6 +367,49 @@ export interface SparePartQuery {
   size: number
 }
 
+// ==================== 告警管理模块类型 ====================
+
+export const AlertLevel = {
+  P0: 'P0',
+  P1: 'P1',
+  P2: 'P2',
+  P3: 'P3',
+} as const
+export type AlertLevel = typeof AlertLevel[keyof typeof AlertLevel]
+
+export const AlertStatus = {
+  PENDING: 'pending',
+  PROCESSING: 'processing',
+  RESOLVED: 'resolved',
+  IGNORED: 'ignored',
+} as const
+export type AlertStatus = typeof AlertStatus[keyof typeof AlertStatus]
+
+export interface Alert {
+  id: string
+  level: AlertLevel
+  title: string
+  description: string
+  stationName: string
+  deviceCode: string
+  status: AlertStatus
+  handler?: string
+  handleTime?: string
+  handleResult?: string
+  createTime: string
+}
+
+export interface AlertQuery {
+  level?: AlertLevel
+  status?: AlertStatus
+  keyword?: string
+  stationId?: string
+  startTime?: string
+  endTime?: string
+  page?: number
+  size?: number
+}
+
 // ==================== 定价策略相关类型 ====================
 
 export const PricingStrategyType = {
