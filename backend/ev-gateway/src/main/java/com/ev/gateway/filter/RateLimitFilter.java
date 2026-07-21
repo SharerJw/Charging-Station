@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
-import org.springframework.script.support.ScriptExpression;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -118,7 +117,7 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
 
     public RateLimitFilter(ReactiveStringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
-        this.redisScript = ScriptExpression.of(LUA_SCRIPT, Long.class);
+        this.redisScript = RedisScript.of(LUA_SCRIPT, Long.class);
     }
 
     @Override

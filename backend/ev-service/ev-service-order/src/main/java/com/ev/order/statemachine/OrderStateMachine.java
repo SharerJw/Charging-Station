@@ -4,13 +4,9 @@ import com.ev.common.core.exception.BizException;
 import com.ev.order.entity.ChargingOrderEntity;
 import com.ev.order.entity.OrderStatusHistoryEntity;
 import com.ev.order.mapper.OrderStatusHistoryMapper;
-import com.ev.order.service.OrderStatusHistoryService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +17,6 @@ import java.util.Map;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class OrderStateMachine {
 
     private final Map<OrderStatus, OrderStateHandler> handlers = new EnumMap<>(OrderStatus.class);

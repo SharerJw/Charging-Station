@@ -94,7 +94,6 @@ jobs:
       matrix:
         app:
           - admin-web
-          - ops-app
           - user-miniapp
           - simulator-web
 
@@ -133,23 +132,56 @@ jobs:
         continue-on-error: true
 
   # ============================================================
+  # Flutter Build (ops_flutter)
+  # ============================================================
+  flutter-build:
+    name: Flutter Build (ops_flutter)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.x'
+          channel: stable
+
+      - name: Flutter pub get
+        working-directory: apps/ops_flutter
+        run: flutter pub get
+
+      - name: Flutter analyze
+        working-directory: apps/ops_flutter
+        run: flutter analyze --no-fatal-infos
+        continue-on-error: true
+
+      - name: Flutter build APK
+        working-directory: apps/ops_flutter
+        run: flutter build apk --debug
+
+  # ============================================================
   # PR Summary Status
   # ============================================================
   pr-check-status:
     name: PR Check Status
     runs-on: ubuntu-latest
-    needs: [backend-build, frontend-build]
+    needs: [backend-build, frontend-build, flutter-build]
     if: always()
     steps:
       - name: Verify all checks passed
         run: |
           if [ "${{ needs.backend-build.result }}" != "success" ] || \
-             [ "${{ needs.frontend-build.result }}" != "success" ]; then
+             [ "${{ needs.frontend-build.result }}" != "success" ] || \
+             [ "${{ needs.flutter-build.result }}" != "success" ]; then
             echo "PR check failed"
             echo ""
             echo "Results:"
             echo "  Backend Build:  ${{ needs.backend-build.result }}"
             echo "  Frontend Build: ${{ needs.frontend-build.result }}"
+            echo "  Flutter Build:  ${{ needs.flutter-build.result }}"
             exit 1
           fi
           echo "All PR checks passed"

@@ -9,7 +9,7 @@ apps/
 ├── admin-web/          # 后台管理系统 Web
 ├── simulator-web/      # 产品模拟器 Web
 ├── user-miniapp/       # 用户端小程序
-└── ops-app/            # 产品运维 App
+└── ops_flutter/        # 产品运维 App (Flutter)
 ```
 
 ## 技术栈
@@ -23,9 +23,14 @@ apps/
 - Vue Router
 - ECharts
 
-### 小程序/App 项目 (user-miniapp, ops-app)
+### 小程序项目 (user-miniapp)
 - UniApp + Vue 3
 - Pinia
+
+### 运维 App (ops_flutter)
+- Flutter + Dart
+- Provider
+- GoRouter
 
 ## 快速开始
 
@@ -53,13 +58,13 @@ pnpm dev:mp-weixin
 # 使用微信开发者工具打开 dist/dev/mp-weixin 目录
 ```
 
-### 产品运维 App
+### 产品运维 App (Flutter)
 ```bash
-cd ops-app
-pnpm install
-pnpm dev:h5
-# 访问 H5 版本
-# 或使用 pnpm dev:app 打包原生App
+cd ops_flutter
+flutter pub get
+flutter run -d chrome --web-port 5175
+# 或构建 APK
+flutter build apk --release
 ```
 
 ## 项目说明

@@ -29,9 +29,6 @@ importers:
       vue:
         specifier: ^3.5.13
         version: 3.5.39(typescript@5.8.3)
-      vuex:
-        specifier: ^4.1.0
-        version: 4.1.0(vue@3.5.39(typescript@5.8.3))
     devDependencies:
       '@dcloudio/uni-automator':
         specifier: 3.0.0-4060620250520001
@@ -3813,11 +3810,6 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
-
-  vuex@4.1.0:
-    resolution: {integrity: sha512-hmV6UerDrPcgbSy9ORAtNXDr9M4wlNP4pEFKye4ujJF8oqgFFuxDCdOLS3eNoRTtq5O3hoBDh9Doj1bQMYHRbQ==}
-    peerDependencies:
-      vue: ^3.2.0
 
   w3c-hr-time@1.0.2:
     resolution: {integrity: sha512-z8P5DvDNjKDoFIHK7q8r8lackT6l+jo/Ye3HOle7l9nICP9lf1Ci25fy9vHd0JOWewkIFzXIEig3TdKT7JQ5fQ==}
@@ -8495,11 +8487,6 @@ snapshots:
       '@vue/shared': 3.5.39
     optionalDependencies:
       typescript: 5.8.3
-
-  vuex@4.1.0(vue@3.5.39(typescript@5.8.3)):
-    dependencies:
-      '@vue/devtools-api': 6.6.4
-      vue: 3.5.39(typescript@5.8.3)
 
   w3c-hr-time@1.0.2:
     dependencies:

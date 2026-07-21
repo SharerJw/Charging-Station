@@ -32,10 +32,10 @@ public class RequestIdFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         // 1. 检查请求头是否已有 X-Request-Id，有则透传，没有则生成去掉横杠的 UUID
-        String requestId = exchange.getRequest().getHeaders().getFirst(REQUEST_ID_HEADER);
-        if (requestId == null || requestId.isBlank()) {
-            requestId = UUID.randomUUID().toString().replace("-", "");
-        }
+        String headerRequestId = exchange.getRequest().getHeaders().getFirst(REQUEST_ID_HEADER);
+        final String requestId = (headerRequestId == null || headerRequestId.isBlank())
+                ? UUID.randomUUID().toString().replace("-", "")
+                : headerRequestId;
 
         // 2. 将 requestId 存入 exchange 属性，方便后续 Filter 使用
         exchange.getAttributes().put(REQUEST_ID_ATTR, requestId);
@@ -48,9 +48,10 @@ public class RequestIdFilter implements GlobalFilter, Ordered {
                 .request(r -> r.header(REQUEST_ID_HEADER, requestId))
                 .build();
 
+        // 5. 在响应提交前写入响应头
+        mutatedExchange.getResponse().getHeaders().set(REQUEST_ID_HEADER, requestId);
+
         return chain.filter(mutatedExchange).then(Mono.fromRunnable(() -> {
-            // 5. 写回响应头
-            exchange.getResponse().getHeaders().set(REQUEST_ID_HEADER, requestId);
             MDC.remove(REQUEST_ID_ATTR);
         }));
     }

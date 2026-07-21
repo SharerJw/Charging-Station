@@ -120,3 +120,4 @@ test-results/
 *.spec.js
 **/test-results/
 **/debug-page.cjs
+*.apk

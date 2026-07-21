@@ -26,6 +26,10 @@ public class BizException extends RuntimeException {
         return new BizException(code, message);
     }
 
+    public static BizException fail(String message) {
+        return new BizException(500, message);
+    }
+
     // 认证/权限
     public static BizException notLogin() {
         return new BizException(ErrorCode.NOT_LOGIN);

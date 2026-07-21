@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
@@ -72,7 +71,7 @@ public class AuditLogFilter implements GlobalFilter, Ordered {
      * 从 X-Forwarded-For 或 RemoteAddress 获取客户端真实IP
      */
     private String resolveClientIp(ServerHttpRequest request) {
-        List<String> forwardedFor = request.getHeaders().get(HttpHeaders.X_FORWARDED_FOR);
+        List<String> forwardedFor = request.getHeaders().get("X-Forwarded-For");
         if (forwardedFor != null && !forwardedFor.isEmpty()) {
             String firstIp = forwardedFor.get(0);
             if (firstIp != null && !firstIp.isBlank()) {

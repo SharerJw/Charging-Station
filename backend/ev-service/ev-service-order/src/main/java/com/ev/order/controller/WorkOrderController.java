@@ -36,4 +36,25 @@ public class WorkOrderController {
     public R<WorkOrderVO> complete(@PathVariable Long id, @RequestBody Map<String, String> body) {
         return R.ok(workOrderService.complete(id, body.get("result")));
     }
+
+    @Operation(summary = "工单详情") @GetMapping("/{id}")
+    public R<WorkOrderVO> detail(@PathVariable Long id) {
+        return R.ok(workOrderService.detail(id));
+    }
+
+    @Operation(summary = "创建工单") @PostMapping
+    public R<WorkOrderVO> create(@RequestBody Map<String, String> body) {
+        return R.ok(workOrderService.create(body.get("title"), body.get("description"),
+                body.get("type"), body.get("priority"), body.get("stationName"), body.get("deviceCode")));
+    }
+
+    @Operation(summary = "分配工单") @PostMapping("/{id}/assign")
+    public R<WorkOrderVO> assign(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        return R.ok(workOrderService.assign(id, body.get("assignee")));
+    }
+
+    @Operation(summary = "工单统计") @GetMapping("/statistics")
+    public R<Map<String, Object>> statistics() {
+        return R.ok(workOrderService.statistics());
+    }
 }

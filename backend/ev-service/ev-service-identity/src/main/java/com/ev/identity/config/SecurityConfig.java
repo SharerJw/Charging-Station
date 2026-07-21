@@ -6,8 +6,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -23,15 +21,20 @@ import org.springframework.security.web.SecurityFilterChain;
  */
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig {
+class IdentitySecurityConfig {
 
     // ======================== 公开路径 ========================
 
     private static final String[] PUBLIC_PATHS = {
-            // 认证接口
-            "/api/v1/auth/login",
-            "/api/v1/auth/register",
-            "/api/v1/auth/sms/**",
+            // 认证接口（管理端）
+            "/api/auth/**",
+            "/api/v1/auth/**",
+
+            // 认证接口（运维端）
+            "/api/v1/ops/auth/**",
+
+            // 运维端用户信息（Gateway 注入 X-User-Id，无需登录 token）
+            "/api/v1/ops/user/profile",
 
             // Actuator 健康检查
             "/actuator/**",
@@ -63,10 +66,4 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // ======================== 密码编码器 ========================
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
 }

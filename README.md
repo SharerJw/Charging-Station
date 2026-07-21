@@ -62,7 +62,7 @@
 |------|---------|------|
 | **框架** | Vue 3 + TypeScript + Composition API | 四端统一前端技术栈 |
 | **UI 组件** | Element Plus | 管理后台 / 模拟器 |
-| **跨端方案** | UniApp + Vue 3 | 用户小程序 + 运维 App（H5/小程序） |
+| **跨端方案** | UniApp + Vue 3 / Flutter | 用户小程序 (UniApp) + 运维 App (Flutter) |
 | **状态管理** | Pinia | 全局状态管理 |
 | **样式** | TailwindCSS | 原子化 CSS |
 | **可视化** | ECharts 5 | 数据看板、趋势图、实时曲线 |
@@ -76,9 +76,9 @@
 ┌──────────────────────────────────────────────────────────────────┐
 │                        客户端层（四端）                            │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐     │
-│  │ admin-web│  │  ops-app │  │user-mini │  │ simulator-web│     │
-│  │ Vue3+EP  │  │ UniApp   │  │ UniApp   │  │ Vue3+EP      │     │
-│  │ :5173    │  │ :5175    │  │ :5176    │  │ :5177        │     │
+│  │ admin-web│  │ops_flutter│  │user-mini │  │ simulator-web│     │
+│  │ Vue3+EP  │  │ Flutter  │  │ UniApp   │  │ Vue3+EP      │     │
+│  │ :5173    │  │  APK    │  │ :5176    │  │ :5177        │     │
 │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────┬───────┘     │
 └───────┼──────────────┼─────────────┼───────────────┼─────────────┘
         │              │             │               │
@@ -132,29 +132,23 @@ Charging-Station/
 │   │           ├── login/                 #     登录页
 │   │           └── error/                 #     错误页面（403/404）
 │   │
-│   ├── ops-app/                           # 运维 App (UniApp + Vue 3, :5175)
-│   │   └── src/pages/
-│   │       ├── index/                     #   工作台（待办、快捷操作、告警列表）
-│   │       ├── station/                   #   站点巡检
-│   │       ├── device/                    #   设备管理
-│   │       ├── alert/                     #   告警处理
-│   │       ├── alert-detail/              #   告警详情
-│   │       ├── alert-stats/               #   告警统计
-│   │       ├── workorder/                 #   工单管理
-│   │       ├── workorder-detail/          #   工单详情
-│   │       ├── workorder-process/         #   工单处理
-│   │       ├── workorder-stats/           #   工单统计
-│   │       ├── inspection/                #   巡检任务
-│   │       ├── inspection-exec/           #   巡检执行
-│   │       ├── inspection-report/         #   巡检报告
-│   │       ├── dispatch/                  #   调度
+│   ├── ops_flutter/                       # 运维 App (Flutter, APK)
+│   │   └── lib/features/
+│   │       ├── auth/                      #   登录认证
+│   │       ├── dashboard/                 #   工作台（待办、快捷操作、告警列表）
+│   │       ├── station/                   #   站点管理 + 设备详情
+│   │       ├── alert/                     #   告警处理、详情、统计
+│   │       ├── workorder/                 #   工单管理、详情、处理、统计、创建
+│   │       ├── inspection/                #   巡检任务、执行、报告
+│   │       ├── dispatch/                  #   告警派单
 │   │       ├── knowledge/                 #   知识库
-│   │       ├── messages-ops/              #   消息
-│   │       ├── remote-control/            #   远程控制
-│   │       ├── shift-handover/            #   交接班
-│   │       ├── spare-parts/               #   备件管理
-│   │       ├── profile/                   #   个人中心
-│   │       └── login/                     #   登录
+│   │       ├── messages/                  #   消息中心
+│   │       ├── remote_control/            #   远程控制
+│   │       ├── shift_handover/            #   交接班
+│   │       ├── spare_parts/               #   备件管理
+│   │       ├── scan/                      #   扫码
+│   │       ├── profile/                   #   个人中心 + 编辑资料
+│   │       └── settings/                  #   设置、修改密码、通知设置、关于
 │   │
 │   ├── user-miniapp/                      # 用户小程序 (UniApp + Vue 3, :5176)
 │   │   └── src/pages/
@@ -287,8 +281,8 @@ cd backend
 # 后台管理系统 (:5173)
 cd apps/admin-web && pnpm install && pnpm dev
 
-# 运维 App H5 (:5175)
-cd apps/ops-app && pnpm install && pnpm dev:h5
+# 运维 App (Flutter)
+cd apps/ops_flutter && flutter run -d chrome --web-port 5175
 
 # 用户小程序 H5 (:5176)
 cd apps/user-miniapp && pnpm install && pnpm dev:h5

@@ -8,7 +8,11 @@ CREATE DATABASE ev_station OWNER ev;
 -- 创建订单数据库
 CREATE DATABASE ev_order OWNER ev;
 
+-- 创建充电服务数据库
+CREATE DATABASE ev_charging OWNER ev;
+
 -- 授权
 GRANT ALL PRIVILEGES ON DATABASE ev_identity TO ev;
 GRANT ALL PRIVILEGES ON DATABASE ev_station TO ev;
 GRANT ALL PRIVILEGES ON DATABASE ev_order TO ev;
+GRANT ALL PRIVILEGES ON DATABASE ev_charging TO ev;

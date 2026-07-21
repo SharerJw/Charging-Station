@@ -97,7 +97,6 @@ jobs:
       matrix:
         app:
           - admin-web
-          - ops-app
           - user-miniapp
           - simulator-web
 
@@ -141,6 +140,46 @@ jobs:
         with:
           name: frontend-${{ matrix.app }}-dist
           path: apps/${{ matrix.app }}/dist
+          retention-days: 3
+          if-no-files-found: ignore
+
+  # ============================================================
+  # Job 2b: Flutter Build (ops_flutter)
+  # ============================================================
+  flutter-build:
+    name: Flutter Build (ops_flutter)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.x'
+          channel: stable
+
+      - name: Flutter pub get
+        working-directory: apps/ops_flutter
+        run: flutter pub get
+
+      - name: Flutter analyze
+        working-directory: apps/ops_flutter
+        run: flutter analyze --no-fatal-infos
+        continue-on-error: true
+
+      - name: Flutter build APK
+        working-directory: apps/ops_flutter
+        run: flutter build apk --debug
+
+      - name: Upload Flutter APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-ops-apk
+          path: apps/ops_flutter/build/app/outputs/flutter-apk/
           retention-days: 3
           if-no-files-found: ignore
 
@@ -255,13 +294,14 @@ jobs:
   ci-status:
     name: CI Status
     runs-on: ubuntu-latest
-    needs: [backend-build, frontend-build, code-quality]
+    needs: [backend-build, frontend-build, flutter-build, code-quality]
     if: always()
     steps:
       - name: Check all jobs
         run: |
           if [ "${{ needs.backend-build.result }}" != "success" ] || \
              [ "${{ needs.frontend-build.result }}" != "success" ] || \
+             [ "${{ needs.flutter-build.result }}" != "success" ] || \
              [ "${{ needs.code-quality.result }}" != "success" ]; then
             echo "One or more jobs failed"
             exit 1

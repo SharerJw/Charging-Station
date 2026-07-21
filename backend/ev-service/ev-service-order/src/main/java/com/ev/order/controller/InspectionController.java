@@ -29,4 +29,9 @@ public class InspectionController {
     public R<InspectionTaskVO> submit(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         return R.ok(inspectionService.submit(id, null));
     }
+
+    @Operation(summary = "巡检详情") @GetMapping("/{id}")
+    public R<InspectionTaskVO> detail(@PathVariable Long id) {
+        return R.ok(inspectionService.detail(id));
+    }
 }

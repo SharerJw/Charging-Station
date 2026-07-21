@@ -25,7 +25,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-public class SecurityConfig {
+class OrderSecurityConfig {
 
     // ======================== 公开路径 ========================
 
@@ -55,21 +55,9 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // 路由授权规则
+                // 网关（AuthGlobalFilter）已统一校验 JWT，下游服务信任网关
                 .authorizeHttpRequests(auth -> auth
-                        // 公开放行
-                        .requestMatchers(PUBLIC_PATHS).permitAll()
-
-                        // 订单接口 —— 需要 USER 角色
-                        .requestMatchers("/api/v1/orders/**").hasRole("USER")
-
-                        // 运维接口 —— 需要 OPS 或 ADMIN 角色
-                        .requestMatchers("/api/v1/ops/**").hasAnyRole("OPS", "ADMIN")
-
-                        // 仪表盘接口 —— 需要认证（不限角色）
-                        .requestMatchers("/api/dashboard/**").authenticated()
-
-                        // 其余接口 —— 需要认证
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 );
 
         return http.build();

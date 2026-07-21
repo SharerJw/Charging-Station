@@ -10,16 +10,19 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.context.event.ContextRefreshedEvent;
 
-import jakarta.annotation.PostConstruct;
 import java.util.List;
 
 /**
  * MyBatis-Plus 配置
  */
 @Configuration
-public class MybatisPlusConfig {
+public class MybatisPlusConfig implements ApplicationListener<ContextRefreshedEvent> {
 
+    @Lazy
     @Autowired
     private List<SqlSessionFactory> sqlSessionFactoryList;
 
@@ -39,9 +42,11 @@ public class MybatisPlusConfig {
 
     /**
      * 注册数据权限拦截器
+     * 使用 ContextRefreshedEvent 延迟到整个 Spring 上下文初始化完成后再添加，
+     * 避免 @PostConstruct 在 SqlSessionFactory 创建阶段强制解析 lazy proxy 导致循环依赖。
      */
-    @PostConstruct
-    public void addDataPermissionInterceptor() {
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
         DataPermissionInterceptor interceptor = new DataPermissionInterceptor();
         for (SqlSessionFactory sqlSessionFactory : sqlSessionFactoryList) {
             sqlSessionFactory.getConfiguration().addInterceptor(interceptor);

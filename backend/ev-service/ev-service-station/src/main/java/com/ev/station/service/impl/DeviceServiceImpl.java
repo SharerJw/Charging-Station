@@ -7,14 +7,16 @@ import com.ev.common.core.result.PageResult;
 import com.ev.station.dto.*;
 import com.ev.station.entity.ConnectorEntity;
 import com.ev.station.entity.DeviceEntity;
+import com.ev.station.entity.DeviceFaultEntity;
 import com.ev.station.mapper.ConnectorMapper;
+import com.ev.station.mapper.DeviceFaultMapper;
 import com.ev.station.mapper.DeviceMapper;
 import com.ev.station.service.DeviceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 public class DeviceServiceImpl implements DeviceService {
     private final DeviceMapper deviceMapper;
     private final ConnectorMapper connectorMapper;
+    private final DeviceFaultMapper deviceFaultMapper;
 
     @Override
     public PageResult<DeviceVO> page(DeviceQuery query) {
@@ -72,6 +75,53 @@ public class DeviceServiceImpl implements DeviceService {
         connector.setStatus("AVAILABLE");
         connectorMapper.updateById(connector);
         log.info("解锁枪头: deviceId={}, connectorId={}", id, connectorId);
+    }
+
+    @Override
+    public Map<String, Object> deviceStatus(Long id) {
+        DeviceEntity entity = deviceMapper.selectById(id);
+        if (entity == null) throw BizException.deviceNotFound();
+        List<ConnectorEntity> connectors = connectorMapper.selectList(
+                new LambdaQueryWrapper<ConnectorEntity>().eq(ConnectorEntity::getDeviceId, id)
+                        .orderByAsc(ConnectorEntity::getConnectorId));
+        List<Map<String, Object>> connectorStatusList = connectors.stream().map(c -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("connectorId", c.getConnectorId());
+            m.put("type", c.getType());
+            m.put("status", c.getStatus());
+            m.put("maxPower", c.getMaxPower());
+            m.put("currentTransactionId", c.getCurrentTransactionId());
+            return m;
+        }).collect(Collectors.toList());
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("deviceId", entity.getId());
+        result.put("deviceCode", entity.getCode());
+        result.put("status", entity.getStatus());
+        result.put("lifecycle", entity.getLifecycle());
+        result.put("ratedPower", entity.getRatedPower());
+        result.put("connectors", connectorStatusList);
+        return result;
+    }
+
+    @Override
+    public List<Map<String, Object>> deviceFaults(Long id) {
+        DeviceEntity entity = deviceMapper.selectById(id);
+        if (entity == null) throw BizException.deviceNotFound();
+        List<DeviceFaultEntity> faults = deviceFaultMapper.selectList(
+                new LambdaQueryWrapper<DeviceFaultEntity>()
+                        .eq(DeviceFaultEntity::getDeviceId, id)
+                        .orderByDesc(DeviceFaultEntity::getOccurredAt));
+        return faults.stream().map(f -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", f.getId());
+            m.put("faultCode", f.getFaultCode());
+            m.put("faultDescription", f.getFaultDescription());
+            m.put("level", f.getLevel());
+            m.put("status", f.getStatus());
+            m.put("occurredAt", f.getOccurredAt());
+            m.put("resolvedAt", f.getResolvedAt());
+            return m;
+        }).collect(Collectors.toList());
     }
 
     private DeviceVO toVO(DeviceEntity entity) {

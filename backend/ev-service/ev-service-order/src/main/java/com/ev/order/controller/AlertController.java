@@ -38,4 +38,14 @@ public class AlertController {
         alertService.ignore(id, null);
         return R.ok();
     }
+
+    @Operation(summary = "告警详情") @GetMapping("/{id}")
+    public R<AlertVO> detail(@PathVariable Long id) {
+        return R.ok(alertService.detail(id));
+    }
+
+    @Operation(summary = "告警统计") @GetMapping("/statistics")
+    public R<Map<String, Object>> statistics() {
+        return R.ok(alertService.statistics());
+    }
 }

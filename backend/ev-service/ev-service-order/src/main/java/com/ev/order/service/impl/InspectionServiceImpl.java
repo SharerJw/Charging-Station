@@ -62,6 +62,15 @@ public class InspectionServiceImpl implements InspectionService {
         return toVO(task);
     }
 
+    @Override
+    public InspectionTaskVO detail(Long id) {
+        InspectionTaskEntity task = inspectionTaskMapper.selectById(id);
+        if (task == null) {
+            throw BizException.of(4000, "巡检任务不存在");
+        }
+        return toVO(task);
+    }
+
     private InspectionTaskVO toVO(InspectionTaskEntity e) {
         return InspectionTaskVO.builder()
                 .id(String.valueOf(e.getId())).name(e.getName()).stationName(e.getStationName())

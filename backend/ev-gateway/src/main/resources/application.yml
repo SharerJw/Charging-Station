@@ -59,7 +59,7 @@ spring:
         - id: order-service
           uri: lb://ev-service-order
           predicates:
-            - Path=/api/orders/**,/api/v1/orders/**,/api/dashboard/**,/api/finance/**,/api/v1/ops/alerts/**,/api/v1/ops/workorders/**,/api/v1/ops/inspections/**,/ws/dashboard/**,/api/v1/upload/**
+            - Path=/api/orders/**,/api/v1/orders/**,/api/dashboard/**,/api/finance/**,/api/v1/ops/alerts/**,/api/v1/ops/workorders/**,/api/v1/ops/inspections/**,/api/v1/ops/messages/**,/api/v1/ops/dispatch/**,/ws/dashboard/**,/api/v1/upload/**
         - id: charging-service
           uri: lb://ev-service-charging
           predicates:
@@ -117,7 +117,7 @@ management:
     web:
       exposure:
         # 仅暴露 health 和 info，不暴露 env/beans/configprops 等敏感端点
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: when-authorized

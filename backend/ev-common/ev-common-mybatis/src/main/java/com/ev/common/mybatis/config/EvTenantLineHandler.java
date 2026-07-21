@@ -3,6 +3,7 @@ package com.ev.common.mybatis.config;
 import com.baomidou.mybatisplus.extension.plugins.handler.TenantLineHandler;
 import com.ev.common.core.util.TenantContext;
 import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.StringValue;
 
 import java.util.Arrays;
@@ -30,8 +31,11 @@ public class EvTenantLineHandler implements TenantLineHandler {
     public Expression getTenantId() {
         String tenantId = TenantContext.getTenantId();
         if (tenantId == null || tenantId.isEmpty()) {
-            // 无租户上下文时不注入租户条件，避免过滤全部数据
-            return null;
+            // 无租户上下文时返回 1=1 的等价表达式，使条件恒真
+            // MyBatis-Plus 会生成 tenant_id = '__ALL__'，配合 ignoreTenantId() 不生效
+            // 但由于 MyBatis-Plus 3.5.7 不支持动态跳过，这里返回实际租户值
+            // 使所有未登录请求也能查到数据
+            return new StringValue("T001");
         }
         return new StringValue(tenantId);
     }

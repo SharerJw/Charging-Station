@@ -24,7 +24,7 @@
 Charging-Station/
 ├── apps/                          # 前端四端应用
 │   ├── admin-web/                 # 后台管理系统 Web (Vue 3 + Element Plus, :5173)
-│   ├── ops-app/                   # 运维移动端 (UniApp + Vue 3, :5175)
+│   ├── ops_flutter/               # 运维移动端 (Flutter, APK)
 │   ├── user-miniapp/              # 用户微信小程序 (UniApp + Vue 3, :5176)
 │   └── simulator-web/             # 产品模拟器 Web (Vue 3 + Element Plus, :5177)
 │
@@ -138,7 +138,7 @@ cd backend && ./gradlew build -x test
 
 # 3. 启动前端
 cd apps/admin-web && pnpm install && pnpm dev
-cd apps/ops-app && pnpm install && pnpm dev:h5
+cd apps/ops_flutter && flutter run -d chrome --web-port 5175
 cd apps/user-miniapp && pnpm install && pnpm dev:h5
 cd apps/simulator-web && pnpm install && pnpm dev
 

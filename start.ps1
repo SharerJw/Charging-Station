@@ -148,9 +148,9 @@ function Start-Frontend {
     Kill-Ports @(5173, 5175, 5176, 5177)
     Start-Sleep -Seconds 2
 
+    # ── pnpm-based apps ──────────────────────────────────────
     $apps = @(
         @{ Name = "admin-web";     Port = 5173; Exe = "cmd"; Args = @("/c", "npx vite --port 5173") },
-        @{ Name = "ops-app";       Port = 5175; Exe = "cmd"; Args = @("/c", "npx uni --port 5175") },
         @{ Name = "user-miniapp";  Port = 5176; Exe = "cmd"; Args = @("/c", "npx uni --port 5176") },
         @{ Name = "simulator-web"; Port = 5177; Exe = "cmd"; Args = @("/c", "npx vite --port 5177") }
     )
@@ -178,6 +178,19 @@ function Start-Frontend {
         Write-Host "  Starting $($app.Name) on port $($app.Port)..." -ForegroundColor DarkGray
     }
 
+    # ── Flutter app (ops_flutter) ─────────────────────────────
+    $flutterDir = Join-Path $ProjectRoot "apps\ops_flutter"
+    if (Test-Path $flutterDir) {
+        Log "Starting ops_flutter (Flutter)..."
+        $logOut = Join-Path $env:TEMP "ev-ops_flutter.log"
+        $logErr = Join-Path $env:TEMP "ev-ops_flutter-err.log"
+        Start-Process -FilePath "cmd" `
+            -ArgumentList "/c", "flutter run -d chrome --web-port 5175 > `"$logOut`" 2> `"$logErr`"" `
+            -WorkingDirectory $flutterDir `
+            -WindowStyle Hidden
+        Write-Host "  Starting ops_flutter on port 5175..." -ForegroundColor DarkGray
+    }
+
     Start-Sleep -Seconds 8
     foreach ($app in $apps) {
         if (Test-Port $app.Port) {
@@ -185,6 +198,11 @@ function Start-Frontend {
         } else {
             Write-Host "  http://localhost:$($app.Port) still starting..." -ForegroundColor DarkGray
         }
+    }
+    if (Test-Port 5175) {
+        Ok "http://localhost:5175"
+    } else {
+        Write-Host "  http://localhost:5175 still starting..." -ForegroundColor DarkGray
     }
 }
 

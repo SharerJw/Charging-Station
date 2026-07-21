@@ -15,7 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -77,6 +79,66 @@ public class WorkOrderServiceImpl implements WorkOrderService {
         workOrderMapper.updateById(wo);
         log.info("工单已完成: workOrderId={}", id);
         return toVO(wo);
+    }
+
+    @Override
+    public WorkOrderVO detail(Long id) {
+        WorkOrderEntity wo = workOrderMapper.selectById(id);
+        if (wo == null) {
+            throw BizException.of(3000, "工单不存在");
+        }
+        return toVO(wo);
+    }
+
+    @Override
+    @Transactional
+    public WorkOrderVO create(String title, String description, String type, String priority, String stationName, String deviceCode) {
+        WorkOrderEntity wo = new WorkOrderEntity();
+        wo.setOrderNo("WO" + System.currentTimeMillis());
+        wo.setTitle(title);
+        wo.setDescription(description);
+        wo.setType(type);
+        wo.setPriority(priority);
+        wo.setStationName(stationName);
+        wo.setDeviceCode(deviceCode);
+        wo.setStatus("pending");
+        wo.setCreator("运维工程师");
+        workOrderMapper.insert(wo);
+        log.info("工单已创建: workOrderId={}, orderNo={}", wo.getId(), wo.getOrderNo());
+        return toVO(wo);
+    }
+
+    @Override
+    @Transactional
+    public WorkOrderVO assign(Long id, String assignee) {
+        WorkOrderEntity wo = workOrderMapper.selectById(id);
+        if (wo == null) {
+            throw BizException.of(3000, "工单不存在");
+        }
+        wo.setAssignee(assignee);
+        workOrderMapper.updateById(wo);
+        log.info("工单已分配: workOrderId={}, assignee={}", id, assignee);
+        return toVO(wo);
+    }
+
+    @Override
+    public Map<String, Object> statistics() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalOrders", workOrderMapper.selectCount(null));
+
+        LambdaQueryWrapper<WorkOrderEntity> pendingWrapper = new LambdaQueryWrapper<>();
+        pendingWrapper.eq(WorkOrderEntity::getStatus, "pending");
+        stats.put("pendingOrders", workOrderMapper.selectCount(pendingWrapper));
+
+        LambdaQueryWrapper<WorkOrderEntity> acceptedWrapper = new LambdaQueryWrapper<>();
+        acceptedWrapper.eq(WorkOrderEntity::getStatus, "accepted");
+        stats.put("acceptedOrders", workOrderMapper.selectCount(acceptedWrapper));
+
+        LambdaQueryWrapper<WorkOrderEntity> completedWrapper = new LambdaQueryWrapper<>();
+        completedWrapper.eq(WorkOrderEntity::getStatus, "completed");
+        stats.put("completedOrders", workOrderMapper.selectCount(completedWrapper));
+
+        return stats;
     }
 
     private WorkOrderVO toVO(WorkOrderEntity e) {

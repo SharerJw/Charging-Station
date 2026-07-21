@@ -9,5 +9,6 @@ dependencies {
     implementation(libs.spring.boot.starter.aop)
     implementation(libs.spring.boot.starter.data.redis)
     implementation(libs.micrometer.registry.prometheus)
+    implementation(libs.spring.kafka)
     compileOnly("jakarta.servlet:jakarta.servlet-api:6.0.0")
 }

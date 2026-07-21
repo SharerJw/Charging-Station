@@ -15,7 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -75,6 +77,36 @@ public class AlertServiceImpl implements AlertService {
         alert.setStatus("ignored");
         alertMapper.updateById(alert);
         log.info("告警已忽略: alertId={}", id);
+    }
+
+    @Override
+    public AlertVO detail(Long id) {
+        DeviceAlertEntity alert = alertMapper.selectById(id);
+        if (alert == null) {
+            throw BizException.of(2001, "告警不存在");
+        }
+        return toVO(alert);
+    }
+
+    @Override
+    public Map<String, Object> statistics() {
+        Map<String, Object> stats = new HashMap<>();
+        LambdaQueryWrapper<DeviceAlertEntity> allWrapper = new LambdaQueryWrapper<>();
+        stats.put("totalAlerts", alertMapper.selectCount(allWrapper));
+
+        LambdaQueryWrapper<DeviceAlertEntity> pendingWrapper = new LambdaQueryWrapper<>();
+        pendingWrapper.eq(DeviceAlertEntity::getStatus, "pending");
+        stats.put("pendingAlerts", alertMapper.selectCount(pendingWrapper));
+
+        LambdaQueryWrapper<DeviceAlertEntity> resolvedWrapper = new LambdaQueryWrapper<>();
+        resolvedWrapper.eq(DeviceAlertEntity::getStatus, "resolved");
+        stats.put("resolvedAlerts", alertMapper.selectCount(resolvedWrapper));
+
+        LambdaQueryWrapper<DeviceAlertEntity> ignoredWrapper = new LambdaQueryWrapper<>();
+        ignoredWrapper.eq(DeviceAlertEntity::getStatus, "ignored");
+        stats.put("ignoredAlerts", alertMapper.selectCount(ignoredWrapper));
+
+        return stats;
     }
 
     private AlertVO toVO(DeviceAlertEntity a) {

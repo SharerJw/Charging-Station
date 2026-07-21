@@ -9,6 +9,11 @@ server:
 spring:
   application:
     name: ev-service-identity
+  # 禁用Kafka自动配置（identity服务不需要Kafka）
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaAnnotationDrivenConfiguration
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:5432/ev_identity
     username: ${DB_USER:ev}
@@ -64,3 +69,17 @@ springdoc:
 logging:
   level:
     com.ev: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ev-service-identity

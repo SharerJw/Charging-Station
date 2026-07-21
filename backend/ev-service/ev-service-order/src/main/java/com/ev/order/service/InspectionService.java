@@ -20,4 +20,9 @@ public interface InspectionService {
      * 提交巡检结果
      */
     InspectionTaskVO submit(Long id, String result);
+
+    /**
+     * 巡检详情
+     */
+    InspectionTaskVO detail(Long id);
 }

@@ -4,6 +4,8 @@ import com.ev.common.core.dto.PageQuery;
 import com.ev.common.core.result.PageResult;
 import com.ev.order.dto.AlertVO;
 
+import java.util.Map;
+
 public interface AlertService {
 
     /**
@@ -20,4 +22,14 @@ public interface AlertService {
      * 忽略告警
      */
     void ignore(Long id, String note);
+
+    /**
+     * 告警详情
+     */
+    AlertVO detail(Long id);
+
+    /**
+     * 告警统计
+     */
+    Map<String, Object> statistics();
 }
